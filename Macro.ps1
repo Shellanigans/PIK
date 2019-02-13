@@ -371,7 +371,7 @@ Function Interact
 
     Write-Host $X
 
-    If(!(Test-Path ($env:APPDATA+'\Macro\Stop.txt')))
+    If(!(Test-Path ($env:APPDATA+'\Macro\Stop.txt')) -AND ($X -notmatch '^\\\\#'))
     {
         $X = ($X -replace '{COPY}','^c')
         $X = ($X -replace '{PASTE}','^v')
