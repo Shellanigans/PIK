@@ -7,6 +7,7 @@ Each key is represented by one or more characters. To specify a single keyboard 
 The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([ ]) have no special meaning to SendKeys, but you must enclose them in braces. 
 
 The following are other special keys you can specify:
+
 | Key             | Syntax                       |
 | --------------- | ----------------------------:|
 | BACKSPACE       | {BACKSPACE}, {BS}, or {BKSP} |
