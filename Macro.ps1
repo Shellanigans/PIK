@@ -1,78 +1,122 @@
-Function GUI
+Add-Type -AssemblyName System.Drawing | Out-Null
+Add-Type -AssemblyName System.Windows.Forms | Out-Null
+
+[Void] [System.Windows.Forms.Application]::EnableVisualStyles()
+
+Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing -TypeDefinition @'
+using SWF = System.Windows.Forms;
+using DR = System.Drawing;
+
+namespace GUI
 {
-    Param
-    (
-        [Switch]$L,[Switch]$TB,[Switch]$B,[Switch]$C,[Int]$SX,[Int]$SY,[Int]$LX,[Int]$LY,[String]$TE
-    )
-
-    If(@([AppDomain]::CurrentDomain.GetAssemblies() | Select FullName | ?{($_ -match 'System.Drawing') -OR ($_ -match 'System.Windows.Forms')}).Count -lt 2)
-    {
-        [void] [System.Reflection.Assembly]::LoadWithPartialName('System.Drawing') 
-        [void] [System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
-
-        [Void] [System.Windows.Forms.Application]::EnableVisualStyles()
-    }
-
-    If($L)
-    {
-        $Temp = New-Object System.Windows.Forms.Label
-    }
-    ElseIf($TB)
-    {
-        $Temp = New-Object System.Windows.Forms.TextBox
-
-        $Temp.Multiline = $True
-        
-        If(($Temp | Get-Member | ?{($_.Name -eq 'TexCh')}).Count -lt 1)
-        {
-            [Void] ($Temp | Add-Member -PassThru -MemberType ScriptMethod -Name 'TexCh' -Value {Param($Add) $This.Add_TextChanged($Add)} -Force)
-        }
-    }
-    ElseIf($B)
-    {
-        $Temp = New-Object System.Windows.Forms.Button
-
-        If(($Temp | Get-Member | ?{($_.Name -eq 'Cl')}).Count -lt 1)
-        {
-            [Void] ($Temp | Add-Member -PassThru -MemberType ScriptMethod -Name 'Cl' -Value {Param($Add) $This.Add_Click($Add)} -Force)
-        }
-    }
-    ElseIf($C)
-    {
-        $Temp = New-Object System.Windows.Forms.CheckBox
-    }
-    Else
-    {
-        $Temp = New-Object System.Windows.Forms.Form
-
-        If(($Temp | Get-Member | ?{($_.Name -eq 'Start')}).Count -lt 1)
-        {
-            [Void] ($Temp | Add-Member -PassThru -MemberType ScriptMethod -Name 'Start' -Value {[Void] $This.ShowDialog()} -Force)
-        }
-
-        $F = $True
-    }
-
-    If($F)
-    {
-        If(($Temp | Get-Member | ?{($_.Name -eq 'InsArr')}).Count -lt 1)
-        {
-            [Void] ($Temp | Add-Member -PassThru -MemberType ScriptMethod -Name 'InsArr' -Value {Param($Add) [Void] ($Add | %{$This.Controls.Add($_)})} -Force)
+    public class F : SWF.Form{
+        public F (int sx, int sy, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Text = tx;
         }
     }
 
-    $Temp.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)
-    
-    $Temp.Location = New-Object System.Drawing.Size($LX,$LY)
-    $Temp.Size = New-Object System.Drawing.Size($SX,$SY)
-    
-    If($TE)
-    {
-        $Temp.Text = $TE
+    public class TC : SWF.TabControl{
+        public TC (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
     }
 
-    Return $Temp
+    public class TP : SWF.TabPage{
+        public TP (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class L : SWF.Label{
+        public L (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class TB : SWF.TextBox{
+        public TB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class RTB : SWF.RichTextBox{
+        public RTB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class MTB : SWF.MaskedTextBox{
+        public MTB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class B : SWF.Button{
+        public B (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class RB : SWF.RadioButton{
+        public RB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class ChB : SWF.CheckBox{
+        public ChB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
+
+    public class P : SWF.Panel{
+        public P (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
+    }
+
+    public class LB : SWF.ListBox{
+        public LB (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
+    }
+
+    public class CoB : SWF.ComboBox{
+        public CoB (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
+    }
+
+    public class GB : SWF.GroupBox{
+        public GB (int sx, int sy, int lx, int ly, string tx){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+            this.Text = tx;
+        }
+    }
 }
+'@
 
 Function NL
 {
@@ -112,7 +156,7 @@ Try
     '
 
     $Hide = [Console.Window]::GetConsoleWindow()
-    [Void][Console.Window]::ShowWindow($Hide, 0)
+    #[Void][Console.Window]::ShowWindow($Hide, 0)
 }Catch{}
 
 [void] [System.Reflection.Assembly]::LoadWithPartialName('Microsoft.VisualBasic')
@@ -130,42 +174,45 @@ Add-Type -NameSpace Mouse -Name Event -MemberDefinition '
 Function Note
 {
     $NoteScript = {
-. ($env:APPDATA+'\Macro\PseudoProf.ps1')
+Add-Type -AssemblyName System.Drawing | Out-Null
+Add-Type -AssemblyName System.Windows.Forms | Out-Null
 
-$NoteForm = (GUI -SX 600 -SY 605 -TE 'Functions')
-$NoteForm.MinimumSize = New-Object System.Drawing.Size(600,605)
+[Void] [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$TextBox = (GUI -TB -SX 535 -SY 510 -LX 25 -LY 25)
+$NoteForm = New-Object System.Windows.Forms.Form
+$NoteForm.Size = New-Object System.Drawing.Size(600,608)
+$NoteForm.Text = 'Functions'
+$NoteForm.MinimumSize = New-Object System.Drawing.Size(600,608)
+
+$TextBox = New-Object System.Windows.Forms.TextBox
+$TextBox.Size = New-Object System.Drawing.Size(535,510)
+$TextBox.Location = New-Object System.Drawing.Size(25,25)
+$TextBox.Multiline = $True
+$TextBox.WordWrap = $False
 $TextBox.Scrollbars = 'Vertical'
-$TextBox.TexCh({$This.Text | Out-File ($env:APPDATA+'\Macro\Notes.txt') -Width 1000 -Force})
+$TextBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Notes.txt') -Width 1000 -Force})
 
 Try{$TextBox.Text = (Get-Content ($env:APPDATA+'\Macro\Notes.txt') -ErrorAction Stop) -join (NL)}Catch{}
 
-$OK = (GUI -B -SX 50 -SY 23 -LX 275 -LY 540 -TE "OK")
-$OK.Cl({$NoteForm.Close()})
+$OK = New-Object System.Windows.Forms.Button
+$OK.Size = New-Object System.Drawing.Size(50,25)
+$OK.Location = New-Object System.Drawing.Size(275,540)
+$OK.Text = 'OK'
+$OK.Add_Click({$NoteForm.Close()})
 
-$TextBox.TabIndex = 0
-$OK.TabIndex = 1
-#$HeaderLabel.TabIndex = 2
-#$HeaderBox.TabIndex = 3
-#$NoteForm.TabIndex = 4
-
-$NoteForm.InsArr(@($TextBox,$OK))
+$NoteForm.Controls.AddRange(@($TextBox,$OK))
 
 $NoteForm.Add_SizeChanged({
-    #$HeaderBox.Size = New-Object System.Drawing.Size((([Int]$This.Width)-65),(([Int]$This.Height)*0.314))
     $TextBox.Size = New-Object System.Drawing.Size((([Int]$This.Width)-65),(([Int]$This.Height)-([Int]$HeaderBox.Height)-105))
-    #$TextBox.Location = New-Object System.Drawing.Size(25,(([Int]$HeaderBox.Height)+35))
     $OK.Location = New-Object System.Drawing.Size((([Int]$This.Width/2)-25),(([Int]$This.Height)-65))
 })
 
-$NoteForm.Start()
+$NoteForm.ShowDialog()
 }
-    $NoteScript | Out-File ($env:APPDATA+'\Macro\MacroNotes.ps1') -Width 1000 -Force
 
     If((Get-Job -Name 'Notes' | ?{$_.State -match 'Running'}).Count -le 0)
     {
-        Start-Job -FilePath ($env:APPDATA+'\Macro\MacroNotes.ps1') -Name 'Notes'
+        Start-Job -ScriptBlock $NoteScript -Name 'Notes'
     }
 }
 
@@ -294,13 +341,13 @@ Function Interact
     }
 }
 
-$Form = (GUI -SX 365 -SY 485 -TE 'Macro Builder 3: Electric Avenue')
+$Form = [GUI.F]::New(365, 485, 'Macro Builder 3: Electric Avenue')
 $Form.MinimumSize = New-Object System.Drawing.Size(357,485)
 
-$CommandsLabel = (GUI -L -SX 100 -SY 20 -LX 25 -LY 15 -TE 'Key Strokes:')
+$CommandsLabel = [GUI.L]::New(100, 20, 25, 15, 'Key Strokes:')
 
-$GetMouseCoords = (GUI -B -SX 125 -SY 20 -LX 200 -LY 11 -TE 'Get Mouse X,Y')
-$GetMouseCoords.Cl({
+$GetMouseCoords = [GUI.B]::New(125, 20, 200, 11, 'Get Mouse X,Y')
+$GetMouseCoords.Add_Click({
     Sleep 3
     
     $Mouse = [String]([Windows.Forms.Cursor]::Position | %{($_.X,$_.Y) -join ','})
@@ -310,14 +357,16 @@ $GetMouseCoords.Cl({
     [Windows.Forms.MessageBox]::Show([String]$Mouse, 'X & Y Coords', [Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Information, [System.Windows.Forms.MessageBoxDefaultButton]::Button1) | Out-Null
 })
 
-$Commands = (GUI -TB -SX 300 -SY 345 -LX 25 -LY 35)
+$Commands = [GUI.TB]::New(300, 345, 25, 35, '')
+$Commands.Multiline = $True
+$Commands.WordWrap = $False
 $Commands.ScrollBars = 'Vertical'
-$Commands.TexCh({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
+$Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
 
 Try{$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction Stop) -join (NL)}Catch{}
 
-$GO = (GUI -B -SX 100 -SY 50 -LX 25 -LY 390 -TE 'GO')
-$GO.Cl({
+$GO = [GUI.B]::New(100, 50, 25, 390, 'GO')
+$GO.Add_Click({
     Start-Job -ScriptBlock {
     Try
     {
@@ -398,7 +447,7 @@ Do
     }#>
 }While($Loop.Checked -AND !(Test-Path ($env:APPDATA+'\Macro\Stop.txt'))<# -AND ([Int]($Iteration.Text) -gt 0)#>)
 
-$Form.InsArr(@($GO,$Notes,<#$Loop,#>$GetMouseCoords))
+$Form.Controls.AddRange(@($GO,$Notes,<#$Loop,#>$GetMouseCoords))
     
 $Commands.ReadOnly = $False
 #$Iteration.ReadOnly = $False
@@ -413,17 +462,17 @@ Get-Job | ?{$_.Status -notmatch 'Running'} | Remove-Job
 $Form.Refresh()
 })
 
-#$Loop = (GUI -C -SX 50 -SY 15 -LX 131 -LY 392 -TE 'Loop')
+#$Loop = [GUI.C]::New(50, 15, 131, 392, 'Loop')
 
-#$IterationLabel = (GUI -L -SX 95 -SY 12 -LX 129 -LY 407 -TE 'No. of Loops')
-#$Iteration = (GUI -TB -SX 85 -SY 20 -LX 130 -LY 420)
+#$IterationLabel = [GUI.L]::New(95, 12, 129, 407, 'No. of Loops')
+#$Iteration = [GUI.TB]::New(85, 20, 130, 420)
 #$Iteration.Text = '10'
 #$Iteration.Add_TextChanged({$This.Text = $This.Text -replace '\D'})
 
-$Notes = (GUI -B -SX 100 -SY 50 -LX 225 -LY 390 -TE 'Notes')
-$Notes.Cl({Note})
+$Notes = [GUI.B]::New(100, 50, 225, 390, 'Notes')
+$Notes.Add_Click({Note})
 
-$Form.InsArr(@($CommandsLabel,$GetMouseCoords,$Commands,$GO,<#$Loop,$IterationLabel,$Iteration,#>$Notes))
+$Form.Controls.AddRange(@($CommandsLabel,$GetMouseCoords,$Commands,$GO,<#$Loop,$IterationLabel,$Iteration,#>$Notes))
 
 $Form.Add_SizeChanged({
     $GetMouseCoords.Location = New-Object System.Drawing.Size((([Int]$This.Width)-157),11)
@@ -435,7 +484,7 @@ $Form.Add_SizeChanged({
     $Notes.Location = New-Object System.Drawing.Size((([Int]$This.Width)-132),(([Int]$This.Height)-95))
 })
 
-$Form.Start()
+$Form.ShowDialog()
 
 @(Try{Get-Content ($env:APPDATA+'\Macro\Undo.txt') -ErrorAction Stop}Catch{Break}) | %{[KeyBD.Event]::keybd_event(([String]$_), 0, '&H2', 0)}
-Del ($env:APPDATA+'\Macro\Undo.txt') -Force
+Del ($env:APPDATA+'\Macro\Undo.txt') -Force -ErrorAction SilentlyContinue
