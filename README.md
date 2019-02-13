@@ -79,37 +79,71 @@ If you want to get really fancy then you can actually create shorthand for yours
 Then type out the keystrokes just like you would in the main window and end it with {FUNCTION END}. This allows you to specify the function in the main window as {THING}. Just make sure to call each function on their own line. You can specify multiple functions and you can even nest them together. A complete example would look like this:
 
 {FUNCTIONS} 
+
 {FUNCTION NAME THING1} 
+
 Thing 1{ENTER} 
+
 {FUNCTION END} 
+
+ 
 
 {FUNCTION NAME THING2} 
+
 Thing 2{ENTER} 
+
 {FUNCTION END} 
+
+ 
 
 {FUNCTION NAME THING3} 
+
 Thing 3{ENTER} 
+
 {FUNCTION END} 
 
+ 
+
 The above would allow you to type into the main window the following: 
+
 {THING1} 
+
 {THING2} 
+
 {THING3} 
 
+ 
+
 Which gets interpreted as: 
+
 Thing 1{ENTER} 
+
 Thing 2{ENTER} 
+
 Thing 3{ENTER} 
 
+ 
+
 Which would give the output:
+
 Thing 1 
+
 Thing 2 
+
 Thing 3 
+
+ 
 
 (Without the {ENTER}s they would all be on the same line) 
 
+ 
+
 You can even specify number like with the other functions like so: 
 
+ 
+
 {THING 5} 
+
+ 
 
 FINAL NOTE: It is probably NOT a good idea to use the macro to enter data into the notes. This causes some stability issues.
