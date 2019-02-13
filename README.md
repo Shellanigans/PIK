@@ -56,16 +56,18 @@ If you need to figure out the X and Y coordinates of your cursor at a specific p
 
 You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
-LMOUSE             RMOUSE             MMOUSE             CANCEL
-BACKSPACE          TAB                CLEAR              ENTER
-SHIFT              CTRL               ALT                PAUSE
-CAPSLOCK           ESC                SPACEBAR           PAGEUP
-PAGEDOWN           END                HOME               LEFTARROW
-UPARROW            RIGHTARROW         DOWNARROW          SELECT
-EXECUTE            PRINTSCREEN        INS                DEL
-HELP               NUMLOCK            NUM# (0-9)         NUMMULT
-NUMPLUS            NUMENTER           NUMMINUS           NUMPOINT
-NUMDIV             All letters        All numbers        F(1-16)
+| Col1              | Col2               | Col3               | Col4               |
+|:----------------- |:------------------ | ------------------:| ------------------:|
+|LMOUSE             | RMOUSE             | MMOUSE             | CANCEL             |
+|BACKSPACE          | TAB                | CLEAR              | ENTER              |
+|SHIFT              | CTRL               | ALT                | PAUSE              |
+|CAPSLOCK           | ESC                | SPACEBAR           | PAGEUP             |
+|PAGEDOWN           | END                | HOME               | LEFTARROW          |
+|UPARROW            | RIGHTARROW         | DOWNARROW          | SELECT             |
+|EXECUTE            | PRINTSCREEN        | INS                | DEL                |
+|HELP               | NUMLOCK            | NUM# (0-9)         | NUMMULT            |
+|NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
+|NUMDIV             | All letters        | All numbers        | F(1-16)            |
 
 You can loop the entire thing by checking the "Loop" checkbox. Then specifying the number of time you want the program to run through completely. (The default is 10)
 
