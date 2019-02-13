@@ -1,4 +1,5 @@
-# MacroThe purpose of this program is to simulate keystrokes and mouse input to the windows operating system.
+#Macro
+The purpose of this program is to simulate keystrokes and mouse input to the windows operating system.
 
 Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the method. To represent more than one character, append each additional character to the one preceding it. To represent the letters A, B, and C, specify the parameter as "ABC".
 
