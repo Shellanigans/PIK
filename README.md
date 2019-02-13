@@ -80,22 +80,18 @@ Then type out the keystrokes just like you would in the main window and end it w
 
 {FUNCTIONS} 
 {FUNCTION NAME THING1} 
-
 Thing 1{ENTER} 
-
 {FUNCTION END} 
 
 {FUNCTION NAME THING2} 
-
 Thing 2{ENTER} 
-
 {FUNCTION END} 
 
 {FUNCTION NAME THING3} 
-
 Thing 3{ENTER} 
-
 {FUNCTION END} 
+
+
 
 The above would allow you to type into the main window the following: 
 
@@ -104,6 +100,8 @@ The above would allow you to type into the main window the following:
 {THING2} 
 
 {THING3} 
+
+
 
 
 Which gets interpreted as: 
@@ -115,6 +113,8 @@ Thing 2{ENTER}
 Thing 3{ENTER} 
 
 
+
+
 Which would give the output:
 
 Thing 1 
@@ -122,6 +122,8 @@ Thing 1
 Thing 2 
 
 Thing 3 
+
+
 
 
 (Without the {ENTER}s they would all be on the same line) 
