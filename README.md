@@ -57,7 +57,7 @@ If you need to figure out the X and Y coordinates of your cursor at a specific p
 You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
 | Col1              | Col2               | Col3               | Col4               |
-|:----------------- |:------------------ | ------------------:| ------------------:|
+|:----------------- |:------------------ |:------------------ |:------------------ |
 |LMOUSE             | RMOUSE             | MMOUSE             | CANCEL             |
 |BACKSPACE          | TAB                | CLEAR              | ENTER              |
 |SHIFT              | CTRL               | ALT                | PAUSE              |
@@ -91,40 +91,20 @@ Thing 2{ENTER}
 Thing 3{ENTER} 
 {FUNCTION END} 
 
-
-
 The above would allow you to type into the main window the following: 
-
 {THING1} 
-
 {THING2} 
-
 {THING3} 
 
-
-
-
 Which gets interpreted as: 
-
 Thing 1{ENTER} 
-
 Thing 2{ENTER} 
-
 Thing 3{ENTER} 
 
-
-
-
 Which would give the output:
-
 Thing 1 
-
 Thing 2 
-
 Thing 3 
-
-
-
 
 (Without the {ENTER}s they would all be on the same line) 
 
