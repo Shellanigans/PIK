@@ -7,30 +7,31 @@ Each key is represented by one or more characters. To specify a single keyboard 
 The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([ ]) have no special meaning to SendKeys, but you must enclose them in braces. 
 
 The following are other special keys you can specify:
-
-BACKSPACE        {BACKSPACE}, {BS}, or {BKSP}
-BREAK            {BREAK}
-CAPS LOCK        {CAPSLOCK}
-DEL or DELETE    {DELETE} or {DEL}
-END              {END}
-ENTER            {ENTER} or ~
-ESC              {ESC}
-HELP             {HELP}
-HOME             {HOME}
-INS or INSERT    {INSERT} or {INS}
-PAGE DOWN        {PGDN}
-PAGE UP          {PGUP}
-NUM LOCK         {NUMLOCK}
-TAB              {TAB}
-UP ARROW         {UP}
-DOWN ARROW       {DOWN}
-RIGHT ARROW      {RIGHT}
-LEFT ARROW       {LEFT}
-F#               {F#} (Can be from 1 - 16)
-Keypad add       {ADD}
-Keypad subtract  {SUBTRACT}
-Keypad multiply  {MULTIPLY}
-Keypad divide    {DIVIDE}
+| Key             | Syntax                       |
+| --------------- | ----------------------------:|
+| BACKSPACE       | {BACKSPACE}, {BS}, or {BKSP} |
+| BREAK           | {BREAK}                      |
+| CAPS LOCK       | {CAPSLOCK}                   |
+| DEL or DELETE   | {DELETE} or {DEL}            |
+| END             | {END}                        |
+| ENTER           | {ENTER} or ~                 |
+| ESC             | {ESC}                        |
+| HELP            | {HELP}                       |
+| HOME            | {HOME}                       |
+| INS or INSERT   | {INSERT} or {INS}            |
+| PAGE DOWN       | {PGDN}                       |
+| PAGE UP         | {PGUP}                       |
+| NUM LOCK        | {NUMLOCK}                    |
+| TAB             | {TAB}                        |
+| UP ARROW        | {UP}                         |
+| DOWN ARROW      | {DOWN}                       |
+| RIGHT ARROW     | {RIGHT}                      |
+| LEFT ARROW      | {LEFT}                       |
+| F#              | {F#} (Can be from 1 - 16)    |
+| Keypad add      | {ADD}                        |
+| Keypad subtract | {SUBTRACT}                   |
+| Keypad multiply | {MULTIPLY}                   |
+| Keypad divide   | {DIVIDE}                     |
 
 SCROLL LOCK is reserved for cancelling the macros. Simply press and hold until the macro stops on its own.
 
