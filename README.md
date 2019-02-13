@@ -34,7 +34,7 @@ The following are other special keys you can specify:
 | Keypad multiply | {MULTIPLY}                   |
 | Keypad divide   | {DIVIDE}                     |
 
-SCROLL LOCK is reserved for cancelling the macros. Simply press and hold until the macro stops on its own.
+**SCROLL LOCK is reserved for cancelling the macros. Simply press and hold until the macro stops on its own.**
 
 To specify keys combined with any combination of the SHIFT, CTRL, and ALT keys, precede the key code with one or more of the following codes.
 
