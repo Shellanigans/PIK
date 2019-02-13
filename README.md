@@ -42,7 +42,7 @@ To specify keys combined with any combination of the SHIFT, CTRL, and ALT keys, 
 SHIFT (+)
 CTRL  (^)
 ALT   (%)
-``
+```
 
 To specify that any combination of SHIFT, CTRL, and ALT should be held down while several other keys are pressed, enclose the code for those keys in parentheses. For example, to specify to hold down SHIFT while E and C are pressed, use "+(EC)". To specify to hold down SHIFT while E is pressed, followed by C without SHIFT, use "+EC".
 
