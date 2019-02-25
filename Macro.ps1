@@ -280,21 +280,48 @@ Function Interact
 
     Write-Host $X
 
-    If(!(Test-Path ($env:APPDATA+'\Macro\Stop.txt')))
+    If(!(Test-Path ($env:APPDATA+'\Macro\Stop.txt')) -AND $(Try{$X.SubString(0,3) -notmatch '^\\\\#'}Catch{$True}))
     {
         $X = ($X -replace '{COPY}','^c')
         $X = ($X -replace '{PASTE}','^v')
         $X = ($X -replace '{SELECTALL}','^a')
+        
+        $X = ($X -replace '{GETCLIP}',([System.Windows.Forms.Clipboard]::GetText()))
 
         While($X -match '{RAND ')
         {
-            $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{'{'+$_+'}'} | %{$X = $X -replace $_,(Get-Random -Minimum $_.Split(' ')[1].Split(',')[0] -Maximum ($_.Split(' ')[1].Split(',')[1] -replace '}'))}
+            $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
+                    $X = $X -replace '{'+$_+'}',(Get-Random -Minimum $_.Split(',')[0] -Maximum $_.Split(',')[1]))
+            }
+            
             Write-Host $X
+        }
+        
+        while($X -match '{VAR ')
+        {
+            $X.Split('{}') | ?{$_ -match 'VAR '} | %{
+                If($_ -match '=')
+                {
+                    Set-Variable -Name $_.Split(' ')[1].Split('=')[0] -Value $_.Split(' ')[1].Split('=')[1] -Scope Global
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+                Else
+                {
+                    $X = ($X -replace ('{'+$_+'}')),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Global).Value)
+                }
+            }
         }
 
         If($X -match '{FOCUS')
         {
             $([Void] [Microsoft.VisualBasic.Interaction]::AppActivate($X -replace '{FOCUS ' -replace '}')) 2> $Null
+        }
+        ElseIf($X -match '{SETCLIP ')
+        {
+            $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
+                [System.Windows.Forms.Clipboard]::SetText($_.Substring(8))
+                $X = ($X -replace ('{'+$_+'}'))
+            }
         }
         ElseIf($X -match '{WAIT')
         {
