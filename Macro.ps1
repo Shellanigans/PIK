@@ -368,12 +368,12 @@ Function Interact
     }
 }
 
-$Form = [GUI.F]::New(365, 490, 'Macro Builder 3: Electric Avenue')
+$Form = [GUI.F]::New(365, 490, 'Macro Builder')
 $Form.MinimumSize = New-Object System.Drawing.Size(357,485)
 
 $CommandsLabel = [GUI.L]::New(100, 20, 25, 15, 'Key Strokes:')
 
-$GetMouseCoords = [GUI.B]::New(125, 20, 200, 11, 'Get Mouse X,Y')
+$GetMouseCoords = [GUI.B]::New(125, 20, 200, 7, 'Get Mouse X,Y')
 $GetMouseCoords.Add_Click({
     Sleep 3
     
