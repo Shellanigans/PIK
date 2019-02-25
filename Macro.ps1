@@ -192,7 +192,7 @@ $TextBox.WordWrap = $False
 $TextBox.Scrollbars = 'Vertical'
 $TextBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Notes.txt') -Width 1000 -Force})
 
-Try{$TextBox.Text = (Get-Content ($env:APPDATA+'\Macro\Notes.txt') -ErrorAction Stop) -join (NL)}Catch{}
+Try{$TextBox.Text = (Get-Content ($env:APPDATA+'\Macro\Notes.txt') -ErrorAction Stop) -join [System.Environment]::NewLine}Catch{}
 
 $OK = New-Object System.Windows.Forms.Button
 $OK.Size = New-Object System.Drawing.Size(50,25)
@@ -210,7 +210,7 @@ $NoteForm.Add_SizeChanged({
 $NoteForm.ShowDialog()
 }
 
-    If((Get-Job -Name 'Notes' | ?{$_.State -match 'Running'}).Count -le 0)
+    If((Get-Job -Name 'Notes' -ErrorAction SilentlyContinue | ?{$_.State -match 'Running'}).Count -le 0)
     {
         Start-Job -ScriptBlock $NoteScript -Name 'Notes'
     }
