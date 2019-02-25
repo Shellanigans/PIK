@@ -291,7 +291,7 @@ Function Interact
         While($X -match '{RAND ')
         {
             $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
-                    $X = $X -replace '{'+$_+'}',(Get-Random -Minimum $_.Split(',')[0] -Maximum $_.Split(',')[1]))
+                    $X = $X -replace '{'+$_+'}',(Get-Random -Minimum $_.Split(',')[0] -Maximum $_.Split(',')[1])
             }
             
             Write-Host $X
@@ -368,7 +368,7 @@ Function Interact
     }
 }
 
-$Form = [GUI.F]::New(365, 485, 'Macro Builder 3: Electric Avenue')
+$Form = [GUI.F]::New(365, 490, 'Macro Builder 3: Electric Avenue')
 $Form.MinimumSize = New-Object System.Drawing.Size(357,485)
 
 $CommandsLabel = [GUI.L]::New(100, 20, 25, 15, 'Key Strokes:')
@@ -481,8 +481,8 @@ $Commands.ReadOnly = $False
 
 Try{Del ($env:APPDATA+'\Macro\Stop.txt') -ErrorAction Stop -Force}Catch{}
 
-Get-Job | ?{$_.Name -notmatch 'Notes'} | Stop-Job
-Get-Job | ?{$_.Status -notmatch 'Running'} | Remove-Job
+Get-Job -ErrorAction SilentlyContinue | ?{$_.Name -notmatch 'Notes'} | Stop-Job -ErrorAction SilentlyContinue -Force
+Get-Job -ErrorAction SilentlyContinue | ?{$_.Status -notmatch 'Running'} | Remove-Job -ErrorAction SilentlyContinue -Force
 
 #$Iteration.Text = $PrevIt
 
@@ -496,7 +496,7 @@ $Form.Refresh()
 #$Iteration.Text = '10'
 #$Iteration.Add_TextChanged({$This.Text = $This.Text -replace '\D'})
 
-$Notes = [GUI.B]::New(100, 50, 225, 390, 'Notes')
+$Notes = [GUI.B]::New(100, 50, 225, 390, 'Functions')
 $Notes.Add_Click({Note})
 
 $Form.Controls.AddRange(@($CommandsLabel,$GetMouseCoords,$Commands,$GO,<#$Loop,$IterationLabel,$Iteration,#>$Notes))
