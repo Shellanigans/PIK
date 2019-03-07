@@ -1,15 +1,11 @@
-#Add-Type -AssemblyName System.Drawing | Out-Null
-Add-Type -AssemblyName System.Windows.Forms | Out-Null
-Add-Type -AssemblyName Microsoft.VisualBasic | Out-Null
-
-Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing -TypeDefinition @'
+Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
 
-using SWF = System.Windows.Forms;
 using DR = System.Drawing;
+using SWF = System.Windows.Forms;
 
-namespace Console{
+namespace Cons{
     public class MouseEvnt{
         [DllImport("user32.dll")]
         public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
@@ -29,6 +25,38 @@ namespace Console{
 
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
+        }
+    }
+
+    public class App{
+        public static void Act (string AppTitle){
+            Microsoft.VisualBasic.Interaction.AppActivate(AppTitle);
+        }
+    }
+
+    public class Clip{
+        public static string GetT (){
+            return SWF.Clipboard.GetText();
+        }
+
+        public static void SetT (string Text){
+            SWF.Clipboard.SetText(Text);
+        }
+    }
+
+    public class Curs{
+        public static DR.Point GPos (){
+            return SWF.Cursor.Position;
+        }
+
+        public static void SPos (int x, int y){
+            SWF.Cursor.Position = new DR.Point(x, y);
+        }
+    }
+
+    public class Send{
+        public static void Keys (string Keys){
+            SWF.SendKeys.SendWait(Keys);
         }
     }
 }
@@ -151,14 +179,11 @@ namespace GUI{
         }
     }
 }
-'@
 
-Function NL
-{
-    Param($X)
-
-    Return $(If($X -AND ($X -ne 0)){(1..([Math]::Abs([Int]$X)) | %{[System.Environment]::NewLine}) -join ''}Else{[System.Environment]::NewLine})
+public class N{
+    public static string L = System.Environment.NewLine;
 }
+'@
 
 Function ActiveKeys
 {
@@ -224,18 +249,20 @@ Function Interact
 
     Write-Host $X
 
-    If(!$SyncHash.Stop -AND $(Try{$X.SubString(0,3) -notmatch '^\\\\#'}Catch{$True}))
+    If(!$SyncHash.Stop)
     {
+        If($X.Length -ge 3 -AND $X.SubString(0,3) -match '^\\\\#'){$X = ''}
+        
         $X = ($X -replace '{COPY}','^c')
         $X = ($X -replace '{PASTE}','^v')
         $X = ($X -replace '{SELECTALL}','^a')
         
-        $X = ($X -replace '{GETCLIP}',([System.Windows.Forms.Clipboard]::GetText()))
+        $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
 
         While($X -match '{RAND ')
         {
             $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
-                    $X = $X -replace '{'+$_+'}',(Get-Random -Minimum $_.Split(',')[0] -Maximum $_.Split(',')[1])
+                    $X = $X -replace ('{'+$_+'}'),(Get-Random -Minimum $_.Split(' ')[1].Split(',')[0] -Maximum $_.Split(' ')[1].Split(',')[1])
             }
             
             Write-Host $X
@@ -251,19 +278,21 @@ Function Interact
                 }
                 Else
                 {
-                    $X = ($X -replace ('{'+$_+'}')),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Global).Value)
+                    $X = $X -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Global).Value)
                 }
             }
+
+            Write-Host $X
         }
 
         If($X -match '{FOCUS')
         {
-            $([Void] [Microsoft.VisualBasic.Interaction]::AppActivate($X -replace '{FOCUS ' -replace '}')) 2> $Null
+            Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
         }
         ElseIf($X -match '{SETCLIP ')
         {
             $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
-                [System.Windows.Forms.Clipboard]::SetText($_.Substring(8))
+                [Cons.Clip]::SetT($_.Substring(8))
                 $X = ($X -replace ('{'+$_+'}'))
             }
         }
@@ -277,43 +306,43 @@ Function Interact
 
             If($X -match 'MOUSE')
             {
-                [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Console.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
+                [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
             }
             Else
             {
                 $Temp = (ActiveKeys ($X.Split()[-1] -replace '}'))
                 $UndoHash.KeyList+=([String]$Temp)
-                [Console.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
+                [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
             }
         }
         ElseIf($X -match '^{[LRM]?MOUSE')
         {
             If($X -match ',')
             {
-                [Windows.Forms.Cursor]::Position = [String]($X -replace '{MOUSE ' -replace '}')
+                $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
             }
             ElseIf($X -match ' ')
             {
-                0..([Int](($X -replace '}').Split(' ')[-1])) | %{[Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Console.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}}
+                0..([Int](($X -replace '}').Split(' ')[-1])) | %{[Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}}
             }
             Else
             {
-                [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Console.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}
+                [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}
             }
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
         {
-            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split((NL)) | ?{$_ -ne ''} | %{Interact $_}}
+            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}
         }
         Else
         {
-            [System.Windows.Forms.SendKeys]::SendWait($X)
+            [Cons.Send]::Keys($X)
         }
     }
 }
 
-#[Void][Console.WindowDisp]::ShowWindow([Console.WindowDisp]::GetConsoleWindow(), 0)
-[Void][Console.WindowDisp]::Visual()
+[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+[Void][Cons.WindowDisp]::Visual()
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 
@@ -356,7 +385,7 @@ $Commands.Multiline = $True
 $Commands.WordWrap = $False
 $Commands.ScrollBars = 'Vertical'
 $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
-Try{$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction Stop) -join (NL)}Catch{}
+Try{$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction Stop) -join [N]::L}Catch{}
 $TabPageCmds.Controls.Add($Commands)
 $TabController.Controls.Add($TabPageCmds)
 
@@ -373,19 +402,19 @@ $TabController.Controls.Add($TabPageFunctions)
 $GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
 $GO.Add_Click({
     $FuncHash = @{}
-    $UndoHash.KeyList | %{[Console.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
     $Form.Controls.Remove($GO)
     $Form.Controls.Remove($GetMouseCoords)
 
-    $Commands.ReadOnly = $True
+    $Commands.ReadOnly     = $True
     $FunctionsBox.ReadOnly = $True
 
     $Form.Refresh()
 
-    $FunctionsBox.Text.Split((NL)) | ?{$_ -ne ''} | %{
-        $Functions = $False
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{
+        $Functions     = $False
         $FunctionStart = $False
 
         $FunctionText = @()
@@ -402,7 +431,7 @@ $GO.Add_Click({
                 ElseIf($_ -match '^{FUNCTION END}$')
                 {
                     $FunctionStart = $False
-                    $FuncHash.Add($Name,($FunctionText -join (NL)))
+                    $FuncHash.Add($Name,($FunctionText -join [N]::L))
                     $FunctionText = @()
                 }
                 Else
@@ -414,19 +443,19 @@ $GO.Add_Click({
         If($_ -match '{FUNCTIONS}'){$Functions = $True}
     }
 
-    $Commands.Text.Split((NL)) | ?{$_ -ne ''} | %{
+    $Commands.Text.Split([N]::L) | ?{$_ -ne ''} | %{
         If(!$SyncHash.Stop)
         {
             Interact $_
         }
     }
 
-    $UndoHash.KeyList | %{[Console.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
     $Form.Controls.AddRange(@($GO,$GetMouseCoords))
     
-    $Commands.ReadOnly = $False
+    $Commands.ReadOnly     = $False
     $FunctionsBox.ReadOnly = $False
 
     $Form.Refresh()
@@ -437,14 +466,14 @@ $GetMouseCoords.Add_Click({
     $Form.Controls.Remove($GO)
     $Form.Controls.Remove($GetMouseCoords)
 
-    $Commands.ReadOnly = $True
+    $Commands.ReadOnly     = $True
     $FunctionsBox.ReadOnly = $True
     
     Sleep 3
    
-    [System.Windows.Forms.ClipBoard]::SetText('{MOUSE '+((([System.Windows.Forms.Cursor]::Position).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
+    [Cons.Clip]::SetT('{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
 
-    $Commands.ReadOnly = $False
+    $Commands.ReadOnly     = $False
     $FunctionsBox.ReadOnly = $False
 
     $Form.Controls.AddRange(@($GO,$GetMouseCoords))
@@ -461,4 +490,4 @@ $Form.Add_SizeChanged({
 $Form.Controls.AddRange(@($TabController,$GO,$GetMouseCoords))
 
 $Form.ShowDialog()
-$UndoHash.KeyList | %{[Console.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+$UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
