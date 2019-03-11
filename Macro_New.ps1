@@ -195,51 +195,87 @@ Function ActiveKeys
     }
     ElseIf($X.Length -eq 1)
     {
-        Return [String]([Convert]::ToInt32([Char]$X))
+        Return [String]('&H'+[Convert]::ToString(([Int][Char]([String]$X).ToUpper()), 16))
     }
     ElseIf($X -like 'F*')
     {
-        Return [String]('&H7'+('{0:x}' -f ([Int]($X -replace 'F') - 1)))
+        Return [String]('&H7'+[Convert]::ToString(([Int]($X -replace 'F') - 1), 16))
     }
     Else
     {
         Switch($X)
         {
-            'CANCEL'{Return '&H03'}
-            'BACKSPACE'{Return '&H08'}
-            'TAB'{Return '&H09'}
-            'CLEAR'{Return '&HC'}
-            'ENTER'{Return '&HD'}
-            'SHIFT'{Return '&H10'}
-            'CTRL'{Return '&H11'}
-            'ALT'{Return '&H12'}
-            'PAUSE'{Return '&H13'}
-            'CAPSLOCK'{Return '&H14'}
-            'ESC'{Return '&H1B'}
-            'SPACEBAR'{Return '&H20'}
-            'PAGEUP'{Return '&H21'}
-            'PAGEDOWN'{Return '&H22'}
-            'END'{Return '&H23'}
-            'HOME'{Return '&H24'}
-            'LEFTARROW'{Return '&H25'}
-            'UPARROW'{Return '&H26'}
-            'RIGHTARROW'{Return '&H27'}
-            'DOWNARROW'{Return '&H28'}
-            'SELECT'{Return '&H29'}
-            'EXECUTE'{Return '&H2B'}
-            'PRINTSCREEN'{Return '&H2C'}
-            'INS'{Return '&H2D'}
-            'DEL'{Return '&H2E'}
-            'HELP'{Return '&H2F'}
-            'NUMLOCK'{Return '&H90'}
-            'NUMMULT'{Return '&H6A'}
-            'NUMPLUS'{Return '&H6B'}
-            'NUMENTER'{Return '&H6C'}
-            'NUMMINUS'{Return '&H6D'}
-            'NUMPOINT'{Return '&H6E'}
-            'NUMDIV'{Return '&H6F'}
-            'WINDOWS'{Return '&H5B'}
+            'CANCEL'      {Return '&H03'}
+            'BACKSPACE'   {Return '&H08'}
+            'TAB'         {Return '&H09'}
+            'CLEAR'       {Return '&HC'}
+            'ENTER'       {Return '&HD'}
+            'SHIFT'       {Return '&H10'}
+            'CTRL'        {Return '&H11'}
+            'ALT'         {Return '&H12'}
+            'PAUSE'       {Return '&H13'}
+            'CAPSLOCK'    {Return '&H14'}
+            'ESC'         {Return '&H1B'}
+            'SPACEBAR'    {Return '&H20'}
+            'PAGEUP'      {Return '&H21'}
+            'PAGEDOWN'    {Return '&H22'}
+            'END'         {Return '&H23'}
+            'HOME'        {Return '&H24'}
+            'LEFTARROW'   {Return '&H25'}
+            'UPARROW'     {Return '&H26'}
+            'RIGHTARROW'  {Return '&H27'}
+            'DOWNARROW'   {Return '&H28'}
+            'SELECT'      {Return '&H29'}
+            'EXECUTE'     {Return '&H2B'}
+            'PRINTSCREEN' {Return '&H2C'}
+            'INS'         {Return '&H2D'}
+            'DEL'         {Return '&H2E'}
+            'HELP'        {Return '&H2F'}
+            'NUMLOCK'     {Return '&H90'}
+            'NUMMULT'     {Return '&H6A'}
+            'NUMPLUS'     {Return '&H6B'}
+            'NUMENTER'    {Return '&H6C'}
+            'NUMMINUS'    {Return '&H6D'}
+            'NUMPOINT'    {Return '&H6E'}
+            'NUMDIV'      {Return '&H6F'}
+            'WINDOWS'     {Return '&H5B'}
         }
+    }
+}
+
+Function Comparer
+{
+    Param([String]$X,[Switch]$Numeric)
+
+    $Comp = $X.Split()[1]
+    
+    $Op1 = $X.Split()[0]
+    $Op2 = $X.Split()[2].Split(',')[0]
+
+    If($Op1 -eq 'NULL'){$Op1 = $Null}
+    If($Op2 -eq 'NULL'){$Op2 = $Null}
+
+    If($Numeric)
+    {
+        $Op1 = [Double]$Op1
+        $Op2 = [Double]$Op2
+    }
+
+    If($TComm -eq 'NULL'){$TComm = ''}Else{$TComm = $X.Split()[2].Split(',')[1]; $TComm = $TComm.Split('`')}
+    If($FComm -eq 'NULL'){$FComm = ''}Else{$FComm = $X.Split()[2].Split(',')[2]; $FComm = $FComm.Substring(0, ($FComm.Length - 1)); $FComm = $FComm.Split('`')}
+
+    Switch($Comp)
+    {
+        '-match'    {If($Op1 -match $Op2)    {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-eq'       {If($Op1 -eq $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-like'     {If($Op1 -like $Op2)     {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-lt'       {If($Op1 -lt $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-le'       {If($Op1 -le $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-gt'       {If($Op1 -gt $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-ge'       {If($Op1 -ge $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-notmatch' {If($Op1 -notmatch $Op2) {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-ne'       {If($Op1 -ne $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
+        '-notlike'  {If($Op1 -notlike $Op2)  {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
     }
 }
 
@@ -268,26 +304,38 @@ Function Interact
             Write-Host $X
         }
         
-        While($X -match '{VAR ')
+        While($X -match '{VAR ' -AND $X -notmatch '{CMP')
         {
             $X.Split('{}') | ?{$_ -match 'VAR '} | %{
+                $PH =  $_.Split(' ')[1]
+                
                 If($_ -match '=')
                 {
-                    Set-Variable -Name $_.Split(' ')[1].Split('=')[0] -Value $_.Split(' ')[1].Split('=')[1] -Scope Global
+                    Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script
                     $X = ($X -replace ('{'+$_+'}'))
                 }
                 Else
                 {
-                    $X = $X -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Global).Value)
+                    $X = $X -replace ('{'+$_+'}'),((Get-Variable -Name $PH.Split('=')[0] -Scope Script).Value)
+                    Write-Host $X
                 }
             }
-
-            Write-Host $X
         }
 
         If($X -match '{FOCUS')
         {
             Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
+        }
+        ElseIf($X -match '{CMP')
+        {
+            If($X -match '{CMPN')
+            {
+                Comparer ($X.Substring(6)) -Numeric
+            }
+            Else
+            {
+                Comparer ($X.Substring(5))
+            }
         }
         ElseIf($X -match '{SETCLIP ')
         {
@@ -328,6 +376,15 @@ Function Interact
             Else
             {
                 [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}
+            }
+        }
+        ElseIf($X -match 'WINDOWS}')
+        {
+            Switch($X)
+            {
+                '{WINDOWS}'  {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; Sleep -Milliseconds 40}
+                '{LWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; Sleep -Milliseconds 40}
+                '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; Sleep -Milliseconds 40}
             }
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
@@ -443,7 +500,7 @@ $GO.Add_Click({
         If($_ -match '{FUNCTIONS}'){$Functions = $True}
     }
 
-    $Commands.Text.Split([N]::L) | ?{$_ -ne ''} | %{
+    ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{
         If(!$SyncHash.Stop)
         {
             Interact $_
@@ -488,6 +545,7 @@ $Form.Add_SizeChanged({
 })
 
 $Form.Controls.AddRange(@($TabController,$GO,$GetMouseCoords))
+$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
 $Form.ShowDialog()
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
