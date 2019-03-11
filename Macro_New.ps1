@@ -249,8 +249,8 @@ Function Comparer
 
     $Comp = $X.Split()[1]
     
-    $Op1 = $X.Split()[0]
-    $Op2 = $X.Split()[2].Split(',')[0]
+    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT()
+    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT()
 
     If($Op1 -eq 'NULL'){$Op1 = $Null}
     If($Op2 -eq 'NULL'){$Op2 = $Null}
@@ -261,8 +261,40 @@ Function Comparer
         $Op2 = [Double]$Op2
     }
 
-    If($TComm -eq 'NULL'){$TComm = ''}Else{$TComm = $X.Split()[2].Split(',')[1]; $TComm = $TComm.Split('`')}
-    If($FComm -eq 'NULL'){$FComm = ''}Else{$FComm = $X.Split()[2].Split(',')[2]; $FComm = $FComm.Substring(0, ($FComm.Length - 1)); $FComm = $FComm.Split('`')}
+    Try
+    {
+        If($TComm -eq 'NULL')
+        {
+            $TComm = ''
+        }
+        Else
+        {
+            $TComm = $X.Split()[2].Split(',')[1] -replace '{GETCLIP}',[Cons.Clip]::GetT()
+            $TComm = $TComm.Split('`')
+        }
+    }
+    Catch
+    {
+        $TComm = $Null
+    }
+    
+    Try
+    {
+        If($FComm -eq 'NULL')
+        {
+            $FComm = ''
+        }
+        Else
+        {
+            $FComm = $X.Split()[2].Split(',')[2]
+            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{GETCLIP}',[Cons.Clip]::GetT()
+            $FComm = $FComm.Split('`')
+        }
+    }
+    Catch
+    {
+        $TComm = $Null
+    }
 
     Switch($Comp)
     {
@@ -293,7 +325,7 @@ Function Interact
         $X = ($X -replace '{PASTE}','^v')
         $X = ($X -replace '{SELECTALL}','^a')
         
-        $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
+        If($X -notmatch '{CMP'){$X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))}
 
         While($X -match '{RAND ')
         {
@@ -322,11 +354,7 @@ Function Interact
             }
         }
 
-        If($X -match '{FOCUS')
-        {
-            Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
-        }
-        ElseIf($X -match '{CMP')
+        If($X -match '{CMP')
         {
             If($X -match '{CMPN')
             {
@@ -334,8 +362,12 @@ Function Interact
             }
             Else
             {
-                Comparer ($X.Substring(5))
+                Comparer ($X.Substring(5) -replace '')
             }
+        }
+        ElseIf($X -match '{FOCUS')
+        {
+            Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
         }
         ElseIf($X -match '{SETCLIP ')
         {
