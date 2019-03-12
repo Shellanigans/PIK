@@ -186,7 +186,7 @@ public class N{
 '@
 
 #######CLEANUP
-[Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+[Void][Reflection.Assembly]::LoadWithPartialName("System.Drawing")
 Function Screenshot([Drawing.Rectangle]$bounds, $path) {
    $bmp = New-Object Drawing.Bitmap $bounds.width, $bounds.height
    $graphics = [Drawing.Graphics]::FromImage($bmp)
