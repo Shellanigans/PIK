@@ -264,8 +264,8 @@ Function Comparer
 
     $Comp = $X.Split()[1]
     
-    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
-    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
+    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' ' -replace '{COM}',','
+    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' ' -replace '{COM}',','
 
     If($Op1 -eq 'NULL'){$Op1 = $Null}
     If($Op2 -eq 'NULL'){$Op2 = $Null}
@@ -276,6 +276,22 @@ Function Comparer
         $Op2 = [Double]$Op2
     }
 
+    While($Op1 -match '{VAR ')
+    {
+        $Op1.Split('{}') | ?{$_ -match 'VAR '} | %{
+            $Op1 = $Op1 -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Script).Value)
+            Write-Host $Op1
+        }
+    }
+
+    While($Op2 -match '{VAR ')
+    {
+        $Op2.Split('{}') | ?{$_ -match 'VAR '} | %{
+            $Op2 = $Op2 -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Script).Value)
+            Write-Host $Op2
+        }
+    }
+
     Try
     {
         If($TComm -eq 'NULL')
@@ -284,7 +300,7 @@ Function Comparer
         }
         Else
         {
-            $TComm = $X.Split()[2].Split(',')[1] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
+            $TComm = $X.Split()[2].Split(',')[1] -replace '{_}',' ' -replace '{COM}',','
             $TComm = $TComm.Split('`')
         }
     }
@@ -302,7 +318,7 @@ Function Comparer
         Else
         {
             $FComm = $X.Split()[2].Split(',')[2]
-            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
+            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{_}',' ' -replace '{COM}',','
             $FComm = $FComm.Split('`')
         }
     }
@@ -342,14 +358,6 @@ Function Interact
         
         If($X -notmatch '{CMP'){$X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))}
 
-        While($X -match '^{GC ' -AND $X -notmatch '{CMP')
-        {
-            $X.Split('{}') | ?{$_ -match 'GC '} | %{
-                $X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC ($_.Substring(3) -replace '\\\\','\')))
-                Write-Host $X
-            }
-        }
-
         While($X -match '{RAND ')
         {
             $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
@@ -357,6 +365,14 @@ Function Interact
             }
             
             Write-Host $X
+        }
+
+        While($X -match '^{GC ' -AND $X -notmatch '{CMP')
+        {
+            $X.Split('{}') | ?{$_ -match 'GC '} | %{
+                $X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC $_.Substring(3)))
+                Write-Host $X
+            }
         }
         
         While($X -match '{VAR ' -AND $X -notmatch '{CMP')
@@ -386,6 +402,19 @@ Function Interact
             Else
             {
                 Comparer ($X.Substring(5) -replace '')
+            }
+        }
+        ElseIf($X -match '^{SC')
+        {
+            $PH = $X.Substring(4).Split(',')
+
+            If($X -notmatch '^{SCA ')
+            {
+                ($PH[0] -replace '{_}',' ' -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{_}',' ' -replace '{COM}',',') -Force
+            }
+            Else
+            {
+                ($PH[0] -replace '{_}',' ' -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{_}',' ' -replace '{COM}',',') -Append -Force
             }
         }
         ElseIf($X -match '{FOCUS')
@@ -570,6 +599,7 @@ $GO.Add_Click({
         }
     }
 
+    $SyncHash.Stop = $True
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
@@ -590,9 +620,12 @@ $GetMouseCoords.Add_Click({
     $FunctionsBox.ReadOnly = $True
     
     Sleep 3
-   
-    [Cons.Clip]::SetT('{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
-
+    
+    $Position = ('{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+    [Cons.Clip]::SetT($Position)
+    $Commands.Text+=($Position)
+    
     $Commands.ReadOnly     = $False
     $FunctionsBox.ReadOnly = $False
 
