@@ -185,6 +185,21 @@ public class N{
 }
 '@
 
+#######CLEANUP
+[Reflection.Assembly]::LoadWithPartialName("System.Drawing")
+Function Screenshot([Drawing.Rectangle]$bounds, $path) {
+   $bmp = New-Object Drawing.Bitmap $bounds.width, $bounds.height
+   $graphics = [Drawing.Graphics]::FromImage($bmp)
+
+   $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
+
+   $bmp.Save($path)
+
+   $graphics.Dispose()
+   $bmp.Dispose()
+}
+#######
+
 Function ActiveKeys
 {
     Param([String]$X)
@@ -249,8 +264,8 @@ Function Comparer
 
     $Comp = $X.Split()[1]
     
-    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT()
-    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT()
+    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
+    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
 
     If($Op1 -eq 'NULL'){$Op1 = $Null}
     If($Op2 -eq 'NULL'){$Op2 = $Null}
@@ -269,7 +284,7 @@ Function Comparer
         }
         Else
         {
-            $TComm = $X.Split()[2].Split(',')[1] -replace '{GETCLIP}',[Cons.Clip]::GetT()
+            $TComm = $X.Split()[2].Split(',')[1] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
             $TComm = $TComm.Split('`')
         }
     }
@@ -287,7 +302,7 @@ Function Comparer
         Else
         {
             $FComm = $X.Split()[2].Split(',')[2]
-            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{GETCLIP}',[Cons.Clip]::GetT()
+            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' '
             $FComm = $FComm.Split('`')
         }
     }
@@ -326,6 +341,14 @@ Function Interact
         $X = ($X -replace '{SELECTALL}','^a')
         
         If($X -notmatch '{CMP'){$X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))}
+
+        While($X -match '^{GC ' -AND $X -notmatch '{CMP')
+        {
+            $X.Split('{}') | ?{$_ -match 'GC '} | %{
+                $X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC ($_.Substring(3) -replace '\\\\','\')))
+                Write-Host $X
+            }
+        }
 
         While($X -match '{RAND ')
         {
@@ -419,6 +442,14 @@ Function Interact
                 '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; Sleep -Milliseconds 40}
             }
         }
+        ElseIf($X -match '^{SCRNSHT ')
+        {
+            $PH = ($X -replace '{SCRNSHT ')
+            $PH = $PH.Substring(0,($PH.Length - 1))
+
+            $Bounds = [Drawing.Rectangle]::FromLTRB($PH.Split(',')[0],$PH.Split(',')[1],$PH.Split(',')[2],$PH.Split(',')[3])
+            Screenshot $Bounds $PH.Split(',')[4]
+        }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}
@@ -438,30 +469,6 @@ If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 $UndoHash = @{KeyList=[String[]]@()}
 $FuncHash = @{}
 $SyncHash = [HashTable]::Synchronized(@{Stop=$False})
-
-$Pow = [Powershell]::Create()
-$Run = [RunspaceFactory]::CreateRunspace()
-$Run.Open()
-$Pow.Runspace = $Run
-$Pow.AddScript({
-    Param($SyncHash)
-
-    Add-Type -Name Win32 -Namespace API -MemberDefinition '
-    [DllImport("user32.dll")]
-    public static extern short GetAsyncKeyState(int virtualKeyCode);
-    ' -ErrorAction SilentlyContinue
-
-    While($True)
-    {
-        Sleep -Milliseconds 50
-        If([API.Win32]::GetAsyncKeyState(145))
-        {
-            $SyncHash.Stop = $True
-        }
-    }
-}) | Out-Null
-$Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
-$Pow.BeginInvoke() | Out-Null
 
 $Form = [GUI.F]::New(365, 490, 'KeyMouseMacro')
 $Form.MinimumSize = [GUI.SP]::SI(357,485)
@@ -490,6 +497,30 @@ $TabController.Controls.Add($TabPageFunctions)
 
 $GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
 $GO.Add_Click({
+    $Pow = [Powershell]::Create()
+    $Run = [RunspaceFactory]::CreateRunspace()
+    $Run.Open()
+    $Pow.Runspace = $Run
+    $Pow.AddScript({
+        Param($SyncHash)
+
+        Add-Type -Name Win32 -Namespace API -MemberDefinition '
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(int virtualKeyCode);
+        ' -ErrorAction SilentlyContinue
+
+        While(!$SyncHash.Stop)
+        {
+            Sleep -Milliseconds 50
+            If([API.Win32]::GetAsyncKeyState(145))
+            {
+                $SyncHash.Stop = $True
+            }
+        }
+    }) | Out-Null
+    $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
+    $Pow.BeginInvoke() | Out-Null
+
     $FuncHash = @{}
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
@@ -510,10 +541,10 @@ $GO.Add_Click({
     }{
         If($Functions)
         {
-            If(!$FunctionStart -AND $_ -match '{FUNCTION NAME '){$FunctionStart = $True}
+            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
             If($FunctionStart)
             {
-                If($_ -match '{FUNCTION NAME ')
+                If($_ -match '^{FUNCTION NAME ')
                 {
                     $Name = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
                 }
