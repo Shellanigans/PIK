@@ -258,88 +258,66 @@ Function ActiveKeys
     }
 }
 
-Function Comparer
+Function Parser
 {
-    Param([String]$X,[Switch]$Numeric)
+    Param([String]$X)
 
-    $Comp = $X.Split()[1]
-    
-    $Op1 = $X.Split()[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' ' -replace '{COM}',','
-    $Op2 = $X.Split()[2].Split(',')[0] -replace '{GETCLIP}',[Cons.Clip]::GetT() -replace '{_}',' ' -replace '{COM}',','
+    $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
 
-    If($Op1 -eq 'NULL'){$Op1 = $Null}
-    If($Op2 -eq 'NULL'){$Op2 = $Null}
-
-    If($Numeric)
+    While($X -match '{RAND ')
     {
-        $Op1 = [Double]$Op1
-        $Op2 = [Double]$Op2
+        $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
+                $X = $X -replace ('{'+$_+'}'),(Get-Random -Minimum $_.Split(' ')[1].Split(',')[0] -Maximum $_.Split(' ')[1].Split(',')[1])
+        }
+            
+        Write-Host $X
     }
 
-    While($Op1 -match '{VAR ')
+    While($X -match '{GC ')
     {
-        $Op1.Split('{}') | ?{$_ -match 'VAR '} | %{
-            $Op1 = $Op1 -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Script).Value)
-            Write-Host $Op1
+        $X.Split('{}') | ?{$_ -match 'GC '} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(3))))
+            Write-Host $X
+        }
+    }
+        
+    While($X -match '{VAR ')
+    {
+        $X.Split('{}') | ?{$_ -match 'VAR '} | %{
+            $PH = $_.Split(' ')[1]
+                
+            If($_ -match '=')
+            {
+                Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script -Force
+                $X = ($X -replace ('{'+$_+'}'))
+            }
+            Else
+            {
+                $X = $X.Replace(('{'+$_+'}'),((Get-Variable -Name $PH -Scope Script).Value))
+                Write-Host $X
+            }
         }
     }
 
-    While($Op2 -match '{VAR ')
+    While($X -match '{MATH ')
     {
-        $Op2.Split('{}') | ?{$_ -match 'VAR '} | %{
-            $Op2 = $Op2 -replace ('{'+$_+'}'),((Get-Variable -Name $_.Split(' ')[1].Split('=')[0] -Scope Script).Value)
-            Write-Host $Op2
+        $X.Split('{}') | ?{$_ -match 'MATH '} | %{
+            $PH = $_.Split(' ')[1]
+                
+            If($_ -match '=')
+            {
+                Set-Variable -Name $PH.Split('=')[0] -Value ([ScriptBlock]::Create($PH.Split('=')[1]).Invoke()) -Scope Script -Force
+                $X = ($X.Replace(('{'+$_+'}'),''))
+            }
+            Else
+            {
+                $X = $X.Replace(('{'+$_+'}'),([ScriptBlock]::Create($PH).Invoke()))
+                Write-Host $X
+            }
         }
     }
 
-    Try
-    {
-        If($TComm -eq 'NULL')
-        {
-            $TComm = ''
-        }
-        Else
-        {
-            $TComm = $X.Split()[2].Split(',')[1] -replace '{_}',' ' -replace '{COM}',','
-            $TComm = $TComm.Split('`')
-        }
-    }
-    Catch
-    {
-        $TComm = $Null
-    }
-    
-    Try
-    {
-        If($FComm -eq 'NULL')
-        {
-            $FComm = ''
-        }
-        Else
-        {
-            $FComm = $X.Split()[2].Split(',')[2]
-            $FComm = $FComm.Substring(0, ($FComm.Length - 1)) -replace '{_}',' ' -replace '{COM}',','
-            $FComm = $FComm.Split('`')
-        }
-    }
-    Catch
-    {
-        $TComm = $Null
-    }
-
-    Switch($Comp)
-    {
-        '-match'    {If($Op1 -match $Op2)    {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-eq'       {If($Op1 -eq $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-like'     {If($Op1 -like $Op2)     {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-lt'       {If($Op1 -lt $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-le'       {If($Op1 -le $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-gt'       {If($Op1 -gt $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-ge'       {If($Op1 -ge $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-notmatch' {If($Op1 -notmatch $Op2) {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-ne'       {If($Op1 -ne $Op2)       {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-        '-notlike'  {If($Op1 -notlike $Op2)  {$TComm | %{Interact ($_ -replace '{_}',' ')}}Else{$FComm | %{Interact ($_ -replace '{_}',' ')}}}
-    }
+    Return $X
 }
 
 Function Interact
@@ -355,67 +333,20 @@ Function Interact
         $X = ($X -replace '{COPY}','^c')
         $X = ($X -replace '{PASTE}','^v')
         $X = ($X -replace '{SELECTALL}','^a')
-        
-        If($X -notmatch '{CMP'){$X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))}
 
-        While($X -match '{RAND ')
-        {
-            $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
-                    $X = $X -replace ('{'+$_+'}'),(Get-Random -Minimum $_.Split(' ')[1].Split(',')[0] -Maximum $_.Split(' ')[1].Split(',')[1])
-            }
-            
-            Write-Host $X
-        }
+        $X = (Parser $X)
 
-        While($X -match '^{GC ' -AND $X -notmatch '{CMP')
-        {
-            $X.Split('{}') | ?{$_ -match 'GC '} | %{
-                #$X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC $_.Substring(3)))
-                [Cons.Clip]::SetT((GC $_.Substring(3)))
-                Write-Host $X
-            }
-        }
-        
-        While($X -match '{VAR ' -AND $X -notmatch '{CMP')
-        {
-            $X.Split('{}') | ?{$_ -match 'VAR '} | %{
-                $PH =  $_.Split(' ')[1]
-                
-                If($_ -match '=')
-                {
-                    Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script
-                    $X = ($X -replace ('{'+$_+'}'))
-                }
-                Else
-                {
-                    $X = $X -replace ('{'+$_+'}'),((Get-Variable -Name $PH.Split('=')[0] -Scope Script).Value)
-                    Write-Host $X
-                }
-            }
-        }
-
-        If($X -match '{CMP')
-        {
-            If($X -match '{CMPN')
-            {
-                Comparer ($X.Substring(6)) -Numeric
-            }
-            Else
-            {
-                Comparer ($X.Substring(5) -replace '')
-            }
-        }
-        ElseIf($X -match '^{SC')
+        If($X -match '^{SC')
         {
             $PH = $X.Substring(4).Split(',')
 
             If($X -notmatch '^{SCA ')
             {
-                ($PH[0] -replace '{_}',' ' -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{_}',' ' -replace '{COM}',',') -Force
+                ($PH[0] -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{COM}',',') -Force
             }
             Else
             {
-                ($PH[0] -replace '{_}',' ' -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{_}',' ' -replace '{COM}',',') -Append -Force
+                ($PH[0] -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{COM}',',') -Append -Force
             }
         }
         ElseIf($X -match '{FOCUS')
@@ -480,6 +411,42 @@ Function Interact
             $Bounds = [Drawing.Rectangle]::FromLTRB($PH.Split(',')[0],$PH.Split(',')[1],$PH.Split(',')[2],$PH.Split(',')[3])
             Screenshot $Bounds $PH.Split(',')[4]
         }
+        ElseIf($IfElHash.ContainsKey($X.Trim('{}')))
+        {
+            $IfElName = $X.Trim('{}')
+
+            $Op1 = $IfElHash.($IfElName+'OP1')
+            $Op2 = $IfElHash.($IfElName+'OP2')
+
+            $Op1 = (Parser $Op1)
+            $Op2 = (Parser $Op2)
+
+            If($Op1 -eq 'NULL'){$Op1 = $Null}
+            If($Op2 -eq 'NULL'){$Op2 = $Null}
+
+            If($IfElHash.ContainsKey($IfElName+'NUMERIC'))
+            {
+                $Op1 = [Double]$Op1
+                $Op2 = [Double]$Op2
+            }
+
+            $TComm = $IfElHash.($IfElName+'TComm') -replace 'NULL',''
+            $FComm = $IfElHash.($IfElName+'FComm') -replace 'NULL',''
+
+            Switch($IfElHash.($IfElName+'CMP'))
+            {
+                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'LE'       {If($Op1 -le $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+            }
+        }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}
@@ -497,6 +464,7 @@ Function Interact
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 
 $UndoHash = @{KeyList=[String[]]@()}
+$IfElHash = @{}
 $FuncHash = @{}
 $SyncHash = [HashTable]::Synchronized(@{Stop=$False})
 
@@ -551,6 +519,7 @@ $GO.Add_Click({
     $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
     $Pow.BeginInvoke() | Out-Null
 
+    $IfElHash = @{}
     $FuncHash = @{}
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
@@ -562,6 +531,80 @@ $GO.Add_Click({
     $FunctionsBox.ReadOnly = $True
 
     $Form.Refresh()
+
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{
+        $Statements     = $False
+        $StatementStart = $False
+    }{
+        If($Statements)
+        {
+            If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
+            {
+                $StatementStart = $True
+                $Numeric = $False
+
+                $TF = $True
+
+                $StatementTText = @()
+                $StatementFText = @()
+            }
+
+            If($StatementStart)
+            {
+                If($_ -match '^{STATEMENT NAME ')
+                {
+                    $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
+                    $IfElHash.Add($NameState,'')
+                }
+                ElseIf($_ -match '^{NUMERIC}$')
+                {
+                    $IfElHash.Add($NameState+'NUMERIC','')
+                }
+                ElseIf($_ -match '^{OP1 ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                    $IfElHash.Add($NameState+'OP1',$PH)
+                }
+                ElseIf($_ -match '^{CMP ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    $IfElHash.Add($NameState+'CMP',$PH)
+                }
+                ElseIf($_ -match '^{OP2 ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                    $IfElHash.Add($NameState+'OP2',$PH)
+                }
+                ElseIf($_ -match '^{ELSE}$')
+                {
+                    $TF = $False
+                }
+                ElseIf($_ -match '^{STATEMENT END}$')
+                {
+                    $StatementStart = $False
+                    $IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
+                    $IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
+                }
+                Else
+                {
+                    If($TF)
+                    {
+                        $StatementTText+=$_
+                    }
+                    Else
+                    {
+                        $StatementFText+=$_
+                    }
+                }
+            }
+        }
+        If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
+    }
 
     $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{
         $Functions     = $False
@@ -576,12 +619,12 @@ $GO.Add_Click({
             {
                 If($_ -match '^{FUNCTION NAME ')
                 {
-                    $Name = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
+                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
                 }
                 ElseIf($_ -match '^{FUNCTION END}$')
                 {
                     $FunctionStart = $False
-                    $FuncHash.Add($Name,($FunctionText -join [N]::L))
+                    $FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
                     $FunctionText = @()
                 }
                 Else
@@ -590,7 +633,7 @@ $GO.Add_Click({
                 }
             }
         }
-        If($_ -match '{FUNCTIONS}'){$Functions = $True}
+        If($_ -match '^{FUNCTIONS}$'){$Functions = $True}ElseIf($_ -match '^{FUNCTIONS END}$'){$Functions = $False}
     }
 
     ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{
