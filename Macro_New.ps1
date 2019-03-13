@@ -370,7 +370,8 @@ Function Interact
         While($X -match '^{GC ' -AND $X -notmatch '{CMP')
         {
             $X.Split('{}') | ?{$_ -match 'GC '} | %{
-                $X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC $_.Substring(3)))
+                #$X = ($X -replace (('{'+$_+'}') -replace '\\','\\'),(GC $_.Substring(3)))
+                [Cons.Clip]::SetT((GC $_.Substring(3)))
                 Write-Host $X
             }
         }
