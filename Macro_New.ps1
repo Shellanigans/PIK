@@ -532,7 +532,7 @@ $GO.Add_Click({
 
     $Form.Refresh()
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ') -replace '{_}',' '} | %{
         $Statements     = $False
         $StatementStart = $False
     }{
@@ -606,7 +606,7 @@ $GO.Add_Click({
         If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
     }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ') -replace '{_}',' '} | %{
         $Functions     = $False
         $FunctionStart = $False
 
