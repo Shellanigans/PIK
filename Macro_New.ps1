@@ -478,6 +478,7 @@ $Commands = [GUI.TB]::New(290, 345, 0, 0, '')
 $Commands.Multiline = $True
 $Commands.WordWrap = $False
 $Commands.ScrollBars = 'Vertical'
+$Commands.AcceptsTab = $True
 $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
 Try{$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction Stop) -join [N]::L}Catch{}
 $TabPageCmds.Controls.Add($Commands)
@@ -488,6 +489,7 @@ $FunctionsBox = [GUI.TB]::New(290, 345, 0, 0, '')
 $FunctionsBox.Multiline = $True
 $FunctionsBox.WordWrap = $False
 $FunctionsBox.Scrollbars = 'Vertical'
+$FunctionsBox.AcceptsTab = $True
 $FunctionsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force})
 Try{$FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction Stop) -join [System.Environment]::NewLine}Catch{}
 $TabPageFunctions.Controls.Add($FunctionsBox)
@@ -532,7 +534,7 @@ $GO.Add_Click({
 
     $Form.Refresh()
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ') -replace '{_}',' '} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
         $Statements     = $False
         $StatementStart = $False
     }{
@@ -606,7 +608,7 @@ $GO.Add_Click({
         If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
     }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ') -replace '{_}',' '} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
         $Functions     = $False
         $FunctionStart = $False
 
