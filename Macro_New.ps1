@@ -273,9 +273,9 @@ Function Parser
         Write-Host $X
     }
 
-    While($X -match '{GC ')
+    While($X -match '{GETC ')
     {
-        $X.Split('{}') | ?{$_ -match 'GC '} | %{
+        $X.Split('{}') | ?{$_ -match 'GETC '} | %{
             $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(3))))
             Write-Host $X
         }
@@ -289,7 +289,7 @@ Function Parser
             If($_ -match '=')
             {
                 Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script -Force
-                $X = ($X -replace ('{'+$_+'}'))
+                $X = $X.Replace(('{'+$_+'}'),'')
             }
             Else
             {
@@ -307,7 +307,7 @@ Function Parser
             If($_ -match '=')
             {
                 Set-Variable -Name $PH.Split('=')[0] -Value ([ScriptBlock]::Create($PH.Split('=')[1]).Invoke()) -Scope Script -Force
-                $X = ($X.Replace(('{'+$_+'}'),''))
+                $X = $X.Replace(('{'+$_+'}'),'')
             }
             Else
             {
@@ -336,11 +336,11 @@ Function Interact
 
         $X = (Parser $X)
 
-        If($X -match '^{SC')
+        If($X -match '^{SETC')
         {
             $PH = $X.Substring(4).Split(',')
 
-            If($X -notmatch '^{SCA ')
+            If($X -notmatch '^{SETCA ')
             {
                 ($PH[0] -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{COM}',',') -Force
             }
@@ -407,9 +407,10 @@ Function Interact
         {
             $PH = ($X -replace '{SCRNSHT ')
             $PH = $PH.Substring(0,($PH.Length - 1))
+            $PH = $PH.Split(',')
 
-            $Bounds = [Drawing.Rectangle]::FromLTRB($PH.Split(',')[0],$PH.Split(',')[1],$PH.Split(',')[2],$PH.Split(',')[3])
-            Screenshot $Bounds $PH.Split(',')[4]
+            $Bounds = [Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],$PH[2],$PH[3])
+            Screenshot $Bounds $PH[4]
         }
         ElseIf($IfElHash.ContainsKey($X.Trim('{}')))
         {
