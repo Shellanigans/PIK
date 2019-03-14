@@ -362,7 +362,29 @@ Function Interact
         }
         ElseIf($X -match '{WAIT')
         {
-            $X -replace '{WAIT ' -replace '}' | %{If($_ -ne '{WAIT'){If($_ -match 'M'){[Int]($_ -replace 'M ')}Else{[Int]($_)*1000}}Else{1000}} | %{Sleep -Milliseconds $_}
+            $X -replace '{WAIT' -replace '}' | %{
+                If($_ -ne '{WAIT')
+                {
+                    If($_ -match 'M')
+                    {
+                        $PH = [Int]($_ -replace 'M ')
+                    }
+                    Else
+                    {
+                        $PH = [Int]($_)*1000
+                    }
+                }
+                Else
+                {
+                    $PH = 1000
+                }
+
+                If(!$SyncHash.Stop){Sleep -Milliseconds ($PH % 3000)}
+                For($i = 0; $i -lt [Int](($PH / 3000).ToString().Split('.')[0]) -AND !$SyncHash.Stop; $i++)
+                {
+                    Sleep 3
+                }
+            }
         }
         ElseIf($X -match '{[/\\]?HOLD')
         {
@@ -467,7 +489,31 @@ If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 $UndoHash = @{KeyList=[String[]]@()}
 $IfElHash = @{}
 $FuncHash = @{}
-$SyncHash = [HashTable]::Synchronized(@{Stop=$False})
+$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False})
+
+$Pow = [Powershell]::Create()
+$Run = [RunspaceFactory]::CreateRunspace()
+$Run.Open()
+$Pow.Runspace = $Run
+$Pow.AddScript({
+    Param($SyncHash)
+
+    Add-Type -Name Win32 -Namespace API -MemberDefinition '
+    [DllImport("user32.dll")]
+    public static extern short GetAsyncKeyState(int virtualKeyCode);
+    ' -ErrorAction SilentlyContinue
+
+    While(!$SyncHash.Kill)
+    {
+        Sleep -Milliseconds 50
+        If([API.Win32]::GetAsyncKeyState(145))
+        {
+            $SyncHash.Stop = $True
+        }
+    }
+}) | Out-Null
+$Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
+$Pow.BeginInvoke() | Out-Null
 
 $Form = [GUI.F]::New(365, 490, 'KeyMouseMacro')
 $Form.MinimumSize = [GUI.SP]::SI(357,485)
@@ -498,30 +544,6 @@ $TabController.Controls.Add($TabPageFunctions)
 
 $GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
 $GO.Add_Click({
-    $Pow = [Powershell]::Create()
-    $Run = [RunspaceFactory]::CreateRunspace()
-    $Run.Open()
-    $Pow.Runspace = $Run
-    $Pow.AddScript({
-        Param($SyncHash)
-
-        Add-Type -Name Win32 -Namespace API -MemberDefinition '
-        [DllImport("user32.dll")]
-        public static extern short GetAsyncKeyState(int virtualKeyCode);
-        ' -ErrorAction SilentlyContinue
-
-        While(!$SyncHash.Stop)
-        {
-            Sleep -Milliseconds 50
-            If([API.Win32]::GetAsyncKeyState(145))
-            {
-                $SyncHash.Stop = $True
-            }
-        }
-    }) | Out-Null
-    $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
-    $Pow.BeginInvoke() | Out-Null
-
     $IfElHash = @{}
     $FuncHash = @{}
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
@@ -646,7 +668,6 @@ $GO.Add_Click({
         }
     }
 
-    $SyncHash.Stop = $True
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
@@ -692,3 +713,5 @@ $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.2
 
 $Form.ShowDialog()
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+
+$SyncHash.Kill = $True
