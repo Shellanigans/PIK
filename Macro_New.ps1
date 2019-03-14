@@ -185,21 +185,6 @@ public class N{
 }
 '@
 
-#######CLEANUP
-[Void][Reflection.Assembly]::LoadWithPartialName("System.Drawing")
-Function Screenshot([Drawing.Rectangle]$bounds, $path) {
-   $bmp = New-Object Drawing.Bitmap $bounds.width, $bounds.height
-   $graphics = [Drawing.Graphics]::FromImage($bmp)
-
-   $graphics.CopyFromScreen($bounds.Location, [Drawing.Point]::Empty, $bounds.size)
-
-   $bmp.Save($path)
-
-   $graphics.Dispose()
-   $bmp.Dispose()
-}
-#######
-
 Function ActiveKeys
 {
     Param([String]$X)
@@ -273,47 +258,122 @@ Function Parser
         Write-Host $X
     }
 
-    While($X -match '{GETC ')
+    While($X -match '{GETCON ')
     {
-        $X.Split('{}') | ?{$_ -match 'GETC '} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(3))))
+        $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
             Write-Host $X
         }
     }
-        
-    While($X -match '{VAR ')
+    
+    While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
-        $X.Split('{}') | ?{$_ -match 'VAR '} | %{
+        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
                 
-            If($_ -match '=')
-            {
-                Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script -Force
-                $X = $X.Replace(('{'+$_+'}'),'')
-            }
-            Else
-            {
-                $X = $X.Replace(('{'+$_+'}'),((Get-Variable -Name $PH -Scope Script).Value))
-                Write-Host $X
-            }
+            $X = $X.Replace(('{'+$_+'}'),((Get-Variable -Name $PH -Scope Script).Value))
+            Write-Host $X
         }
-    }
 
-    While($X -match '{MATH ')
-    {
-        $X.Split('{}') | ?{$_ -match 'MATH '} | %{
-            $PH = $_.Split(' ')[1]
+        $X.Split('{}') | ?{$_ -match 'MANIP ' -AND $_ -match ','} | %{
+            $PH = ($_.Substring(6)).Split(' ')
+
+            $Operator = $PH[0]
+            $Operands = @($PH[1].Split(','))
+            $Operands+=''
+            $Operands+=''
+
+            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
+            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
+            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
+
+            $Output = ''
+
+            Switch($Operator)
+            {
+                'ADD'
+                {
+                    $Output = ([Double]$Operands[0] + [Double]$Operands[1])
+                }
+                'SUB'
+                {
+                    $Output = ([Double]$Operands[0] - [Double]$Operands[1])
+                }
+                'MUL'
+                {
+                    $Output = ([Double]$Operands[0] * [Double]$Operands[1])
+                }
+                'DIV'
+                {
+                    $Output = ([Double]$Operands[0] / [Double]$Operands[1])
+                }
+                'POW'
+                {
+                    $Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])
+                }
+                'MOD'
+                {
+                    $Output = ([Double]$Operands[0] % [Double]$Operands[1])
+                }
+                'SIN'
+                {
+                    $Output = [Math]::Sin([Double]$Operands[0])
+                }
+                'COS'
+                {
+                    $Output = [Math]::Cos([Double]$Operands[0])
+                }
+                'TAN'
+                {
+                    $Output = [Math]::Tan([Double]$Operands[0])
+                }
+                'FLR'
+                {
+                    $Output = [Math]::Floor([Double]$Operands[0])
+                }
+                'CEI'
+                {
+                    $Output = [Math]::Ceiling([Double]$Operands[0])
+                }
+                'LEN'
+                {
+                    $Output = $Operands[0].Length
+                }
+                'APP'
+                {
+                    $Output = $Operands -join ''
+                }
+                'RPL'
+                {
+                    $Output = $Operands[0].Replace($Operands[1],$Operands[2])
+                }
+                'TRS'
+                {
+                    $Output = $Operands[0].TrimStart($Operands[1])
+                }
+                'TRE'
+                {
+                    $Output = $Operands[0].TrimEnd($Operands[1])
+                }
+                'CNT'
+                {
+                    $Output = (Get-Variable -Name ([String]$Operands[0]+'*')).Count
+                }
+                'SPL'
+                {
+                    (Get-Variable -Name $Operands[0]).Value.ToString().Split($Operands[1]) | %{$Count = 0}{Set-Variable -Name ($Operands[0]+$Count) -Value $_ -Scope Script; $Count++}
+                }
+            }
+            
+            $X = $X.Replace(('{'+$_+'}'),$Output)
+            If($Output){Write-Host $X}
+        }
+
+        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
+            $PH = $_.Substring(4)
                 
-            If($_ -match '=')
-            {
-                Set-Variable -Name $PH.Split('=')[0] -Value ([ScriptBlock]::Create($PH.Split('=')[1]).Invoke()) -Scope Script -Force
-                $X = $X.Replace(('{'+$_+'}'),'')
-            }
-            Else
-            {
-                $X = $X.Replace(('{'+$_+'}'),([ScriptBlock]::Create($PH).Invoke()))
-                Write-Host $X
-            }
+            Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script -Force
+            $X = $X.Replace(('{'+$_+'}'),'')
         }
     }
 
@@ -334,19 +394,24 @@ Function Interact
         $X = ($X -replace '{PASTE}','^v')
         $X = ($X -replace '{SELECTALL}','^a')
 
+        $X = ($X -replace '{SPACE}',' ')
+        $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
+
         $X = (Parser $X)
 
-        If($X -match '^{SETC')
+        If($X -match '^{SETCON')
         {
-            $PH = $X.Substring(4).Split(',')
+            $PH = $X.Substring(8).Split(',')
+            $PH[0] = ($PH[0] -replace '{COM}',',')
+            $PH[1] = ($PH[1] -replace '{COM}',',')
 
-            If($X -notmatch '^{SETCA ')
+            If($X -notmatch '^{SETCONA ')
             {
-                ($PH[0] -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{COM}',',') -Force
+                ($PH[0].TrimStart(' ')) | Out-File ($PH[1].Substring(0,($PH[1].Length - 1))) -Force
             }
             Else
             {
-                ($PH[0] -replace '{COM}',',') | Out-File ($PH[1].Substring(0,($PH[1].Length - 1)) -replace '{COM}',',') -Append -Force
+                ($PH[0].TrimStart(' ')) | Out-File ($PH[1].Substring(0,($PH[1].Length - 1))) -Append -Force
             }
         }
         ElseIf($X -match '{FOCUS')
@@ -380,7 +445,7 @@ Function Interact
                 }
 
                 If(!$SyncHash.Stop){Sleep -Milliseconds ($PH % 3000)}
-                For($i = 0; $i -lt [Int](($PH / 3000).ToString().Split('.')[0]) -AND !$SyncHash.Stop; $i++)
+                For($i = 0; $i -lt [Int]([Math]::Floor($PH / 3000)) -AND !$SyncHash.Stop; $i++)
                 {
                     Sleep 3
                 }
@@ -431,8 +496,17 @@ Function Interact
             $PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
 
-            $Bounds = [Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],$PH[2],$PH[3])
-            Screenshot $Bounds $PH[4]
+            $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],$PH[2],$PH[3])
+
+            $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+            $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+            $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
+            
+            $BMP.Save($PH[4])
+            
+            $Graphics.Dispose()
+            $BMP.Dispose()
         }
         ElseIf($IfElHash.ContainsKey($X.Trim('{}')))
         {
@@ -661,7 +735,7 @@ $GO.Add_Click({
         If($_ -match '^{FUNCTIONS}$'){$Functions = $True}ElseIf($_ -match '^{FUNCTIONS END}$'){$Functions = $False}
     }
 
-    ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{
+    ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{
         If(!$SyncHash.Stop)
         {
             Interact $_
