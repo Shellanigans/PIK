@@ -283,9 +283,9 @@ Function Parser
             $Operands+=''
             $Operands+=''
 
-            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
-            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
-            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ')
+            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
+            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
+            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
 
             $Output = ''
 
@@ -525,6 +525,7 @@ Function Interact
             {
                 $Op1 = [Double]$Op1
                 $Op2 = [Double]$Op2
+                Write-Host $Op1;Write-Host $Op2
             }
 
             $TComm = $IfElHash.($IfElName+'TComm') -replace 'NULL',''
