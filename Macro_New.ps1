@@ -279,7 +279,7 @@ Function Parser
             $PH = ($_.Substring(6))
 
             $Operator = $PH.Split(' ')[0]
-            $Operands = @(PH.Substring(4).Split(','))
+            $Operands = $PH.Substring(4).Split(',')
             $Operands[-1] = $Operands[-1].Substring(0, ($Operands[-1].Length))
             $Operands+=''
             $Operands+=''
@@ -526,7 +526,6 @@ Function Interact
             {
                 $Op1 = [Double]$Op1
                 $Op2 = [Double]$Op2
-                Write-Host $Op1;Write-Host $Op2
             }
 
             $TComm = $IfElHash.($IfElName+'TComm') -replace 'NULL',''
