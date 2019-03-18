@@ -525,7 +525,6 @@ Function Interact
             {
                 $Op1 = [Double]$Op1
                 $Op2 = [Double]$Op2
-                Write-Host $Op1;Write-Host $Op2
             }
 
             $TComm = $IfElHash.($IfElName+'TComm') -replace 'NULL',''
