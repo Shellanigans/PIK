@@ -401,7 +401,7 @@ Function Interact
 
         If($X -match '^{SETCON')
         {
-            $PH = $X.Substring(8).Split(',')
+            $PH = ($X.Substring(8)).Split(',')
             $PH[0] = ($PH[0] -replace '{COM}',',')
             $PH[1] = ($PH[1] -replace '{COM}',',')
 
@@ -532,16 +532,16 @@ Function Interact
 
             Switch($IfElHash.($IfElName+'CMP'))
             {
-                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'LE'       {If($Op1 -le $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
-                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split() | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split() | ?{$_ -ne ''} | %{Interact $_}}}
+                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'LE'       {If($Op1 -le $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
             }
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
@@ -644,8 +644,8 @@ $GO.Add_Click({
 
                 $TF = $True
 
-                $StatementTText = @()
-                $StatementFText = @()
+                $StatementTText = [String[]]@()
+                $StatementFText = [String[]]@()
             }
 
             If($StatementStart)
