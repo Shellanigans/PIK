@@ -1,3 +1,5 @@
+Remove-Variable * -EA SilentlyContinue
+
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -284,9 +286,9 @@ Function Parser
             $Operands+=''
             $Operands+=''
 
-            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
-            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
-            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L)
+            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
+            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
+            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
 
             $Output = ''
 
@@ -358,11 +360,43 @@ Function Parser
                 }
                 'CNT'
                 {
-                    $Output = (Get-Variable -Name ([String]$Operands[0]+'*')).Count
+                    $Output = (Get-Variable -Name ('*_'+$Operands[0])).Count
                 }
                 'SPL'
                 {
-                    (Get-Variable -Name $Operands[0]).Value.ToString().Split($Operands[1]) | %{$Count = 0}{Set-Variable -Name ($Operands[0]+$Count) -Value $_ -Scope Script; $Count++}
+                    Remove-Variable ('*_'+$Operands[0]) -Scope Script -Force
+                    (Get-Variable -Name $Operands[0]).Value.ToString().Split($Operands[1]) | %{$Count = 0}{
+                        Set-Variable -Name ([String]$Count+'_'+$Operands[0]) -Value $(If($_ -eq $Null){''}Else{$_}) -Scope Script
+                        $Count++
+                    }
+                }
+                'TCA'
+                {
+                    Remove-Variable ('*_'+$Operands[0]) -Scope Script -Force
+                    (Get-Variable -Name $Operands[0]).Value.ToString().ToCharArray() | %{$Count = 0}{
+                        Set-Variable -Name ([String]$Count+'_'+$Operands[0]) -Value $_ -Scope Script
+                        $Count++
+                    }
+                }
+                'JOI'
+                {
+                    $Vars = @(GV ('*_'+$Operands[0]) | %{$_.Name} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort})
+                    $Output = (@($Vars | %{Get-Variable -Name $_ -ValueOnly}) -join $Operands[1])
+                }
+                'REV'
+                {
+                    (Get-Variable -Name ('*_'+$Operands[0])) | %{$CountF = 0; $CountR = ((Get-Variable -Name ('*_'+$Operands[0])).Count - 1)}{
+                        If($CountR -gt $CountF)
+                        {
+                            $PH = (Get-Variable -Name ([String]$CountR+'_'+$Operands[0]) -ValueOnly)
+                            Set-Variable -Name ([String]$CountR+'_'+$Operands[0]) -Value (Get-Variable -Name ([String]$CountF+'_'+$Operands[0]) -ValueOnly) -Force
+                            Set-Variable -Name ([String]$CountF+'_'+$Operands[0]) -Value $PH -Scope Script -Force
+                            (Get-Variable -Name ([String]$CountR+'_'+$Operands[0])) | %{If($_.Value -eq $Null){Set-Variable -Name $_.Name -Value '' -Scope Script -Force}}
+                            (Get-Variable -Name ([String]$CountF+'_'+$Operands[0])) | %{If($_.Value -eq $Null){Set-Variable -Name $_.Name -Value '' -Scope Script -Force}}
+                            $CountF++
+                            $CountR--
+                        }
+                    }
                 }
             }
             
