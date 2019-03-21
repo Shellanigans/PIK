@@ -286,9 +286,9 @@ Function Parser
             $Operands+=''
             $Operands+=''
 
-            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
-            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
-            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('NULL','')
+            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
+            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
+            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
 
             $Output = ''
 
@@ -348,7 +348,7 @@ Function Parser
                 }
                 'RPL'
                 {
-                    $Output = $Operands[0].Replace($Operands[1],$Operands[2])
+                    $Output = $Operands[0] -replace $Operands[1],$Operands[2]
                 }
                 'TRS'
                 {
@@ -437,8 +437,8 @@ Function Interact
         If($X -match '^{SETCON')
         {
             $PH = ($X.Substring(8)).Split(',')
-            $PH[0] = ($PH[0] -replace '{COM}',',')
-            $PH[1] = ($PH[1] -replace '{COM}',',')
+            $PH[0] = ($PH[0].Replace('(COMMA)',','))
+            $PH[1] = ($PH[1].Replace('(COMMA)',','))
 
             If($X -notmatch '^{SETCONA ')
             {
@@ -553,8 +553,8 @@ Function Interact
             $Op1 = (Parser $Op1)
             $Op2 = (Parser $Op2)
 
-            If($Op1 -eq 'NULL'){$Op1 = $Null}
-            If($Op2 -eq 'NULL'){$Op2 = $Null}
+            If($Op1 -eq '(NULL)'){$Op1 = $Null}
+            If($Op2 -eq '(NULL)'){$Op2 = $Null}
 
             If($IfElHash.ContainsKey($IfElName+'NUMERIC'))
             {
@@ -562,8 +562,8 @@ Function Interact
                 $Op2 = [Double]$Op2
             }
 
-            $TComm = $IfElHash.($IfElName+'TComm') -replace 'NULL',''
-            $FComm = $IfElHash.($IfElName+'FComm') -replace 'NULL',''
+            $TComm = $IfElHash.($IfElName+'TComm').Replace('(NULL)','')
+            $FComm = $IfElHash.($IfElName+'FComm').Replace('(NULL)','')
 
             Switch($IfElHash.($IfElName+'CMP'))
             {
@@ -798,7 +798,7 @@ $GetMouseCoords.Add_Click({
     
     Sleep 3
     
-    $Position = ('{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
+    $Position = ([N]::L+'{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
     
     [Cons.Clip]::SetT($Position)
     $Commands.Text+=($Position)
