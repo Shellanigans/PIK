@@ -152,7 +152,7 @@ Unlike functions, the first 3-4 lines are reserved for the comparison. The first
 {NUMERIC}
 ```
 
-The next line should be the first operand you are going to check. Both operands can be a {VAR} or {MANIP} if you have one set. 
+The next line should be the first operand you are going to check. Both operands can be a {MANIP} or {VAR VARIABLE_NAME} if you have one set. 
 
 Then follow that with the operator of your choice. Then finish with the second operand. Valid values for the comparator are listed below. A complete top section of a statement would look like so:
 
@@ -206,6 +206,7 @@ In this example you could call in the commands box:
 And in our case, the result would be for the program to type out "This is what to type or the actions or functions or statements to call on true condition" because our comparison of "3 LT 5" is true.
 
 Below are the comparators you may use:
+
 |Comparator               |   Syntax|
 |:------------------------|--------:|
 |MATCH                    |    MATCH|
