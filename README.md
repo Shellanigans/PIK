@@ -203,8 +203,9 @@ In this example you could call in the commands box:
 {IF_ELSE_STATEMENT_NAME}
 ```
 
-And in our case, the result would be for the program to type out "This is what to type or the actions or functions or statements to call on true condition" because our comparison of "3 LT 5" is true. Below are the comparators you may use:
+And in our case, the result would be for the program to type out "This is what to type or the actions or functions or statements to call on true condition" because our comparison of "3 LT 5" is true.
 
+Below are the comparators you may use:
 |Comparator               |   Syntax|
 |:------------------------|--------:|
 |MATCH                    |    MATCH|
@@ -217,8 +218,6 @@ And in our case, the result would be for the program to type out "This is what t
 |NOT MATCH                | NOTMATCH|
 |NOT EQUAL                |       NE|
 |NOT LIKE                 |  NOTLIKE|
-
-
 
 **DO NOT NEST THE STATEMENTS BLOCK WITHIN THE FUNCTIONS BLOCK OR VICE VERSA!!! IN THE FUNCTIONS TEXTBOX BOTH THE STATEMENTS AND FUNCTIONS BLOCKS SHOULD BE SEPARATE AND THERE SHOULD ONLY BE ONE OF EACH IN SAID BOX**
 
