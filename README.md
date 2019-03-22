@@ -2,7 +2,9 @@
 
 The purpose of this program is to simulate keystrokes and mouse input to the windows operating system.
 
-Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the method. To represent more than one character, append each additional character to the one preceding it. To represent the letters A, B, and C, specify the parameter as "ABC".
+## Basic Functionality 
+
+Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the method. To represent more than one character, append each additional character to the one preceding it. To represent the letters A, B, and C, specify the parameter as "ABC". In both the "commands" and the "functions" textboxes any spaces or tabs at the beginning of each line will be ignored. In order to actually specify a line that starts with either you must use {TAB} or {SPACE} 
 
 The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([ ]) have no special meaning to SendKeys, but you must enclose them in braces. 
 
@@ -48,13 +50,15 @@ To specify that any combination of SHIFT, CTRL, and ALT should be held down whil
 
 To specify repeating keys, use the form {key number}. You must put a space between key and number. For example, {LEFT 42} means press the LEFT ARROW key 42 times; {h 10} means press H 10 times.
 
+## Special Keywords
+
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
 You can also specify that you want to focus on the specified window by using {FOCUS APPLICATION TITLE} on its own line. (e.g. {FOCUS Untitled - Notepad})
 
 You can specify mouse locations for the cursor by putting {MOUSE 10,10} (The numbers are in pixels with 0,0 being the top left) and clicking with {LMOUSE}, {RMOUSE}, or {MMOUSE}. This will do left, right, and middle click respectively. You must place all mouse functions on independent lines.
 
-If you need to figure out the X and Y coordinates of your cursor at a specific position, you can click "Get Mouse X,Y" and you will be given 3 seconds to place your cursor where you would like it and you will get a notification of the coordinates of your cursor at that position. The command to place the mouse at the specified coords will be copied to your clipboard for you to simply paste into the main window.
+If you need to figure out the X and Y coordinates of your cursor at a specific position, you can click "Mouse X,Y" and you will be given 3 seconds to place your cursor where you would like it and the command to place the mouse at the specified coords will be copied to your clipboard for you to simply paste into the main window. It will also be appended to the end of the commands textbox.
 
 You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
@@ -71,16 +75,16 @@ You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} 
 |NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
 |NUMDIV             | All letters        | All numbers        | F(1-16)            |
 
-You can loop the entire thing by checking the "Loop" checkbox. Then specifying the number of time you want the program to run through completely. (The default is 10)
+## Functions
 
-If you want to get really fancy then you can actually create shorthand for yourself to repeate specific parts multiple times. In the "Notes" window add a line {FUNCTIONS} below all of your notes. Then create a functions by starting a line below that with {FUNCTION NAME THING} like so:
+If you want to get really fancy then you can actually create shorthand for yourself to repeate specific parts multiple times. In the "Functions" textbox add a line {FUNCTIONS}. Then create a functions by starting a line below that with {FUNCTION NAME THING} like so:
 
 ```
 {FUNCTIONS}
 {FUNCTION NAME THING}
 ```
 
-Then type out the keystrokes just like you would in the main window and end it with {FUNCTION END}. This allows you to specify the function in the main window as {THING}. Just make sure to call each function on their own line. You can specify multiple functions and you can even nest them together. A complete example would look like this:
+Then type out the keystrokes just like you would in the main window and end it with {FUNCTION END}. This allows you to specify the function in the main window as {THING}. Just make sure to call each function on their own line. You can specify multiple functions and you can even nest them together. To stop declaring funtions (this is required) add the line {FUNCTIONS END}. A complete example would look like this:
 
 ```
 {FUNCTIONS} 
@@ -94,7 +98,8 @@ Thing 2{ENTER}
  
 {FUNCTION NAME THING3} 
 Thing 3{ENTER} 
-{FUNCTION END} 
+{FUNCTION END}
+{FUNCTIONS END} 
 ```
 
 The above would allow you to type into the main window the following: 
@@ -126,4 +131,94 @@ You can even specify number like with the other functions like so:
 {THING 5} 
 ```
 
-FINAL NOTE: It is probably NOT a good idea to use the macro to enter data into the notes. This causes some stability issues.
+This will call the {THING} function 5 times.
+
+You should be aware that functions DO support recursion (i.e. A function can call upon itself). They can even create a loop or chain of functions (i.e. {FUNCTION1} calls {FUNCTION2} which calls {FUNCTION1}).
+
+## Statements
+
+Like functions, you can create statements which are, at their most basic form, an 'IF/ELSE' statement. They only accept two operands and one comparator. You also must always specify actions for both the true AND false cases; even if they are (NULL).
+
+Just like functions, you must begin all the statements with the line {STATEMENTS}. After this you may begin and name each statement like so:
+
+```
+{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+```
+
+Unlike functions, the first 3-4 lines are reserved for the comparison. The first thing you need to specify is if the comparison you are going to check is numeric in nature. If so simply add the line {NUMERIC}.
+
+```
+{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+{NUMERIC}
+```
+
+The next line should be the first operand you are going to check. Both operands can be a {VAR} or {MANIP} if you have one set. 
+
+Then follow that with the operator of your choice. Then finish with the second operand. Valid values for the comparator are listed below. A complete top section of a statement would look like so:
+
+
+```
+{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+{NUMERIC}
+{OP1 3}
+{CMP LT}
+{OP2 5}
+```
+
+Anything below these lines will be interpreted as the actions to take when the condition above is true. These actions follow the exact same syntax as the main commands textbox. Thus, you should be able to utilize functions or even other statements within them since both statements and functions support recursion (i.e. a statement can call a function and vice versa). After you have your commands placed, on a new line add {ELSE}. This will tell the program that you are done with your true condition actions and have started your false condition actions. Just like before the false condition tells the program what to do when the above comparison is false. When you are done, finish the statement with {STATEMENT END}. Thus your finished statement should look like this:
+
+```
+{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+{NUMERIC}
+{OP1 3}
+{CMP LT}
+{OP2 5}
+ This is what to type or the actions or functions or statements to call on true condition
+{ELSE}
+ This is what to type or the actions or functions or statements to call on false condition
+{STATEMENT END}
+```
+
+And when enclosed by the {STATEMENTS} blocks, a complete statements section would look like:
+
+```
+{STATEMENTS}
+ {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+ {NUMERIC}
+ {OP1 3}
+ {CMP LT}
+ {OP2 5}
+  This is what to type or the actions to take on true condition
+ {ELSE}
+  This is what to type or the actions to take on false condition
+ {STATEMENT END}
+{STATEMENTS END}
+```
+
+(Remember: You CAN use leading tabs and spaces in both the commands textbox and the functions textbox)
+
+**DO NOT NEST THE STATEMENTS BLOCK WITHIN THE FUNCTIONS BLOCK OR VICE VERSA!!! IN THE FUNCTIONS TEXTBOX BOTH THE STATEMENTS AND FUNCTIONS BLOCKS SHOULD BE SEPARATE AND THERE SHOULD ONLY BE ONE OF EACH IN SAID BOX**
+
+**YES**
+```
+{STATEMENTS}
+...
+{STATEMENTS END}
+
+{FUNCTIONS}
+...
+{FUNCTIONS END}
+```
+
+**NO**
+```
+{STATEMENTS}
+...
+
+{FUNCTIONS}
+...
+{FUNCTIONS END}
+
+...
+{STATEMENTS END}
+```
