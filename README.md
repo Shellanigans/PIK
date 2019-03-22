@@ -62,7 +62,7 @@ If you need to figure out the X and Y coordinates of your cursor at a specific p
 
 You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
-| Col1              | Col2               | Col3               | Col4               |
+| 1                 | 2                  | 3                  | 4                  |
 |:----------------- |:------------------ |:------------------ |:------------------ |
 |LMOUSE             | RMOUSE             | MMOUSE             | CANCEL             |
 |BACKSPACE          | TAB                | CLEAR              | ENTER              |
@@ -173,9 +173,9 @@ Anything below these lines will be interpreted as the actions to take when the c
 {OP1 3}
 {CMP LT}
 {OP2 5}
- This is what to type or the actions or functions or statements to call on true condition
+This is what to type or the actions or functions or statements to call on true condition
 {ELSE}
- This is what to type or the actions or functions or statements to call on false condition
+This is what to type or the actions or functions or statements to call on false condition
 {STATEMENT END}
 ```
 
@@ -183,42 +183,63 @@ And when enclosed by the {STATEMENTS} blocks, a complete statements section woul
 
 ```
 {STATEMENTS}
- {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
- {NUMERIC}
- {OP1 3}
- {CMP LT}
- {OP2 5}
-  This is what to type or the actions to take on true condition
- {ELSE}
-  This is what to type or the actions to take on false condition
- {STATEMENT END}
+    {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+        {NUMERIC}
+        {OP1 3}
+        {CMP LT}
+        {OP2 5}
+            This is what to type or the actions or functions or statements to call on true condition
+        {ELSE}
+            This is what to type or the actions or functions or statements to call on false condition
+        {STATEMENT END}
 {STATEMENTS END}
 ```
 
 (Remember: You CAN use leading tabs and spaces in both the commands textbox and the functions textbox)
+
+In this example you could call in the commands box:
+
+```
+{IF_ELSE_STATEMENT_NAME}
+```
+
+And in our case, the result would be for the program to type out "This is what to type or the actions or functions or statements to call on true condition" because our comparison of "3 LT 5" is true. Below are the comparators you may use:
+
+|Comparator               |   Syntax|
+|:------------------------|--------:|
+|MATCH                    |    MATCH|
+|EQUALS                   |       EQ|
+|LIKE                     |     LIKE|
+|LESS THAN                |       LT|
+|LESS THAN OR EQUAL TO    |       LE|
+|GREATER THAN             |       GT|
+|GREATER THAN OR EQUAL TO |       GE|
+|NOT MATCH                | NOTMATCH|
+|NOT EQUAL                |       NE|
+|NOT LIKE                 |  NOTLIKE|
 
 **DO NOT NEST THE STATEMENTS BLOCK WITHIN THE FUNCTIONS BLOCK OR VICE VERSA!!! IN THE FUNCTIONS TEXTBOX BOTH THE STATEMENTS AND FUNCTIONS BLOCKS SHOULD BE SEPARATE AND THERE SHOULD ONLY BE ONE OF EACH IN SAID BOX**
 
 **YES**
 ```
 {STATEMENTS}
-...
+    ...
 {STATEMENTS END}
 
 {FUNCTIONS}
-...
+    ...
 {FUNCTIONS END}
 ```
 
 **NO**
 ```
 {STATEMENTS}
-...
+    ...
 
 {FUNCTIONS}
-...
+    ...
 {FUNCTIONS END}
 
-...
+    ...
 {STATEMENTS END}
 ```
