@@ -127,7 +127,7 @@ MANIPS that have an output can be set to a variable through nesting like so:
 {VAR TEST={MANIP ADD 3,4}}
 ```
 
-Which would set the value of 7 to the variable TEST. You may also call variables withing the ARG portions, just be aware that some MANIPS require the actual variable NAME and NOT the {VAR variable_name} syntax as that would look for a variable with the name of the VALUE of variable name.
+Which would set the value of 7 to the variable TEST. You may also call variables within the ARG portions, just be aware that some MANIPS require the actual variable NAME istelf and NOT the {VAR variable_name} syntax. This would look for a variable with the name of the VALUE contained WITHIN 'variable_name'. Below is an example:
 
 In this example of MANIPS referencing variables, say we have a variable named 'TEST' that contains the string 'split me' In order to split this string on the space we would do the following:
 
@@ -135,7 +135,9 @@ In this example of MANIPS referencing variables, say we have a variable named 'T
 {MANIP SPL TEST,(SPACE)}
 ```
 
-This will create the variables '0_TEST' which contains the value 'split' and '1_TEST' which contains 'me'. Note how we referenced the variable by name but did NOT use the normal syntax of {VAR TEST}. For other MANIPS like add, we would use the normal {VAR} syntax. In this way if 'TEST' had a value of 5 and we wanted to add one to it we could do the following:
+This will create the variables '0_TEST' which contains the value 'split' and '1_TEST' which contains 'me'. Note how we referenced the variable by name but did NOT use the normal syntax of {VAR TEST}.
+
+For other MANIPS like add, we would use the normal {VAR} syntax. In this way if 'TEST' had a value of 5 and we wanted to add one to it we could do the following:
 
 ```
 {VAR TEST={MANIP ADD {VAR TEST},1}}
@@ -147,7 +149,7 @@ This will get interpreted as:
 {VAR TEST={MANIP ADD 5,1}}
 ```
 
-Then:
+Then as:
 
 ```
 {VAR TEST=6}
