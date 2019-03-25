@@ -93,29 +93,29 @@ When it comes to data manipulation, you can make use of the MANIP operator. Ever
 
 Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage.
 
-|Operation |No. Args             |                    Syntax| Action|
-|:---------|:--------------------|--------------------------|:------|
-|ADD       |2                    |     {MANIP ADD ARG1,ARG2}| Adds ARG2 to ARG1|
-|SUB       |2                    |     {MANIP SUB ARG1,ARG2}| Subtracts ARG2 from ARG1|
-|MUL       |2                    |     {MANIP MUL ARG1,ARG2}| Multiplies ARG1 and ARG2|
-|DIV       |2                    |     {MANIP DIV ARG1,ARG2}| Divides ARG1 by ARG2|
-|POW       |2                    |     {MANIP POW ARG1,ARG2}| Takes ARG1 to the power of ARG2|
-|MOD       |2                    |     {MANIP MOD ARG1,ARG2}| Modularly divides ARG1 by ARG2|
-|APP       |2                    |     {MANIP APP ARG1,ARG2}| Appends the string value of ARG2 to ARG1|
-|TRS       |2                    |     {MANIP TRS ARG1,ARG2}| Trims the chars in ARG2 from the start of ARG1|
-|TRE       |2                    |     {MANIP TRE ARG1,ARG2}| Trims the chars in ARG2 from the end of ARG1|
-|SPL       |2                    |     {MANIP SPL ARG1,ARG2}| Splits the **VARIABLE NAMED** ARG1 on the chars in ARG2|
-|JOI       |2                    |     {MANIP JOI ARG1,ARG2}| Joins the **ARRAY NAMED** ARG1 with the string ARG2|
-|TCA       |1                    |   {MANIP TCA ARG1,(NULL)}| Converts the **VARIABLE NAMED** ARG1 to a char array|
-|REV       |1                    |   {MANIP REV ARG1,(NULL)}| Reverses the order of the **ARRAY NAMED** ARG1|
-|SIN       |1                    |   {MANIP SIN ARG1,(NULL)}| Returns the SIN of ARG1|
-|COS       |1                    |   {MANIP COS ARG1,(NULL)}| Returns the COS of ARG1|
-|TAN       |1                    |   {MANIP TAN ARG1,(NULL)}| Returns the TAN of ARG1|
-|FLR       |1                    |   {MANIP FLR ARG1,(NULL)}| Returns the floor of ARG1|
-|CEI       |1                    |   {MANIP CEI ARG1,(NULL)}| Returns the ceiling of ARG1|
-|LEN       |1                    |   {MANIP LEN ARG1,(NULL)}| Returns the length of the **VARIABLE NAMED** ARG1|
-|CNT       |1                    |   {MANIP CNT ARG1,(NULL)}| Returns the count of the **ARRAY NAMED** ARG1|
-|RPL       |3                    |{MANIP RPL ARG1,ARG2,ARG3}| Returns ARG1 after replacing the regex of ARG2 with ARG3|
+|Operation |No. Args             |Syntax                      |Action                                                   |
+|:---------|:--------------------|:---------------------------|:--------------------------------------------------------|
+|ADD       |2                    |{MANIP ADD ARG1,ARG2}       | Adds ARG2 to ARG1                                       |
+|SUB       |2                    |{MANIP SUB ARG1,ARG2}       | Subtracts ARG2 from ARG1                                |
+|MUL       |2                    |{MANIP MUL ARG1,ARG2}       | Multiplies ARG1 and ARG2                                |
+|DIV       |2                    |{MANIP DIV ARG1,ARG2}       | Divides ARG1 by ARG2                                    |
+|POW       |2                    |{MANIP POW ARG1,ARG2}       | Takes ARG1 to the power of ARG2                         |
+|MOD       |2                    |{MANIP MOD ARG1,ARG2}       | Modularly divides ARG1 by ARG2                          |
+|APP       |2                    |{MANIP APP ARG1,ARG2}       | Appends the string value ARG2 to ARG1                   |
+|TRS       |2                    |{MANIP TRS ARG1,ARG2}       | Trims the chars in ARG2 from the start of ARG1          |
+|TRE       |2                    |{MANIP TRE ARG1,ARG2}       | Trims the chars in ARG2 from the end of ARG1            |
+|SPL       |2                    |{MANIP SPL ARG1,ARG2}*      | Splits the **VARIABLE NAMED** ARG1 on the chars in ARG2 |
+|JOI       |2                    |{MANIP JOI ARG1,ARG2}       | Joins the **ARRAY NAMED** ARG1 with the string ARG2     |
+|TCA       |1                    |{MANIP TCA ARG1,(NULL)}*    | Converts the **VARIABLE NAMED** ARG1 to a char array    |
+|REV       |1                    |{MANIP REV ARG1,(NULL)}*    | Reverses the order of the **ARRAY NAMED** ARG1          |
+|SIN       |1                    |{MANIP SIN ARG1,(NULL)}     | Returns the SIN of ARG1                                 |
+|COS       |1                    |{MANIP COS ARG1,(NULL)}     | Returns the COS of ARG1                                 |
+|TAN       |1                    |{MANIP TAN ARG1,(NULL)}     | Returns the TAN of ARG1                                 |
+|FLR       |1                    |{MANIP FLR ARG1,(NULL)}     | Returns the floor of ARG1                               |
+|CEI       |1                    |{MANIP CEI ARG1,(NULL)}     | Returns the ceiling of ARG1                             |
+|LEN       |1                    |{MANIP LEN ARG1,(NULL)}     | Returns the length of the **VARIABLE NAMED** ARG1       |
+|CNT       |1                    |{MANIP CNT ARG1,(NULL)}     | Returns the count of the **ARRAY NAMED** ARG1           |
+|RPL       |3                    |{MANIP RPL ARG1,ARG2,ARG3}  | Returns ARG1 after replacing the regex of ARG2 with ARG3|
 
 ## Functions
 
