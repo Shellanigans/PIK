@@ -75,6 +75,48 @@ You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} 
 |NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
 |NUMDIV             | All letters        | All numbers        | F(1-16)            |
 
+## Advanced Functionality
+
+There are some pretty cool things you can do in a programmatic sense. This program allows you to create and store variables, as well as, manipulate data.
+
+When it comes to storing/getting variables, both are enclosed within braces. To GET, simply call the variable name with {VAR variable_name} and to SET variables, simply include an equals sign (=) without spaces to set a variable to the value after the space and not including the end brace. (i.e. {VAR variable_name=test} will create and store the variable 'variable_name' and set the value to the string 'test')
+
+Every value will always be stored as a string, but comparisons with strings interpreted as numbers is possible. (See below)
+
+When you call a variable, remember that the {VAR var_name} will be interpreted as the value it represents in keystrokes (unless nested within something else, like another {VAR}). Thus, if you had focus of notepad and a variable named 'test' with the value 'abcd', then in the commands window you were to call {VAR test}, the command would be interpreted as the keystrokes 'abcd'.
+
+When it comes to data manipulation, you can make use of the MANIP operator. Every MANIP must be formmatted like so:
+
+```
+{MANIP OPT ARG1,ARG2}
+```
+
+Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage.
+
+|Operation |Num of Args |                    Syntax| Action|
+|:---------|:-----------|-------------------------:|------:|
+|ADD       |2           |     {MANIP ADD ARG1,ARG2}| Adds ARG2 to ARG1|
+|SUB       |2           |     {MANIP SUB ARG1,ARG2}| Subtracts ARG2 from ARG1|
+|MUL       |2           |     {MANIP MUL ARG1,ARG2}| Multiplies ARG1 and ARG2|
+|DIV       |2           |     {MANIP DIV ARG1,ARG2}| Divides ARG1 by ARG2|
+|POW       |2           |     {MANIP POW ARG1,ARG2}| Takes ARG1 to the power of ARG2|
+|MOD       |2           |     {MANIP MOD ARG1,ARG2}| Modularly divides ARG1 by ARG2|
+|APP       |2           |     {MANIP APP ARG1,ARG2}| Appends the string value of ARG2 to ARG1|
+|TRS       |2           |     {MANIP TRS ARG1,ARG2}| Trims the chars in ARG2 from the start of ARG1|
+|TRE       |2           |     {MANIP TRE ARG1,ARG2}| Trims the chars in ARG2 from the end of ARG1|
+|SPL       |2           |     {MANIP SPL ARG1,ARG2}| Splits the **VARIABLE NAMED** ARG1 on the chars in ARG2|
+|JOI       |2           |     {MANIP JOI ARG1,ARG2}| Joins the **ARRAY NAMED** ARG1 with the string ARG2|
+|TCA       |1           |   {MANIP TCA ARG1,(NULL)}| Converts the **VARIABLE NAMED** ARG1 to a char array|
+|REV       |1           |   {MANIP REV ARG1,(NULL)}| Reverses the order of the **ARRAY NAMED** ARG1|
+|SIN       |1           |   {MANIP SIN ARG1,(NULL)}| Returns the SIN of ARG1|
+|COS       |1           |   {MANIP COS ARG1,(NULL)}| Returns the COS of ARG1|
+|TAN       |1           |   {MANIP TAN ARG1,(NULL)}| Returns the TAN of ARG1|
+|FLR       |1           |   {MANIP FLR ARG1,(NULL)}| Returns the floor of ARG1|
+|CEI       |1           |   {MANIP CEI ARG1,(NULL)}| Returns the ceiling of ARG1|
+|LEN       |1           |   {MANIP LEN ARG1,(NULL)}| Returns the length of the **VARIABLE NAMED** ARG1|
+|CNT       |1           |   {MANIP CNT ARG1,(NULL)}| Returns the count of the **ARRAY NAMED** ARG1|
+|RPL       |3           |{MANIP RPL ARG1,ARG2,ARG3}| Returns ARG1 after replacing the regex of ARG2 with ARG3|
+
 ## Functions
 
 If you want to get really fancy then you can actually create shorthand for yourself to repeate specific parts multiple times. In the "Functions" textbox add a line {FUNCTIONS}. Then create a functions by starting a line below that with {FUNCTION NAME THING} like so:
