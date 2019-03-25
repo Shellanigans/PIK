@@ -91,7 +91,7 @@ When it comes to data manipulation, you can make use of the MANIP operator. Ever
 {MANIP OPT ARG1,ARG2}
 ```
 
-Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage. Spacing and commas are reserved for MANIPS, so if you need to specify them or null values use (COMMA), (SPACE), and (NULL).
+Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage. Spacing and commas are reserved for MANIPS, so if you need to specify those, newline, or null values use (COMMA),  (SPACE), (NEWLINE), and (NULL).
 
 |Operation |No. Args             |Syntax                      |Action                                                   |
 |:---------|:--------------------|:---------------------------|:--------------------------------------------------------|
