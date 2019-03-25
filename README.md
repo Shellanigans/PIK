@@ -307,23 +307,23 @@ Below are the comparators you may use:
 **YES**
 ```
 {STATEMENTS}
-    ...
+    Place statements here
 {STATEMENTS END}
 
 {FUNCTIONS}
-    ...
+    Place functions here
 {FUNCTIONS END}
 ```
 
 **NO**
 ```
 {STATEMENTS}
-    ...
+    What are
 
 {FUNCTIONS}
-    ...
+    you doing
 {FUNCTIONS END}
 
-    ...
+    plz stop no
 {STATEMENTS END}
 ```
