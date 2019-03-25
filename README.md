@@ -91,7 +91,7 @@ When it comes to data manipulation, you can make use of the MANIP operator. Ever
 {MANIP OPT ARG1,ARG2}
 ```
 
-Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage.
+Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage. Spacing and commas are reserved for MANIPS, so if you need to specify them or null values use (COMMA), (SPACE), and (NULL).
 
 |Operation |No. Args             |Syntax                      |Action                                                   |
 |:---------|:--------------------|:---------------------------|:--------------------------------------------------------|
@@ -116,6 +116,44 @@ Where OPT is one of the possible operations to perform (See below) and the ARG1 
 |LEN       |1                    |{MANIP LEN ARG1,(NULL)}     | Returns the length of the **VARIABLE NAMED** ARG1       |
 |CNT       |1                    |{MANIP CNT ARG1,(NULL)}     | Returns the count of the **ARRAY NAMED** ARG1           |
 |RPL       |3                    |{MANIP RPL ARG1,ARG2,ARG3}  | Returns ARG1 after replacing the regex of ARG2 with ARG3|
+
+\*This MANIP command doesn't actually return anything, it only performs the action described.
+
+Note: When a variable has been split into an array of any kind, the index goes in the front of the variable name followed by an underscore. (i.e. The first variable in an array {VAR TEST} would be {VAR 0_TEST})
+
+MANIPS that have an output can be set to a variable through nesting like so:
+
+```
+{VAR TEST={MANIP ADD 3,4}}
+```
+
+Which would set the value of 7 to the variable TEST. You may also call variables withing the ARG portions, just be aware that some MANIPS require the actual variable NAME and NOT the {VAR variable_name} syntax as that would look for a variable with the name of the VALUE of variable name.
+
+In this example of MANIPS referencing variables, say we have a variable named 'TEST' that contains the string 'split me' In order to split this string on the space we would do the following:
+
+```
+{MANIP SPL TEST,(SPACE)}
+```
+
+This will create the variables '0_TEST' which contains the value 'split' and '1_TEST' which contains 'me'. Note how we referenced the variable by name but did NOT use the normal syntax of {VAR TEST}. For other MANIPS like add, we would use the normal {VAR} syntax. In this way if 'TEST' had a value of 5 and we wanted to add one to it we could do the following:
+
+```
+{VAR TEST={MANIP ADD {VAR TEST},1}}
+```
+
+This will get interpreted as:
+
+```
+{VAR TEST={MANIP ADD 5,1}}
+```
+
+Then:
+
+```
+{VAR TEST=6}
+```
+
+Which will set the value of 6 to TEST.
 
 ## Functions
 
