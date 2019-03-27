@@ -272,24 +272,21 @@ Function Parser
     {
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
-                
+
             $X = $X.Replace(('{'+$_+'}'),((Get-Variable -Name $PH -Scope Script).Value))
+
             Write-Host $X
         }
 
-        $X.Split('{}') | ?{$_ -match 'MANIP ' -AND $_ -match ','} | %{
+        $X.Split('{}') | ?{$_ -match 'MANIP '} | %{
             $PH = ($_.Substring(6))
 
             $Operator = $PH.Split(' ')[0]
-            $Operands = $PH.Substring(4).Split(',')
+            $Operands = [String[]]($PH.Substring(4).Split(','))
             $Operands[-1] = $Operands[-1].Substring(0, ($Operands[-1].Length))
-            $Operands+=''
-            $Operands+=''
 
-            $Operands[0] = ($Operands[0].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
-            $Operands[1] = ($Operands[1].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
-            $Operands[2] = ($Operands[2].Replace('(COMMA)',',')).Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','')
-
+            $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)',''))}; $Index++}
+            
             $Output = ''
 
             Switch($Operator)
@@ -342,25 +339,60 @@ Function Parser
                 {
                     $Output = $Operands[0].Length
                 }
+                'CNT'
+                {
+                    $Output = (Get-Variable -Name ('*_'+$Operands[0])).Count
+                }
                 'APP'
                 {
                     $Output = $Operands -join ''
                 }
                 'RPL'
                 {
-                    $Output = $Operands[0] -replace $Operands[1],$Operands[2]
+                    If($Operands.Count -gt 3)
+                    {
+                        $Output = ($Operands[0..($Operands.Count - 3)] -join ',') -replace $Operands[-2],$Operands[-1]
+                    }
+                    Else
+                    {
+                        $Output = $Operands[0] -replace $Operands[1],$Operands[2]
+                    }
                 }
                 'TRS'
                 {
-                    $Output = $Operands[0].TrimStart($Operands[1])
+                    If($Operands.Count -gt 2)
+                    {
+                        $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimStart($Operands[-1])
+                    }
+                    Else
+                    {
+                        $Output = $Operands[0].TrimStart($Operands[1])
+                    }
                 }
                 'TRE'
                 {
-                    $Output = $Operands[0].TrimEnd($Operands[1])
+                    If($Operands.Count -gt 2)
+                    {
+                        $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimEnd($Operands[-1])
+                    }
+                    Else
+                    {
+                        $Output = $Operands[0].TrimEnd($Operands[1])
+                    }
                 }
-                'CNT'
+                'JOI'
                 {
-                    $Output = (Get-Variable -Name ('*_'+$Operands[0])).Count
+                    If($Operands.Count -gt 2)
+                    {
+                        $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimEnd($Operands[-1])
+                    }
+                    Else
+                    {
+                        $Output = $Operands[0].TrimEnd($Operands[1])
+                    }
+
+                    $Vars = @(GV ('*_'+$Operands[0]) | %{$_.Name} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort})
+                    $Output = (@($Vars | %{Get-Variable -Name $_ -ValueOnly}) -join $Operands[1])
                 }
                 'SPL'
                 {
@@ -378,18 +410,13 @@ Function Parser
                         $Count++
                     }
                 }
-                'JOI'
-                {
-                    $Vars = @(GV ('*_'+$Operands[0]) | %{$_.Name} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort})
-                    $Output = (@($Vars | %{Get-Variable -Name $_ -ValueOnly}) -join $Operands[1])
-                }
                 'REV'
                 {
                     (Get-Variable -Name ('*_'+$Operands[0])) | %{$CountF = 0; $CountR = ((Get-Variable -Name ('*_'+$Operands[0])).Count - 1)}{
                         If($CountR -ge $CountF)
                         {
                             $PH = (Get-Variable -Name ([String]$CountR+'_'+$Operands[0]) -ValueOnly)
-                            Set-Variable -Name ([String]$CountR+'_'+$Operands[0]) -Value (Get-Variable -Name ([String]$CountF+'_'+$Operands[0]) -ValueOnly) -Force
+                            Set-Variable -Name ([String]$CountR+'_'+$Operands[0]) -Value (Get-Variable -Name ([String]$CountF+'_'+$Operands[0]) -ValueOnly) -Scope Script -Force
                             Set-Variable -Name ([String]$CountF+'_'+$Operands[0]) -Value $PH -Scope Script -Force
                             (Get-Variable -Name ([String]$CountR+'_'+$Operands[0])) | %{If($_.Value -eq $Null){Set-Variable -Name $_.Name -Value '' -Scope Script -Force}}
                             (Get-Variable -Name ([String]$CountF+'_'+$Operands[0])) | %{If($_.Value -eq $Null){Set-Variable -Name $_.Name -Value '' -Scope Script -Force}}
