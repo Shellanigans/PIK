@@ -386,7 +386,7 @@ Function Parser
                 'REV'
                 {
                     (Get-Variable -Name ('*_'+$Operands[0])) | %{$CountF = 0; $CountR = ((Get-Variable -Name ('*_'+$Operands[0])).Count - 1)}{
-                        If($CountR -gt $CountF)
+                        If($CountR -ge $CountF)
                         {
                             $PH = (Get-Variable -Name ([String]$CountR+'_'+$Operands[0]) -ValueOnly)
                             Set-Variable -Name ([String]$CountR+'_'+$Operands[0]) -Value (Get-Variable -Name ([String]$CountF+'_'+$Operands[0]) -ValueOnly) -Force
