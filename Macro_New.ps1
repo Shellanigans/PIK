@@ -249,7 +249,21 @@ Function Parser
 {
     Param([String]$X)
 
+    $X = ($X -replace '{COPY}','^c')
+    $X = ($X -replace '{PASTE}','^v')
+    $X = ($X -replace '{SELECTALL}','^a')
+        
+    $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
+
     $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
+    
+    While($X -match '{SPACE')
+    {
+        $X.Split('{}') | ?{$_ -match 'SPACE'} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(' ' * [Int](($_ -replace '^SPACE$',' 1').Split(' '))[1])))
+            Write-Host $X
+        }
+    }
 
     While($X -match '{RAND ')
     {
@@ -345,7 +359,14 @@ Function Parser
                 }
                 'APP'
                 {
-                    $Output = $Operands -join ''
+                    If($Operands.Count -gt 2)
+                    {
+                        $Output = [String]($Operands[0..($Operands.Count - 2)] -join ',')+[String]$Operands[-1]
+                    }
+                    Else
+                    {
+                        $Output = $Operands -join ''
+                    }
                 }
                 'RPL'
                 {
@@ -433,8 +454,10 @@ Function Parser
 
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
             $PH = $_.Substring(4)
-                
-            Set-Variable -Name $PH.Split('=')[0] -Value $PH.Split('=')[1] -Scope Script -Force
+            $PHName = $PH.Split('=')[0]
+            $PHValue = $PH.Replace(($PHName+'='),'')
+
+            Set-Variable -Name $PHName -Value $PHValue -Scope Script -Force
             $X = $X.Replace(('{'+$_+'}'),'')
         }
     }
@@ -446,18 +469,11 @@ Function Interact
 {
     Param([String]$X)
 
-    Write-Host $X
-
     If(!$SyncHash.Stop)
     {
-        If($X.Length -ge 3 -AND $X.SubString(0,3) -match '^\\\\#'){$X = ''}
-        
-        $X = ($X -replace '{COPY}','^c')
-        $X = ($X -replace '{PASTE}','^v')
-        $X = ($X -replace '{SELECTALL}','^a')
+        Write-Host $X
 
-        $X = ($X -replace '{SPACE}',' ')
-        $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
+        If($X.Length -ge 3 -AND $X.SubString(0,3) -match '^\\\\#'){$X = ''}
 
         $X = (Parser $X)
 
@@ -570,7 +586,7 @@ Function Interact
             $Graphics.Dispose()
             $BMP.Dispose()
         }
-        ElseIf($IfElHash.ContainsKey($X.Trim('{}')))
+        ElseIf($IfElHash.ContainsKey($X.Trim('{}')) -AND ($X -match '^{.*}'))
         {
             $IfElName = $X.Trim('{}')
 
@@ -580,8 +596,8 @@ Function Interact
             $Op1 = (Parser $Op1)
             $Op2 = (Parser $Op2)
 
-            If($Op1 -eq '(NULL)'){$Op1 = $Null}
-            If($Op2 -eq '(NULL)'){$Op2 = $Null}
+            If($Op1 -eq '(NULL)'){$Op1 = ''}
+            If($Op2 -eq '(NULL)'){$Op2 = ''}
 
             If($IfElHash.ContainsKey($IfElName+'NUMERIC'))
             {
@@ -606,7 +622,7 @@ Function Interact
                 'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
             }
         }
-        ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]))
+        ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}
         }
@@ -674,9 +690,26 @@ $FunctionsBox.WordWrap = $False
 $FunctionsBox.Scrollbars = 'Vertical'
 $FunctionsBox.AcceptsTab = $True
 $FunctionsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force})
-Try{$FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction Stop) -join [System.Environment]::NewLine}Catch{}
+Try{$FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction Stop) -join [N]::L}Catch{}
 $TabPageFunctions.Controls.Add($FunctionsBox)
 $TabController.Controls.Add($TabPageFunctions)
+
+$TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'Statements')
+$StatementsBox = [GUI.TB]::New(290, 345, 0, 0, '')
+$StatementsBox.Multiline = $True
+$StatementsBox.WordWrap = $False
+$StatementsBox.Scrollbars = 'Vertical'
+$StatementsBox.AcceptsTab = $True
+$StatementsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force})
+Try{$StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction Stop) -join [N]::L}Catch{}
+$TabPageStatements.Controls.Add($StatementsBox)
+$TabController.Controls.Add($TabPageStatements)
+
+$TabPageBuilder = [GUI.TP]::New(0, 0, 0, 0,'Builder')
+$ORLabel = [GUI.L]::New(500,500,10,10,@'
+'@)
+$TabPageBuilder.Controls.Add($ORLabel)
+$TabController.Controls.Add($TabPageBuilder)
 
 $GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
 $GO.Add_Click({
@@ -693,12 +726,12 @@ $GO.Add_Click({
 
     $Form.Refresh()
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
-        $Statements     = $False
+    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
+        #$Statements     = $False
         $StatementStart = $False
     }{
-        If($Statements)
-        {
+        #If($Statements)
+        #{
             If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
             {
                 $StatementStart = $True
@@ -763,18 +796,18 @@ $GO.Add_Click({
                     }
                 }
             }
-        }
-        If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
+        #}
+        #If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
     }
 
     $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
-        $Functions     = $False
+        #$Functions     = $False
         $FunctionStart = $False
 
         $FunctionText = @()
     }{
-        If($Functions)
-        {
+        #If($Functions)
+        #{
             If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
             If($FunctionStart)
             {
@@ -793,8 +826,8 @@ $GO.Add_Click({
                     $FunctionText+=$_
                 }
             }
-        }
-        If($_ -match '^{FUNCTIONS}$'){$Functions = $True}ElseIf($_ -match '^{FUNCTIONS END}$'){$Functions = $False}
+        #}
+        #If($_ -match '^{FUNCTIONS}$'){$Functions = $True}ElseIf($_ -match '^{FUNCTIONS END}$'){$Functions = $False}
     }
 
     ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{
@@ -840,6 +873,7 @@ $Form.Add_SizeChanged({
     $TabController.Size      = [GUI.SP]::SI((([Int]$This.Width)-57),(([Int]$This.Height)-110))
     $Commands.Size           = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
     $FunctionsBox.Size       = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
+    $StatementsBox.Size       = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
     $GO.Location             = [GUI.SP]::PO(25,(([Int]$This.Height)-95))
     $GetMouseCoords.Location = [GUI.SP]::PO((([Int]$This.Width)-132),(([Int]$This.Height)-95))
 })
