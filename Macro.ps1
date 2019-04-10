@@ -163,6 +163,13 @@ namespace GUI{
         }
     }
 
+    public class NUD : SWF.NumericUpDown{
+        public NUD (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
+    }
+
     public class GB : SWF.GroupBox{
         public GB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -207,11 +214,11 @@ Function ActiveKeys
     {
         Switch($X)
         {
+            'CLEAR'       {Return '&HC'}
+            'ENTER'       {Return '&HD'}
             'CANCEL'      {Return '&H03'}
             'BACKSPACE'   {Return '&H08'}
             'TAB'         {Return '&H09'}
-            'CLEAR'       {Return '&HC'}
-            'ENTER'       {Return '&HD'}
             'SHIFT'       {Return '&H10'}
             'CTRL'        {Return '&H11'}
             'ALT'         {Return '&H12'}
@@ -249,9 +256,9 @@ Function Parser
 {
     Param([String]$X)
 
-    $X = ($X -replace '{COPY}','^c')
-    $X = ($X -replace '{PASTE}','^v')
-    $X = ($X -replace '{SELECTALL}','^a')
+    $X = ($X -replace '{COPY}','(^c)')
+    $X = ($X -replace '{PASTE}','(^v)')
+    $X = ($X -replace '{SELECTALL}','(^a)')
         
     $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
 
@@ -628,12 +635,161 @@ Function Interact
         }
         Else
         {
-            [Cons.Send]::Keys($X)
+            If($X -match '{.*}' -OR $X -match '\(.*\)' -OR $X -match '\[.*\]' -OR $X -match '{.*}')
+            {
+                [Cons.Send]::Keys($X)
+            }
+            Else
+            {
+                If($DelayTimer.Value -ne 0)
+                {
+                    $X.ToCharArray() | %{
+                        [Cons.Send]::Keys($_)
+                        Sleep -Milliseconds ($DelayTimer.Value)
+                    }
+                }
+                Else
+                {
+                    [Cons.Send]::Keys($X)
+                }
+            }
+        }
+
+        If($CommandDelayTimer.Value -ne 0)
+        {
+            Sleep -Milliseconds ($CommandDelayTimer.Value)
         }
     }
 }
 
-[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+Function GO
+{
+    $IfElHash = @{}
+    $FuncHash = @{}
+    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $SyncHash.Stop = $False
+
+    $Form.Controls.Remove($GO)
+    $Form.Controls.Remove($GetMouseCoords)
+
+    $Commands.ReadOnly     = $True
+    $FunctionsBox.ReadOnly = $True
+
+    $Form.Refresh()
+
+    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
+        $StatementStart = $False
+    }{
+        If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
+        {
+            $StatementStart = $True
+            $Numeric = $False
+
+            $TF = $True
+
+            $StatementTText = [String[]]@()
+            $StatementFText = [String[]]@()
+        }
+
+        If($StatementStart)
+        {
+            If($_ -match '^{STATEMENT NAME ')
+            {
+                $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
+                $IfElHash.Add($NameState,'')
+            }
+            ElseIf($_ -match '^{NUMERIC}$')
+            {
+                $IfElHash.Add($NameState+'NUMERIC','')
+            }
+            ElseIf($_ -match '^{OP1 ')
+            {
+                $PH = $_.Substring(5)
+                $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                $IfElHash.Add($NameState+'OP1',$PH)
+            }
+            ElseIf($_ -match '^{CMP ')
+            {
+                $PH = $_.Substring(5)
+                $PH = $PH.Substring(0, ($PH.Length - 1))
+                $IfElHash.Add($NameState+'CMP',$PH)
+            }
+            ElseIf($_ -match '^{OP2 ')
+            {
+                $PH = $_.Substring(5)
+                $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                $IfElHash.Add($NameState+'OP2',$PH)
+            }
+            ElseIf($_ -match '^{ELSE}$')
+            {
+                $TF = $False
+            }
+            ElseIf($_ -match '^{STATEMENT END}$')
+            {
+                $StatementStart = $False
+                $IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
+                $IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
+            }
+            Else
+            {
+                If($TF)
+                {
+                    $StatementTText+=$_
+                }
+                Else
+                {
+                    $StatementFText+=$_
+                }
+            }
+        }
+    }
+
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
+        $FunctionStart = $False
+
+        $FunctionText = @()
+    }{
+        If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
+        If($FunctionStart)
+        {
+            If($_ -match '^{FUNCTION NAME ')
+            {
+                $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
+            }
+            ElseIf($_ -match '^{FUNCTION END}$')
+            {
+                $FunctionStart = $False
+                $FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
+                $FunctionText = @()
+            }
+            Else
+            {
+                $FunctionText+=$_
+            }
+        }
+    }
+
+    ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{
+        If(!$SyncHash.Stop)
+        {
+            Interact $_
+        }
+    }
+
+    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $SyncHash.Stop = $False
+
+    $Form.Controls.AddRange(@($GO,$GetMouseCoords))
+    
+    $Commands.ReadOnly     = $False
+    $FunctionsBox.ReadOnly = $False
+
+    $Form.Refresh()
+}
+
+#[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
 [Void][Cons.WindowDisp]::Visual()
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
@@ -672,181 +828,63 @@ $Form.MinimumSize = [GUI.SP]::SI(357,485)
 
 $TabController = [GUI.TC]::New(300, 375, 25, 7)
 
-$TabPageCmds = [GUI.TP]::New(0, 0, 0, 0,'Commands')
+$TabPageCmds = [GUI.TP]::New(0, 0, 0, 0,'Comm')
 $Commands = [GUI.TB]::New(290, 345, 0, 0, '')
 $Commands.Multiline = $True
 $Commands.WordWrap = $False
 $Commands.ScrollBars = 'Vertical'
 $Commands.AcceptsTab = $True
 $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
-Try{$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction Stop) -join [N]::L}Catch{}
-$TabPageCmds.Controls.Add($Commands)
-$TabController.Controls.Add($TabPageCmds)
+$Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction SilentlyContinue) -join [N]::L
+$Commands.Parent = $TabPageCmds
+$TabPageCmds.Parent = $TabController
 
-$TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Functions')
+$TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
 $FunctionsBox = [GUI.TB]::New(290, 345, 0, 0, '')
 $FunctionsBox.Multiline = $True
 $FunctionsBox.WordWrap = $False
 $FunctionsBox.Scrollbars = 'Vertical'
 $FunctionsBox.AcceptsTab = $True
 $FunctionsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force})
-Try{$FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction Stop) -join [N]::L}Catch{}
-$TabPageFunctions.Controls.Add($FunctionsBox)
-$TabController.Controls.Add($TabPageFunctions)
+$FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue) -join [N]::L
+$FunctionsBox.Parent = $TabPageFunctions
+$TabPageFunctions.Parent = $TabController
 
-$TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'Statements')
+$TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
 $StatementsBox = [GUI.TB]::New(290, 345, 0, 0, '')
 $StatementsBox.Multiline = $True
 $StatementsBox.WordWrap = $False
 $StatementsBox.Scrollbars = 'Vertical'
 $StatementsBox.AcceptsTab = $True
 $StatementsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force})
-Try{$StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction Stop) -join [N]::L}Catch{}
-$TabPageStatements.Controls.Add($StatementsBox)
-$TabController.Controls.Add($TabPageStatements)
+$StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue) -join [N]::L
+$StatementsBox.Parent = $TabPageStatements
+$TabPageStatements.Parent = $TabController
 
-$TabPageBuilder = [GUI.TP]::New(0, 0, 0, 0,'Builder')
-$ORLabel = [GUI.L]::New(500,500,10,10,@'
-'@)
-$TabPageBuilder.Controls.Add($ORLabel)
-$TabController.Controls.Add($TabPageBuilder)
+$TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
+$TabControllerAdvanced = [GUI.TC]::New(270, 325, 10, 10)
+
+$TabPageHelper = [GUI.TP]::New(0, 0, 0, 0,'Helper')
+$TabPageHelper.Parent = $TabControllerAdvanced
+
+$TabPageConfig = [GUI.TP]::New(0, 0, 0, 0,'Config')
+$DelayTimer = [GUI.NUD]::New(100,25,10,10)
+$DelayTimer.Maximum = 999999
+$DelayTimer.Parent = $TabPageConfig
+
+$CommandDelayTimer = [GUI.NUD]::New(100,25,10,35)
+$CommandDelayTimer.Maximum = 999999
+$CommandDelayTimer.Parent = $TabPageConfig
+$TabPageConfig.Parent = $TabControllerAdvanced
+
+$TabControllerAdvanced.Parent = $TabPageAdvanced
+$TabPageAdvanced.Parent = $TabController
+
+$TabController.Parent = $Form
 
 $GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
-$GO.Add_Click({
-    $IfElHash = @{}
-    $FuncHash = @{}
-    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-    $SyncHash.Stop = $False
-
-    $Form.Controls.Remove($GO)
-    $Form.Controls.Remove($GetMouseCoords)
-
-    $Commands.ReadOnly     = $True
-    $FunctionsBox.ReadOnly = $True
-
-    $Form.Refresh()
-
-    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
-        #$Statements     = $False
-        $StatementStart = $False
-    }{
-        #If($Statements)
-        #{
-            If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
-            {
-                $StatementStart = $True
-                $Numeric = $False
-
-                $TF = $True
-
-                $StatementTText = [String[]]@()
-                $StatementFText = [String[]]@()
-            }
-
-            If($StatementStart)
-            {
-                If($_ -match '^{STATEMENT NAME ')
-                {
-                    $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
-                    $IfElHash.Add($NameState,'')
-                }
-                ElseIf($_ -match '^{NUMERIC}$')
-                {
-                    $IfElHash.Add($NameState+'NUMERIC','')
-                }
-                ElseIf($_ -match '^{OP1 ')
-                {
-                    $PH = $_.Substring(5)
-                    $PH = $PH.Substring(0, ($PH.Length - 1))
-                    
-                    $IfElHash.Add($NameState+'OP1',$PH)
-                }
-                ElseIf($_ -match '^{CMP ')
-                {
-                    $PH = $_.Substring(5)
-                    $PH = $PH.Substring(0, ($PH.Length - 1))
-                    $IfElHash.Add($NameState+'CMP',$PH)
-                }
-                ElseIf($_ -match '^{OP2 ')
-                {
-                    $PH = $_.Substring(5)
-                    $PH = $PH.Substring(0, ($PH.Length - 1))
-                    
-                    $IfElHash.Add($NameState+'OP2',$PH)
-                }
-                ElseIf($_ -match '^{ELSE}$')
-                {
-                    $TF = $False
-                }
-                ElseIf($_ -match '^{STATEMENT END}$')
-                {
-                    $StatementStart = $False
-                    $IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
-                    $IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
-                }
-                Else
-                {
-                    If($TF)
-                    {
-                        $StatementTText+=$_
-                    }
-                    Else
-                    {
-                        $StatementFText+=$_
-                    }
-                }
-            }
-        #}
-        #If($_ -match '^{STATEMENTS}$'){$Statements = $True}ElseIf($_ -match '^{STATEMENTS END}$'){$Statements = $False}
-    }
-
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
-        #$Functions     = $False
-        $FunctionStart = $False
-
-        $FunctionText = @()
-    }{
-        #If($Functions)
-        #{
-            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
-            If($FunctionStart)
-            {
-                If($_ -match '^{FUNCTION NAME ')
-                {
-                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
-                }
-                ElseIf($_ -match '^{FUNCTION END}$')
-                {
-                    $FunctionStart = $False
-                    $FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
-                    $FunctionText = @()
-                }
-                Else
-                {
-                    $FunctionText+=$_
-                }
-            }
-        #}
-        #If($_ -match '^{FUNCTIONS}$'){$Functions = $True}ElseIf($_ -match '^{FUNCTIONS END}$'){$Functions = $False}
-    }
-
-    ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{
-        If(!$SyncHash.Stop)
-        {
-            Interact $_
-        }
-    }
-
-    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-    $SyncHash.Stop = $False
-
-    $Form.Controls.AddRange(@($GO,$GetMouseCoords))
-    
-    $Commands.ReadOnly     = $False
-    $FunctionsBox.ReadOnly = $False
-
-    $Form.Refresh()
-})
+$GO.Add_Click({GO})
+$GO.Parent = $Form
 
 $GetMouseCoords = [GUI.B]::New(100, 50, 225, 390, 'Mouse X,Y')
 $GetMouseCoords.Add_Click({
@@ -868,17 +906,18 @@ $GetMouseCoords.Add_Click({
 
     $Form.Controls.AddRange(@($GO,$GetMouseCoords))
 })
+$GetMouseCoords.Parent = $Form
 
 $Form.Add_SizeChanged({
-    $TabController.Size      = [GUI.SP]::SI((([Int]$This.Width)-57),(([Int]$This.Height)-110))
-    $Commands.Size           = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
-    $FunctionsBox.Size       = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
-    $StatementsBox.Size       = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
-    $GO.Location             = [GUI.SP]::PO(25,(([Int]$This.Height)-95))
-    $GetMouseCoords.Location = [GUI.SP]::PO((([Int]$This.Width)-132),(([Int]$This.Height)-95))
+    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-57),(([Int]$This.Height)-110))
+    $Commands.Size              = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
+    $FunctionsBox.Size          = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
+    $StatementsBox.Size         = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
+    $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
+    $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-95))
+    $GetMouseCoords.Location    = [GUI.SP]::PO((([Int]$This.Width)-132),(([Int]$This.Height)-95))
 })
 
-$Form.Controls.AddRange(@($TabController,$GO,$GetMouseCoords))
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
 $Form.ShowDialog()
