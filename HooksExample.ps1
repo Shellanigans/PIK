@@ -68,3 +68,4 @@ public static class Program {
 }
 "@ -ReferencedAssemblies System.Windows.Forms
 [Program]::Main()
+
