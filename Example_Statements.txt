@@ -1,0 +1,30 @@
+﻿{STATEMENT NAME NonNull}
+	\\#If the current word from the reversed 'splitter' array is not equal to null
+	{OP1 {VAR {VAR Index}_splitter}}
+	{CMP ne}
+	{OP2 (NULL)}
+		
+		\\#Take var 'splitter' at the current index and prepend it with a comma and add it to output
+		{VAR OUTPUT={MANIP APP {VAR OUTPUT},(COMMA){VAR {VAR Index}_splitter}}}
+	{ELSE}
+
+		\\#do nothing
+		(NULL)
+{STATEMENT END}
+
+{STATEMENT NAME FORLOOP_LOGIC}
+	\\#numerically check these values
+	{NUMERIC}
+
+	\\#If the current index of 'splitter' is less than the length of the 'splitter' array
+	{OP1 {VAR INDEX}}
+	{CMP lt}
+	{OP2 {MANIP CNT splitter,(NULL)}}
+		
+		\\#go back to the top of forloop
+		{FORLOOP}
+	{ELSE}
+
+		\\#do nothing
+		(NULL)
+{STATEMENT END}
