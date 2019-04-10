@@ -1,0 +1,30 @@
+﻿\\#Focus on the notepad application
+{FOCUS Notepad}
+
+\\#Select everything
+{SELECTALL}
+
+\\#Delete
+{DELETE}
+
+\\#Create a variable 'splitter' with the string value "this is a string to split"
+{VAR splitter=this is a string to split}
+
+\\#Replace all the spaces with newlines
+{VAR splitter={MANIP RPL {VAR splitter},(SPACE),(NEWLINE)}}
+
+\\#split 'splitter' into an array on the newline characters
+{MANIP SPL splitter,(NEWLINE)}
+
+\\#reverse the array (this has no output, just like in PS)
+{MANIP REV splitter}
+
+\\#instantiate variables
+{VAR INDEX=0}
+{VAR OUTPUT=(NULL)}
+
+\\#Go to the function forloop
+{FORLOOP}
+
+\\#Trim the prepended comma at the beginning of the new string formed and output as keystrokes
+{MANIP TRS {VAR OUTPUT},(COMMA)}
