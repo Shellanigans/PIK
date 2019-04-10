@@ -1,0 +1,10 @@
+﻿{FUNCTION NAME FORLOOP}
+	\\#Check the nonNull statement
+	{NONNULL}
+
+	\\#add one to index
+	{VAR Index={MANIP ADD {VAR Index},1}}
+
+	\\#go to FORLOOP_Logic statement
+	{FORLOOP_LOGIC}
+{FUNCTION END}
