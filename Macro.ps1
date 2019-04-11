@@ -288,6 +288,25 @@ Function Parser
             Write-Host $X
         }
     }
+
+    If($X -match '^{GETPIX .*,.*}$')
+    {
+        $PH = ($X -replace '{GETPIX ')
+        $PH = $PH.Substring(0,($PH.Length - 1))
+        $PH = $PH.Split(',')
+
+        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],($PH[0]+1),($PH[1]+1))
+
+        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+
+        $X = $BMP.GetPixel(0,0).Name.ToUpper()
+            
+        $Graphics.Dispose()
+        $BMP.Dispose()
+    }
     
     While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
@@ -641,11 +660,21 @@ Function Interact
             }
             Else
             {
-                If($DelayTimer.Value -ne 0)
+                If($DelayTimer.Value -ne 0 -OR $DelayCheck.Checked)
                 {
                     $X.ToCharArray() | %{
                         [Cons.Send]::Keys($_)
-                        Sleep -Milliseconds ($DelayTimer.Value)
+                        
+                        If($DelayRandTimer.Value -ne 0 -AND $DelayCheck.Checked)
+                        {
+                            $PH = (Get-Random -Minimum (-1*$DelayRandTimer.Value) -Maximum $DelayRandTimer.Value)
+                        }
+                        Else
+                        {
+                            $PH = 0
+                        }
+                        
+                        Sleep -Milliseconds ([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
                     }
                 }
                 Else
@@ -655,25 +684,32 @@ Function Interact
             }
         }
 
-        If($CommandDelayTimer.Value -ne 0)
+        If($CommandDelayTimer.Value -ne 0 -OR $CommDelayCheck.Checked)
         {
-            Sleep -Milliseconds ($CommandDelayTimer.Value)
+            If($CommRandTimer.Value -ne 0 -AND $CommDelayCheck.Checked)
+            {
+                $PH = (Get-Random -Minimum (-1*$CommRandTimer.Value) -Maximum $CommRandTimer.Value)
+            }
+            Else
+            {
+                $PH = 0
+            }
+
+            Sleep -Milliseconds ([Math]::Round([Math]::Abs(($CommandDelayTimer.Value + $PH))))
         }
     }
 }
 
 Function GO
 {
-    $IfElHash = @{}
-    $FuncHash = @{}
-    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $Script:IfElHash = @{}
+    $Script:FuncHash = @{}
+    $Script:UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
-
-    $Form.Controls.Remove($GO)
-    $Form.Controls.Remove($GetMouseCoords)
 
     $Commands.ReadOnly     = $True
     $FunctionsBox.ReadOnly = $True
+    $StatementsBox.ReadOnly = $True
 
     $Form.Refresh()
 
@@ -780,16 +816,17 @@ Function GO
 
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
-
-    $Form.Controls.AddRange(@($GO,$GetMouseCoords))
     
     $Commands.ReadOnly     = $False
     $FunctionsBox.ReadOnly = $False
+    $StatementsBox.ReadOnly = $False
 
     $Form.Refresh()
 }
 
-#[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+[Console]::Title = 'KeyMouseMacro'
+
+[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
 [Void][Cons.WindowDisp]::Visual()
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
@@ -823,13 +860,13 @@ $Pow.AddScript({
 $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $Pow.BeginInvoke() | Out-Null
 
-$Form = [GUI.F]::New(365, 490, 'KeyMouseMacro')
-$Form.MinimumSize = [GUI.SP]::SI(357,485)
+$Form = [GUI.F]::New(365, 495, 'KeyMouseMacro')
+$Form.MinimumSize = [GUI.SP]::SI(365,495)
 
-$TabController = [GUI.TC]::New(300, 375, 25, 7)
+$TabController = [GUI.TC]::New(300, 400, 25, 7)
 
 $TabPageCmds = [GUI.TP]::New(0, 0, 0, 0,'Comm')
-$Commands = [GUI.TB]::New(290, 345, 0, 0, '')
+$Commands = [GUI.TB]::New(290, 370, 0, 0, '')
 $Commands.Multiline = $True
 $Commands.WordWrap = $False
 $Commands.ScrollBars = 'Vertical'
@@ -840,7 +877,7 @@ $Commands.Parent = $TabPageCmds
 $TabPageCmds.Parent = $TabController
 
 $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
-$FunctionsBox = [GUI.TB]::New(290, 345, 0, 0, '')
+$FunctionsBox = [GUI.TB]::New(290, 370, 0, 0, '')
 $FunctionsBox.Multiline = $True
 $FunctionsBox.WordWrap = $False
 $FunctionsBox.Scrollbars = 'Vertical'
@@ -851,7 +888,7 @@ $FunctionsBox.Parent = $TabPageFunctions
 $TabPageFunctions.Parent = $TabController
 
 $TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
-$StatementsBox = [GUI.TB]::New(290, 345, 0, 0, '')
+$StatementsBox = [GUI.TB]::New(290, 370, 0, 0, '')
 $StatementsBox.Multiline = $True
 $StatementsBox.WordWrap = $False
 $StatementsBox.Scrollbars = 'Vertical'
@@ -862,19 +899,117 @@ $StatementsBox.Parent = $TabPageStatements
 $TabPageStatements.Parent = $TabController
 
 $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
-$TabControllerAdvanced = [GUI.TC]::New(270, 325, 10, 10)
+$TabControllerAdvanced = [GUI.TC]::New(270, 350, 10, 10)
+$TabPageDebug = [GUI.TP]::New(0, 0, 0, 0,'Debug')
+$GetMouseCoords = [GUI.B]::New(100, 25, 10, 10, 'Pointer Info')
+$GetMouseCoords.Add_Click({
+    Sleep 3
+    
+    $PH = [Cons.Curs]::GPos()
 
-$TabPageHelper = [GUI.TP]::New(0, 0, 0, 0,'Helper')
-$TabPageHelper.Parent = $TabControllerAdvanced
+    $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+    $MouseCoordsBox.Text = $Position
+
+    $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+    $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+
+    $Graphics.Dispose()
+    $BMP.Dispose()
+})
+$GetMouseCoords.Parent = $TabPageDebug
+
+$MouseCoordsBox = [GUI.TB]::New(120, 25, 120, 10, '')
+$MouseCoordsBox.ReadOnly = $True
+$MouseCoordsBox.Multiline = $True
+$MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+$MouseCoordsBox.Parent = $TabPageDebug
+
+$PixColorLabel = [GUI.L]::New(100, 25, 15, 50, 'HexVal (ARGB):')
+$PixColorLabel.Parent = $TabPageDebug
+
+$PixColorBox = [GUI.TB]::New(120, 25, 120, 45, '')
+$PixColorBox.ReadOnly = $True
+$PixColorBox.Multiline = $True
+$PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+$PixColorBox.Parent = $TabPageDebug
+
+$GetFuncts = [GUI.B]::New(110, 25, 10, 95, 'Get Functs')
+$GetFuncts.Add_Click({
+    $FuncHash.Keys | %{Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $FuncHash.$_ + [N]::L + [N]::L)}
+})
+$GetFuncts.Parent = $TabPageDebug
+
+$GetStates = [GUI.B]::New(110, 25, 130, 95, 'Get States')
+$GetStates.Add_Click({
+    $IfElHash.Keys | %{Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $IfElHash.$_ + [N]::L + [N]::L)}
+})
+$GetStates.Parent = $TabPageDebug
+
+$ClearCons = [GUI.B]::New(230, 25, 10, 125, 'Clear Console')
+$ClearCons.Add_Click({Cls})
+$ClearCons.Parent = $TabPageDebug
+
+$TabPageDebug.Parent = $TabControllerAdvanced
 
 $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0,'Config')
-$DelayTimer = [GUI.NUD]::New(100,25,10,10)
-$DelayTimer.Maximum = 999999
-$DelayTimer.Parent = $TabPageConfig
+$DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
+$DelayLabel.Parent = $TabPageConfig
 
-$CommandDelayTimer = [GUI.NUD]::New(100,25,10,35)
-$CommandDelayTimer.Maximum = 999999
+$DelayTimer = [GUI.NUD]::New(150, 25, 10, 30)
+$DelayTimer.Maximum = 999999999
+$DelayTimer.Parent = $TabPageConfig
+$DelayTimer.BringToFront()
+
+$DelayCheck = [GUI.ChB]::New(150, 25, 170, 25, 'Randomize')
+$DelayCheck.Parent = $TabPageConfig
+
+$DelayRandLabel = [GUI.L]::New(200, 25, 10, 60, 'Key Random Weight (ms):')
+$DelayRandLabel.Parent = $TabPageConfig
+
+$DelayRandTimer = [GUI.NUD]::New(75, 25, 180, 55)
+$DelayRandTimer.Maximum = 999999999
+$DelayRandTimer.Parent = $TabPageConfig
+$DelayRandTimer.BringToFront()
+
+$CommDelayLabel = [GUI.L]::New(150, 25, 10, 90, 'Command Delay (ms):')
+$CommDelayLabel.Parent = $TabPageConfig
+
+$CommandDelayTimer = [GUI.NUD]::New(150, 25, 10, 110)
+$CommandDelayTimer.Maximum = 999999999
 $CommandDelayTimer.Parent = $TabPageConfig
+$CommandDelayTimer.BringToFront()
+
+$CommDelayCheck = [GUI.ChB]::New(150, 25, 170, 105, 'Randomize')
+$CommDelayCheck.Parent = $TabPageConfig
+
+$CommRandLabel = [GUI.L]::New(200, 25, 10, 140, 'Comm Random Weight (ms):')
+$CommRandLabel.Parent = $TabPageConfig
+
+$CommRandTimer = [GUI.NUD]::New(75, 25, 180, 135)
+$CommRandTimer.Maximum = 999999999
+$CommRandTimer.Parent = $TabPageConfig
+$CommRandTimer.BringToFront()
+
+$ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
+$ShowCons.Add_CheckedChanged({
+    If($This.Checked)
+    {
+        [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
+    }
+    Else
+    {
+        [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+    }
+})
+$ShowCons.Parent = $TabPageConfig
+
 $TabPageConfig.Parent = $TabControllerAdvanced
 
 $TabControllerAdvanced.Parent = $TabPageAdvanced
@@ -882,45 +1017,27 @@ $TabPageAdvanced.Parent = $TabController
 
 $TabController.Parent = $Form
 
-$GO = [GUI.B]::New(100, 50, 25, 390, 'Start!')
+$GO = [GUI.B]::New(300, 25, 25, 415, 'Start!')
 $GO.Add_Click({GO})
 $GO.Parent = $Form
 
-$GetMouseCoords = [GUI.B]::New(100, 50, 225, 390, 'Mouse X,Y')
-$GetMouseCoords.Add_Click({
-    $Form.Controls.Remove($GO)
-    $Form.Controls.Remove($GetMouseCoords)
-
-    $Commands.ReadOnly     = $True
-    $FunctionsBox.ReadOnly = $True
-    
-    Sleep 3
-    
-    $Position = ([N]::L+'{MOUSE '+((([Cons.Curs]::GPos()).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-    [Cons.Clip]::SetT($Position)
-    $Commands.Text+=($Position)
-    
-    $Commands.ReadOnly     = $False
-    $FunctionsBox.ReadOnly = $False
-
-    $Form.Controls.AddRange(@($GO,$GetMouseCoords))
-})
-$GetMouseCoords.Parent = $Form
-
 $Form.Add_SizeChanged({
-    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-57),(([Int]$This.Height)-110))
+    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
     $Commands.Size              = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
     $FunctionsBox.Size          = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
     $StatementsBox.Size         = [GUI.SP]::SI((([Int]$TabController.Width)-10),(([Int]$TabController.Height)-30))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
-    $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-95))
-    $GetMouseCoords.Location    = [GUI.SP]::PO((([Int]$This.Width)-132),(([Int]$This.Height)-95))
+    $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
+    $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width)-65),25)
 })
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
+
+Cls
 
 $Form.ShowDialog()
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 
 $SyncHash.Kill = $True
+
+Exit
