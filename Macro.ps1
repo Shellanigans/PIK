@@ -446,14 +446,16 @@ Function Parser
                     Remove-Variable ('*_'+$Operands[0]) -Scope Script -Force
                     (Get-Variable -Name $Operands[0]).Value.ToString().Split($Operands[1]) | %{$Count = 0}{
                         Set-Variable -Name ([String]$Count+'_'+$Operands[0]) -Value $(If($_ -eq $Null){''}Else{$_}) -Scope Script
+                        $Vars+=([String]$Count+'_'+$Operands[0])
                         $Count++
                     }
                 }
                 'TCA'
                 {
-                    Remove-Variable ('*_'+$Operands[0]) -Scope Script -Force
+                    Remove-Variable ('*C_'+$Operands[0]) -Scope Script -Force
                     (Get-Variable -Name $Operands[0]).Value.ToString().ToCharArray() | %{$Count = 0}{
-                        Set-Variable -Name ([String]$Count+'_'+$Operands[0]) -Value $_ -Scope Script
+                        Set-Variable -Name ([String]$Count+'C_'+$Operands[0]) -Value $_ -Scope Script
+                        $Vars+=([String]$Count+'C_'+$Operands[0])
                         $Count++
                     }
                 }
@@ -482,7 +484,9 @@ Function Parser
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             $PHValue = $PH.Replace(($PHName+'='),'')
-
+         
+            $Vars+=$PHName
+            
             Set-Variable -Name $PHName -Value $PHValue -Scope Script -Force
             $X = $X.Replace(('{'+$_+'}'),'')
         }
@@ -732,11 +736,11 @@ Function GO
             If($_ -match '^{STATEMENT NAME ')
             {
                 $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
-                $IfElHash.Add($NameState,'')
+                $IfElHash.Add($NameState,($NameState+'_NAME'))
             }
             ElseIf($_ -match '^{NUMERIC}$')
             {
-                $IfElHash.Add($NameState+'NUMERIC','')
+                $IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
             }
             ElseIf($_ -match '^{OP1 ')
             {
@@ -824,12 +828,17 @@ Function GO
     $Form.Refresh()
 }
 
-[Console]::Title = 'KeyMouseMacro'
+If($Host.Name -match 'Console')
+{
+    [Console]::Title = 'KeyMouseMacro'
 
-[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
-[Void][Cons.WindowDisp]::Visual()
+    [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+    [Void][Cons.WindowDisp]::Visual()
+}
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
+
+$Global:Vars = [String[]]@()
 
 $UndoHash = @{KeyList=[String[]]@()}
 $IfElHash = @{}
@@ -942,17 +951,38 @@ $PixColorBox.Parent = $TabPageDebug
 
 $GetFuncts = [GUI.B]::New(110, 25, 10, 95, 'Get Functs')
 $GetFuncts.Add_Click({
-    $FuncHash.Keys | %{Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $FuncHash.$_ + [N]::L + [N]::L)}
+    $FuncHash.Keys | Sort | %{
+        Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $FuncHash.$_ + [N]::L + [N]::L)
+    }
 })
 $GetFuncts.Parent = $TabPageDebug
 
 $GetStates = [GUI.B]::New(110, 25, 130, 95, 'Get States')
 $GetStates.Add_Click({
-    $IfElHash.Keys | %{Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $IfElHash.$_ + [N]::L + [N]::L)}
+    $IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
+        $PH = $_
+        $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
+        $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,3,4,1,5,6,2]}Else{$PH[0,3,1,4,5,2]}) | %{
+            Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $IfElHash.$_ + [N]::L + [N]::L)
+        }
+
+        Write-Host ([N]::L * 3)
+    }
 })
 $GetStates.Parent = $TabPageDebug
 
-$ClearCons = [GUI.B]::New(230, 25, 10, 125, 'Clear Console')
+$GetVars = [GUI.B]::New(110, 25, 10, 125, 'Get Vars')
+$GetVars.Add_Click({
+    #Write-Host (GV * | Out-String)
+    $Vars | Sort -Unique | %{
+        Write-Host $_
+        $PH = (Get-Variable -Name $_ -Scope Script)
+        Write-Host ([N]::L + $PH.Name + [N]::L + '-------------------------' + [N]::L + $PH.Value + [N]::L + [N]::L)
+    }
+})
+$GetVars.Parent = $TabPageDebug
+
+$ClearCons = [GUI.B]::New(230, 25, 10, 155, 'Clear Console')
 $ClearCons.Add_Click({Cls})
 $ClearCons.Parent = $TabPageDebug
 
@@ -1033,11 +1063,11 @@ $Form.Add_SizeChanged({
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
-Cls
+If($Host.Name -match 'Console'){Cls}
 
 $Form.ShowDialog()
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 
 $SyncHash.Kill = $True
 
-Exit
+If($Host.Name -match 'Console'){Exit}
