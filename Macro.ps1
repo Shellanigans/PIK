@@ -438,15 +438,15 @@ Function Parser
                         $Output = $Operands[0].TrimEnd($Operands[1])
                     }
 
-                    $Vars = @(GV ('*_'+$Operands[0]) | %{$_.Name} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort})
-                    $Output = (@($Vars | %{Get-Variable -Name $_ -ValueOnly}) -join $Operands[1])
+                    $Script:Vars = @(GV ('*_'+$Operands[0]) | %{$_.Name} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort})
+                    $Output = (@($Script:Vars | %{Get-Variable -Name $_ -ValueOnly}) -join $Operands[1])
                 }
                 'SPL'
                 {
                     Remove-Variable ('*_'+$Operands[0]) -Scope Script -Force
                     (Get-Variable -Name $Operands[0]).Value.ToString().Split($Operands[1]) | %{$Count = 0}{
                         Set-Variable -Name ([String]$Count+'_'+$Operands[0]) -Value $(If($_ -eq $Null){''}Else{$_}) -Scope Script
-                        $Vars+=([String]$Count+'_'+$Operands[0])
+                        $Script:Vars+=([String]$Count+'_'+$Operands[0])
                         $Count++
                     }
                 }
@@ -455,7 +455,7 @@ Function Parser
                     Remove-Variable ('*C_'+$Operands[0]) -Scope Script -Force
                     (Get-Variable -Name $Operands[0]).Value.ToString().ToCharArray() | %{$Count = 0}{
                         Set-Variable -Name ([String]$Count+'C_'+$Operands[0]) -Value $_ -Scope Script
-                        $Vars+=([String]$Count+'C_'+$Operands[0])
+                        $Script:Vars+=([String]$Count+'C_'+$Operands[0])
                         $Count++
                     }
                 }
@@ -485,7 +485,7 @@ Function Parser
             $PHName = $PH.Split('=')[0]
             $PHValue = $PH.Replace(($PHName+'='),'')
          
-            $Vars+=$PHName
+            $Script:Vars+=$PHName
             
             Set-Variable -Name $PHName -Value $PHValue -Scope Script -Force
             $X = $X.Replace(('{'+$_+'}'),'')
@@ -838,7 +838,7 @@ If($Host.Name -match 'Console')
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 
-$Global:Vars = [String[]]@()
+$Vars = [String[]]@()
 
 $UndoHash = @{KeyList=[String[]]@()}
 $IfElHash = @{}
@@ -975,7 +975,7 @@ $GetVars = [GUI.B]::New(110, 25, 10, 125, 'Get Vars')
 $GetVars.Add_Click({
     #Write-Host (GV * | Out-String)
     $Vars | Sort -Unique | %{
-        Write-Host $_
+        #Write-Host $_
         $PH = (Get-Variable -Name $_ -Scope Script)
         Write-Host ([N]::L + $PH.Name + [N]::L + '-------------------------' + [N]::L + $PH.Value + [N]::L + [N]::L)
     }
@@ -1029,13 +1029,15 @@ $CommRandTimer.BringToFront()
 
 $ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
 $ShowCons.Add_CheckedChanged({
-    If($This.Checked)
-    {
-        [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
-    }
-    Else
-    {
-        [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+    If($Host.Name -match 'Console'){
+        If($This.Checked)
+        {
+            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
+        }
+        Else
+        {
+            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+        }
     }
 })
 $ShowCons.Parent = $TabPageConfig
