@@ -1,5 +1,6 @@
 Remove-Variable * -EA SilentlyContinue
 
+$MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
@@ -251,7 +252,6 @@ Function ActiveKeys
         }
     }
 }
-
 Function Parser
 {
     Param([String]$X)
@@ -1174,3 +1174,11 @@ $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 $SyncHash.Kill = $True
 
 If($Host.Name -match 'Console'){Exit}
+}
+
+If($PSVersionTable.CLRVersion.Major -le 2)
+{
+    $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{$FlipFlop = $True}{If($FlipFLop){$_}; $FlipFlop = !$FlipFlop} | %{If($_ -match '::New\('){($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '}Else{$_}}) -join [System.Environment]::NewLine)
+}
+
+$MainBlock.Invoke()
