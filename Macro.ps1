@@ -600,7 +600,7 @@ Function Interact
         }
         ElseIf($X -match '^{RESTART}$')
         {
-            $Script:SyncHash.Restart = $True
+            $SyncHash.Restart = $True
         }
         ElseIf($X -match '^{SCRNSHT ')
         {
@@ -713,9 +713,9 @@ Function GO
 {
     $Script:Vars = [String[]]@()
 
-    $Script:IfElHash = @{}
-    $Script:FuncHash = @{}
-    $Script:UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+    $IfElHash = @{}
+    $FuncHash = @{}
+    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
     $Commands.ReadOnly     = $True
