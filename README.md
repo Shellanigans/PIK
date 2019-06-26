@@ -159,17 +159,15 @@ Which will set the value of 6 to TEST.
 
 ## Functions
 
-If you want to get really fancy then you can actually create shorthand for yourself to repeate specific parts multiple times. In the "Functions" textbox add a line {FUNCTIONS}. Then create a functions by starting a line below that with {FUNCTION NAME THING} like so:
+If you want to get really fancy then you can actually create shorthand for yourself to repeat specific parts multiple times. To do this, create a function by starting a line below that with {FUNCTION NAME THING} like so:
 
 ```
-{FUNCTIONS}
 {FUNCTION NAME THING}
 ```
 
-Then type out the keystrokes just like you would in the main window and end it with {FUNCTION END}. This allows you to specify the function in the main window as {THING}. Just make sure to call each function on their own line. You can specify multiple functions and you can even nest them together. To stop declaring funtions (this is required) add the line {FUNCTIONS END}. A complete example would look like this:
+Then type out the keystrokes just like you would in the main window and end it with {FUNCTION END}. This allows you to specify the function in the main window as {THING}. Just make sure to call each function on their own line. You can specify multiple functions and you can even nest them together. A complete example would look like this:
 
 ```
-{FUNCTIONS} 
 {FUNCTION NAME THING1} 
 Thing 1{ENTER} 
 {FUNCTION END} 
@@ -181,7 +179,6 @@ Thing 2{ENTER}
 {FUNCTION NAME THING3} 
 Thing 3{ENTER} 
 {FUNCTION END}
-{FUNCTIONS END} 
 ```
 
 The above would allow you to type into the main window the following: 
@@ -219,9 +216,7 @@ You should be aware that functions DO support recursion (i.e. A function can cal
 
 ## Statements
 
-Like functions, you can create statements which are, at their most basic form, an 'IF/ELSE' statement. They only accept two operands and one comparator. You also must always specify actions for both the true AND false cases; even if they are (NULL).
-
-Just like functions, you must begin all the statements with the line {STATEMENTS}. After this you may begin and name each statement like so:
+Like functions, you can create statements which are, at their most basic form, an 'IF/ELSE' statement. They only accept two operands and one comparator. You also must always specify actions for both the true AND false cases; even if they are (NULL). You may begin and name each statement like so:
 
 ```
 {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
@@ -261,20 +256,18 @@ This is what to type or the actions or functions or statements to call on false 
 {STATEMENT END}
 ```
 
-And when enclosed by the {STATEMENTS} blocks, a complete statements section would look like:
+A complete statements section would look like:
 
 ```
-{STATEMENTS}
-    {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
-        {NUMERIC}
-        {OP1 3}
-        {CMP LT}
-        {OP2 5}
-            This is what to type or the actions or functions or statements to call on true condition
-        {ELSE}
-            This is what to type or the actions or functions or statements to call on false condition
-        {STATEMENT END}
-{STATEMENTS END}
+{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
+    {NUMERIC}
+    {OP1 3}
+    {CMP LT}
+    {OP2 5}
+        This is what to type or the actions or functions or statements to call on true condition
+    {ELSE}
+        This is what to type or the actions or functions or statements to call on false condition
+{STATEMENT END}
 ```
 
 (Remember: You CAN use leading tabs and spaces in both the commands textbox and the functions textbox)
@@ -301,29 +294,3 @@ Below are the comparators you may use:
 |NOT MATCH                | NOTMATCH|
 |NOT EQUAL                |       NE|
 |NOT LIKE                 |  NOTLIKE|
-
-**DO NOT NEST THE STATEMENTS BLOCK WITHIN THE FUNCTIONS BLOCK OR VICE VERSA!!! IN THE FUNCTIONS TEXTBOX BOTH THE STATEMENTS AND FUNCTIONS BLOCKS SHOULD BE SEPARATE AND THERE SHOULD ONLY BE ONE OF EACH IN SAID BOX**
-
-**YES**
-```
-{STATEMENTS}
-    Place statements here
-{STATEMENTS END}
-
-{FUNCTIONS}
-    Place functions here
-{FUNCTIONS END}
-```
-
-**NO**
-```
-{STATEMENTS}
-    What are
-
-{FUNCTIONS}
-    you doing
-{FUNCTIONS END}
-
-    plz stop no
-{STATEMENTS END}
-```
