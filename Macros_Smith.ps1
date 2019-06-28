@@ -718,8 +718,8 @@ Function GO
 {
     $Script:Vars = [String[]]@()
 
-    $IfElHash = @{}
-    $FuncHash = @{}
+    $Script:IfElHash = @{}
+    $Script:FuncHash = @{}
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
@@ -748,31 +748,31 @@ Function GO
             If($_ -match '^{STATEMENT NAME ')
             {
                 $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
-                $IfElHash.Add($NameState,($NameState+'_NAME'))
+                $Script:IfElHash.Add($NameState,($NameState+'_NAME'))
             }
             ElseIf($_ -match '^{NUMERIC}$')
             {
-                $IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
+                $Script:IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
             }
             ElseIf($_ -match '^{OP1 ')
             {
                 $PH = $_.Substring(5)
                 $PH = $PH.Substring(0, ($PH.Length - 1))
                     
-                $IfElHash.Add($NameState+'OP1',$PH)
+                $Script:IfElHash.Add($NameState+'OP1',$PH)
             }
             ElseIf($_ -match '^{CMP ')
             {
                 $PH = $_.Substring(5)
                 $PH = $PH.Substring(0, ($PH.Length - 1))
-                $IfElHash.Add($NameState+'CMP',$PH)
+                $Script:IfElHash.Add($NameState+'CMP',$PH)
             }
             ElseIf($_ -match '^{OP2 ')
             {
                 $PH = $_.Substring(5)
                 $PH = $PH.Substring(0, ($PH.Length - 1))
                     
-                $IfElHash.Add($NameState+'OP2',$PH)
+                $Script:IfElHash.Add($NameState+'OP2',$PH)
             }
             ElseIf($_ -match '^{ELSE}$')
             {
@@ -781,8 +781,8 @@ Function GO
             ElseIf($_ -match '^{STATEMENT END}$')
             {
                 $StatementStart = $False
-                $IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
-                $IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
+                $Script:IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
+                $Script:IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
             }
             Else
             {
@@ -813,7 +813,7 @@ Function GO
             ElseIf($_ -match '^{FUNCTION END}$')
             {
                 $FunctionStart = $False
-                $FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
+                $Script:FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
                 $FunctionText = @()
             }
             Else
@@ -858,8 +858,8 @@ If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 $Vars = [String[]]@()
 
 $UndoHash = @{KeyList=[String[]]@()}
-$IfElHash = @{}
-$FuncHash = @{}
+$Script:IfElHash = @{}
+$Script:FuncHash = @{}
 $SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})
 
 $Pow = [Powershell]::Create()
@@ -1061,7 +1061,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $GetFuncts = [GUI.B]::New(110, 25, 10, 125, 'Get Functs')
                 $GetFuncts.Add_Click({
-                    $FuncHash.Keys | Sort | %{
+                    $Script:FuncHash.Keys | Sort | %{
                         Write-Host ([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $FuncHash.$_ + [N]::L + [N]::L)
 
                         Write-Host ([N]::L * 3)
@@ -1071,7 +1071,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $GetStates = [GUI.B]::New(110, 25, 130, 125, 'Get States')
                 $GetStates.Add_Click({
-                    $IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
+                    $Script:IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
                         $PH = $_
                         $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
                         $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,3,4,1,5,6,2]}Else{$PH[0,3,1,4,5,2]}) | %{
@@ -1085,7 +1085,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $GetVars = [GUI.B]::New(110, 25, 10, 160, 'Get Vars')
                 $GetVars.Add_Click({
-                    $Vars | Sort -Unique | %{
+                    $Script:Vars | Sort -Unique | %{
                         $PH = (Get-Variable -Name $_ -Scope Script)
                         Write-Host ([N]::L + $PH.Name + [N]::L + '-------------------------' + [N]::L + $PH.Value + [N]::L + [N]::L)
                     }
