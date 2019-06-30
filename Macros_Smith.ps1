@@ -798,7 +798,7 @@ Function GO
         }
     }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
         $FunctionStart = $False
 
         $FunctionText = @()
@@ -810,7 +810,7 @@ Function GO
             {
                 $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
             }
-            ElseIf($_ -match '^{FUNCTION END}$')
+            ElseIf($_ -match '^{FUNCTION END}')
             {
                 $FunctionStart = $False
                 $Script:FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
