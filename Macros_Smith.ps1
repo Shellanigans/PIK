@@ -798,7 +798,7 @@ Function GO
         }
     }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
         $FunctionStart = $False
 
         $FunctionText = @()
