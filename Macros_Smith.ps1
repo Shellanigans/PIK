@@ -750,7 +750,7 @@ Function GO
                 $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
                 $Script:IfElHash.Add($NameState,($NameState+'_NAME'))
             }
-            ElseIf($_ -match '^{NUMERIC}$')
+            ElseIf($_ -match '^{NUMERIC}')
             {
                 $Script:IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
             }
@@ -774,11 +774,11 @@ Function GO
                     
                 $Script:IfElHash.Add($NameState+'OP2',$PH)
             }
-            ElseIf($_ -match '^{ELSE}$')
+            ElseIf($_ -match '^{ELSE}')
             {
                 $TF = $False
             }
-            ElseIf($_ -match '^{STATEMENT END}$')
+            ElseIf($_ -match '^{STATEMENT END}')
             {
                 $StatementStart = $False
                 $Script:IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
