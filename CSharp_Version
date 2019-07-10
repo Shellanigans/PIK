@@ -263,6 +263,8 @@ Function Parser
     $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
 
     $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
+
+    $X = ($X -replace '{GETMOUSE}',$($PH = [Cons.Curs]::GPos(); [String]$PH.X+','+[String]$PH.Y))
     
     If($X -match '^{POWER .*}$')
     {
@@ -505,8 +507,6 @@ Function Interact
     If(!$SyncHash.Stop)
     {
         [System.Console]::WriteLine($X)
-
-        If($X.Length -ge 3 -AND $X.SubString(0,3) -match '^\\\\#'){$X = ''}
 
         $X = (Parser $X)
 
@@ -826,10 +826,16 @@ Function GO
     {
         $SyncHash.Restart = $False
         
-        ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{
+        ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{$Commented = $False}{
             If(!$SyncHash.Stop)
             {
-                Interact $_
+                If($_ -match '^<\\\\#'){$Commented = $True}
+                If($_ -match '^\\\\#>'){$Commented = $Flase}
+                
+                If($_ -notmatch '^\\\\#' -AND !$Commented)
+                {
+                    Interact $_
+                }
             }
         }
     }While($SyncHash.Restart)
