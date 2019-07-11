@@ -370,7 +370,7 @@ Function Interpret
 
             $Operator = $PH.Split(' ')[0]
             $Operands = [String[]]($PH.Substring(4).Split(','))
-            $Operands[-1] = $Operands[-1].Substring(0, ($Operands[-1].Length))
+            #$Operands[-1] = $Operands[-1].Substring(0, ($Operands[-1].Length))
 
             $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)',''))}; $Index++}
             
@@ -476,15 +476,6 @@ Function Interpret
                 }
                 'JOI'
                 {
-                    If($Operands.Count -gt 2)
-                    {
-                        $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimEnd($Operands[-1])
-                    }
-                    Else
-                    {
-                        $Output = $Operands[0].TrimEnd($Operands[1])
-                    }
-
                     $Output = ($Script:VarsHash.Keys | ?{$_ -match ('[0-9]*_'+$Operands[0]+'$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{$Script:VarsHash.$_}) -join $Operands[1]
                 }
                 'SPL'
