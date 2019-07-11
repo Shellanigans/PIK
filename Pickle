@@ -4,6 +4,7 @@ $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
@@ -193,78 +194,117 @@ namespace GUI{
 public class N{
     public static string L = System.Environment.NewLine;
 }
-'@
 
-Function ActiveKeys
-{
-    Param([String]$X)
-    
-    If(($X -match 'NUM') -AND ($X.Length -eq 4))
+public class Parser{
+    public static string ActiveKeys(string X)
     {
-        Return [String]('&H6'+($X -replace 'Num'))
-    }
-    ElseIf($X.Length -eq 1)
-    {
-        Return [String]('&H'+[Convert]::ToString(([Int][Char]([String]$X).ToUpper()), 16))
-    }
-    ElseIf($X -like 'F*')
-    {
-        Return [String]('&H7'+[Convert]::ToString(([Int]($X -replace 'F') - 1), 16))
-    }
-    Else
-    {
-        Switch($X)
+        X = X.ToUpper();
+
+        if(Regex.IsMatch(X, "NUM") && X.Length == 4)
         {
-            'CLEAR'       {Return '&HC'}
-            'ENTER'       {Return '&HD'}
-            'CANCEL'      {Return '&H03'}
-            'BACKSPACE'   {Return '&H08'}
-            'TAB'         {Return '&H09'}
-            'SHIFT'       {Return '&H10'}
-            'CTRL'        {Return '&H11'}
-            'ALT'         {Return '&H12'}
-            'PAUSE'       {Return '&H13'}
-            'CAPSLOCK'    {Return '&H14'}
-            'ESC'         {Return '&H1B'}
-            'SPACEBAR'    {Return '&H20'}
-            'PAGEUP'      {Return '&H21'}
-            'PAGEDOWN'    {Return '&H22'}
-            'END'         {Return '&H23'}
-            'HOME'        {Return '&H24'}
-            'LEFTARROW'   {Return '&H25'}
-            'UPARROW'     {Return '&H26'}
-            'RIGHTARROW'  {Return '&H27'}
-            'DOWNARROW'   {Return '&H28'}
-            'SELECT'      {Return '&H29'}
-            'EXECUTE'     {Return '&H2B'}
-            'PRINTSCREEN' {Return '&H2C'}
-            'INS'         {Return '&H2D'}
-            'DEL'         {Return '&H2E'}
-            'HELP'        {Return '&H2F'}
-            'NUMLOCK'     {Return '&H90'}
-            'NUMMULT'     {Return '&H6A'}
-            'NUMPLUS'     {Return '&H6B'}
-            'NUMENTER'    {Return '&H6C'}
-            'NUMMINUS'    {Return '&H6D'}
-            'NUMPOINT'    {Return '&H6E'}
-            'NUMDIV'      {Return '&H6F'}
-            'WINDOWS'     {Return '&H5B'}
+            return ("&H6"+X.Replace("NUM",""));
+        }
+        else if(X.Length == 1)
+        {
+            return ("&H"+Convert.ToString(Convert.ToInt32(Convert.ToChar(X)), 16)).ToUpper();
+        }
+        else if(Regex.IsMatch(X, "^F[0-9][0-6]?"))
+        {
+            return ("&H7"+Convert.ToString((Convert.ToInt32(X.Replace("F","")) - 1), 16)).ToUpper();
+        }
+        else
+        {
+            switch(X)
+            {
+                case "CLEAR":
+	                return "&HC";
+                case "ENTER":
+	                return "&HD";
+                case "CANCEL":
+	                return "&H03";
+                case "BACKSPACE":
+	                return "&H08";
+                case "TAB":
+	                return "&H09";
+                case "SHIFT":
+	                return "&H10";
+                case "CTRL":
+	                return "&H11";
+                case "ALT":
+	                return "&H12";
+                case "PAUSE":
+	                return "&H13";
+                case "CAPSLOCK":
+	                return "&H14";
+                case "ESC":
+	                return "&H1B";
+                case "SPACEBAR":
+	                return "&H20";
+                case "PAGEUP":
+	                return "&H21";
+                case "PAGEDOWN":
+	                return "&H22";
+                case "END":
+	                return "&H23";
+                case "HOME":
+	                return "&H24";
+                case "LEFTARROW":
+	                return "&H25";
+                case "UPARROW":
+	                return "&H26";
+                case "RIGHTARROW":
+	                return "&H27";
+                case "DOWNARROW":
+	                return "&H28";
+                case "SELECT":
+	                return "&H29";
+                case "EXECUTE":
+	                return "&H2B";
+                case "PRINTSCREEN":
+	                return "&H2C";
+                case "INS":
+	                return "&H2D";
+                case "DEL":
+	                return "&H2E";
+                case "HELP":
+	                return "&H2F";
+                case "NUMLOCK":
+	                return "&H90";
+                case "NUMMULT":
+	                return "&H6A";
+                case "NUMPLUS":
+	                return "&H6B";
+                case "NUMENTER":
+	                return "&H6C";
+                case "NUMMINUS":
+	                return "&H6D";
+                case "NUMPOINT":
+	                return "&H6E";
+                case "NUMDIV":
+	                return "&H6F";
+                case "WINDOWS":
+	                return "&H5B";
+                default:
+                    return "&H60";
+            }
         }
     }
 }
-Function Parser
+'@
+
+Function Interpret
 {
     Param([String]$X)
 
-    $X = ($X -replace '{COPY}','(^c)')
-    $X = ($X -replace '{PASTE}','(^v)')
-    $X = ($X -replace '{SELECTALL}','(^a)')
+    $X = ($X.Replace('{COPY}','(^c)'))
+    $X = ($X.Replace('{PASTE}','(^v)'))
+    $X = ($X.Replace('{SELECTALL}','(^a)'))
         
-    $X = ($X -replace '{DATETIME}',(Get-Date).ToString())
+    $X = ($X.Replace('{DATETIME}',([DateTime]::Now).ToString()))
 
-    $X = ($X -replace '{GETCLIP}',([Cons.Clip]::GetT()))
+    $X = ($X.Replace('{GETCLIP}',([Cons.Clip]::GetT())))
 
-    $X = ($X -replace '{GETMOUSE}',$($PH = [Cons.Curs]::GPos(); [String]$PH.X+','+[String]$PH.Y))
+    $X = ($X.Replace('{GETMOUSE}',$($PH = [Cons.Curs]::GPos(); [String]$PH.X+','+[String]$PH.Y)))
     
     If($X -match '^{POWER .*}$')
     {
@@ -282,7 +322,7 @@ Function Parser
     While($X -match '{RAND ')
     {
         $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
-                $X = $X -replace ('{'+$_+'}'),(Get-Random -Minimum $_.Split(' ')[1].Split(',')[0] -Maximum $_.Split(' ')[1].Split(',')[1])
+                $X = $X -replace ('{'+$_+'}'),(([Random]::New()).Next(($_.Split(' ')[1].Split(',')[0]),($_.Split(' ')[1].Split(',')[1])))
         }
             
         [System.Console]::WriteLine($X)
@@ -508,7 +548,7 @@ Function Interact
     {
         [System.Console]::WriteLine($X)
 
-        $X = (Parser $X)
+        $X = (Interpret $X)
 
         If($X -match '^{SETCON')
         {
@@ -572,7 +612,7 @@ Function Interact
             }
             Else
             {
-                $Temp = (ActiveKeys ($X.Split()[-1] -replace '}'))
+                $Temp = ([Parser]::ActiveKeys(($X.Split()[-1] -replace '}')))
                 $UndoHash.KeyList+=([String]$Temp)
                 [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
             }
@@ -630,8 +670,8 @@ Function Interact
             $Op1 = $IfElHash.($IfElName+'OP1')
             $Op2 = $IfElHash.($IfElName+'OP2')
 
-            $Op1 = (Parser $Op1)
-            $Op2 = (Parser $Op2)
+            $Op1 = (Interpret $Op1)
+            $Op2 = (Interpret $Op2)
 
             If($Op1 -eq '(NULL)'){$Op1 = ''}
             If($Op2 -eq '(NULL)'){$Op2 = ''}
@@ -679,7 +719,7 @@ Function Interact
                         
                         If($DelayCheck.Checked)
                         {
-                            $PH = (Get-Random -Minimum (-1*$DelayRandTimer.Value) -Maximum $DelayRandTimer.Value)
+                            $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
                         }
                         Else
                         {
@@ -700,7 +740,7 @@ Function Interact
         {
             If($CommDelayCheck.Checked)
             {
-                $PH = (Get-Random -Minimum (-1*$CommRandTimer.Value) -Maximum $CommRandTimer.Value)
+                $PH = (([Random]::New()).Next((-1*$CommRandTimer.Value),($CommRandTimer.Value)))
             }
             Else
             {
@@ -892,7 +932,7 @@ $Pow.AddScript({
 $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $Pow.BeginInvoke() | Out-Null
 
-$Form = [GUI.F]::New(365, 495, 'KeyMouseMacro')
+$Form = [GUI.F]::New(365, 495, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(365,495)
 
 $TabController = [GUI.TC]::New(300, 400, 25, 7)
@@ -900,7 +940,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         $TabContCommLists = [GUI.TC]::New(0, 0, 0, 0)
         $TabContCommLists.Dock = 'Fill'
             $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
-                $Commands = [GUI.TB]::New(0, 0, 0, 0, '')
+                $Commands = [GUI.RTB]::New(0, 0, 0, 0, '')
                 $Commands.Dock = 'Fill'
                 $Commands.Multiline = $True
                 $Commands.WordWrap = $False
@@ -909,10 +949,27 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
                 $Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction SilentlyContinue) -join [N]::L
                 $Commands.Parent = $TabPageComm
+                $Commands.Add_KeyDown({
+                    If($_.KeyCode.ToString() -eq 'F1')
+                    {
+                        $This.SelectionLength = 0
+                        $This.SelectedText = '<\\#'
+                    }
+                    ElseIf($_.KeyCode.ToString() -eq 'F2')
+                    {
+                        $This.SelectionLength = 0
+                        $This.SelectedText = '\\#>'
+                    }
+                    ElseIf($_.KeyCode.ToString() -eq 'F3')
+                    {
+                        $This.SelectionLength = 0
+                        $This.SelectedText = '\\#'
+                    }
+                })
             $TabPageComm.Parent = $TabContCommLists
             
             $TabPageLists = [GUI.TP]::New(0, 0, 0, 0,'Listeners')
-                $ListsBox = [GUI.TB]::New(260, 200, 10, 10, '')
+                $ListsBox = [GUI.RTB]::New(260, 200, 10, 10, '')
                 $ListsBox.ReadOnly = $True
                 $ListsBox.Multiline = $True
                 $ListsBox.Parent = $TabPageLists
@@ -927,7 +984,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     $TabPageCommLists.Parent = $TabController
 
     $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
-        $FunctionsBox = [GUI.TB]::New(0, 0, 0, 0, '')
+        $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
         $FunctionsBox.Multiline = $True
         $FunctionsBox.WordWrap = $False
         $FunctionsBox.Scrollbars = 'Vertical'
@@ -939,7 +996,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     $TabPageFunctions.Parent = $TabController
 
     $TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
-        $StatementsBox = [GUI.TB]::New(0, 0, 0, 0, '')
+        $StatementsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
         $StatementsBox.Multiline = $True
         $StatementsBox.WordWrap = $False
         $StatementsBox.Scrollbars = 'Vertical'
