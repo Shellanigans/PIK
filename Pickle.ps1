@@ -1008,6 +1008,38 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         $FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue) -join [N]::L
         $FunctionsBox.Dock = 'Fill'
         $FunctionsBox.Parent = $TabPageFunctions
+        $FunctionsBox.Add_KeyDown({
+            If($_.KeyCode.ToString() -eq 'F1')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '<\\#'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F2')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#>'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F3')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $PH = [Cons.Curs]::GPos()
+
+                $XCoord.Value = $PH.X
+                $YCoord.Value = $PH.Y
+
+                $This.SelectionLength = 0
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '{WAIT M 100}'
+            }
+        })
     $TabPageFunctions.Parent = $TabController
 
     $TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
@@ -1020,6 +1052,38 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         $StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue) -join [N]::L
         $StatementsBox.Dock = 'Fill'
         $StatementsBox.Parent = $TabPageStatements
+        $StatementsBox.Add_KeyDown({
+            If($_.KeyCode.ToString() -eq 'F1')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '<\\#'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F2')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#>'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F3')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $PH = [Cons.Curs]::GPos()
+
+                $XCoord.Value = $PH.X
+                $YCoord.Value = $PH.Y
+
+                $This.SelectionLength = 0
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '{WAIT M 100}'
+            }
+        })
     $TabPageStatements.Parent = $TabController
 
     $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
