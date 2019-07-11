@@ -965,6 +965,21 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $This.SelectionLength = 0
                         $This.SelectedText = '\\#'
                     }
+                    ElseIf($_.KeyCode.ToString() -eq 'F5')
+                    {
+                        $PH = [Cons.Curs]::GPos()
+
+                        $XCoord.Value = $PH.X
+                        $YCoord.Value = $PH.Y
+
+                        $This.SelectionLength = 0
+                        $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+                    }
+                    ElseIf($_.KeyCode.ToString() -eq 'F5')
+                    {
+                        $This.SelectionLength = 0
+                        $This.SelectedText = '{WAIT M 100}'
+                    }
                 })
             $TabPageComm.Parent = $TabContCommLists
             
@@ -1015,10 +1030,13 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $GetMouseCoords.Add_Click({
                     $InitialText = $This.Text
                     $This.Text = '3s'
+                    $Form.Refresh()
                     [System.Threading.Thread]::Sleep(1000)
                     $This.Text = '2s'
+                    $Form.Refresh()
                     [System.Threading.Thread]::Sleep(1000)
                     $This.Text = '1s'
+                    $Form.Refresh()
                     [System.Threading.Thread]::Sleep(1000)
                     $This.Text = $InitialText
 
