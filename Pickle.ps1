@@ -3,6 +3,7 @@ Remove-Variable * -EA SilentlyContinue
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -196,26 +197,20 @@ public class N{
 }
 
 public class Parser{
-    public static string ActiveKeys(string X)
-    {
+    public static string HoldKeys(string X){
         X = X.ToUpper();
 
-        if(Regex.IsMatch(X, "NUM") && X.Length == 4)
-        {
+        if(Regex.IsMatch(X, "NUM") && X.Length == 4){
             return ("&H6"+X.Replace("NUM",""));
         }
-        else if(X.Length == 1)
-        {
+        else if(X.Length == 1){
             return ("&H"+Convert.ToString(Convert.ToInt32(Convert.ToChar(X)), 16)).ToUpper();
         }
-        else if(Regex.IsMatch(X, "^F[0-9][0-6]?"))
-        {
+        else if(Regex.IsMatch(X, "^F[0-9][0-6]?")){
             return ("&H7"+Convert.ToString((Convert.ToInt32(X.Replace("F","")) - 1), 16)).ToUpper();
         }
-        else
-        {
-            switch(X)
-            {
+        else{
+            switch(X){
                 case "CLEAR":
 	                return "&HC";
                 case "ENTER":
@@ -289,6 +284,67 @@ public class Parser{
             }
         }
     }
+
+    public static string Interpret(string X){
+        if(Regex.IsMatch(X.ToUpper(), "{[CPSDGR]")){
+            if(Regex.IsMatch(X, "{[CPS]")){
+                X = (X.Replace("{COPY}","(^c)"));
+                X = (X.Replace("{PASTE}","(^v)"));
+                X = (X.Replace("{SELECTALL}","(^a)"));
+            }
+            else if(Regex.IsMatch(X, "{[DSR]A")){
+                X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
+                while(Regex.IsMatch(X, "{SPACE")){
+                    foreach(string SubString in X.Split("{}".ToCharArray())){
+                        if(Regex.IsMatch(SubString, "SPACE")){
+                            X = X.Replace(("{"+SubString+"}"),(new string (' ', Convert.ToInt32(Regex.Replace(SubString, "^SPACE$", " 1").Split(' ')[1]))));
+                            System.Console.WriteLine(X);
+                        }
+                    }
+                }
+                while(Regex.IsMatch(X, "{RAND ")){
+                    foreach(string SubString in X.Split("{}".ToCharArray())){
+                        if(Regex.IsMatch(SubString, "RAND ") && Regex.IsMatch(SubString, ",")){
+                            X = X.Replace(("{"+SubString+"}"),(Convert.ToString((new Random()).Next(Convert.ToInt32(SubString.Split(' ')[1].Split(',')[0]),Convert.ToInt32(SubString.Split(' ')[1].Split(',')[1])))));
+                            System.Console.WriteLine(X);
+                        }
+                    }
+                }
+            }
+            else if(Regex.IsMatch(X, "{GET[CMP]")){
+                X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
+                X = X.Replace("{GETMOUSE}",(Cons.Curs.GPos().X.ToString()+","+Cons.Curs.GPos().Y.ToString()));
+                while(Regex.IsMatch(X, "{GETCON ")){
+                    foreach(string SubString in X.Split("{}".ToCharArray())){
+                        if(Regex.IsMatch(SubString, "GETCON ")){
+                            X = X.Replace(("{"+SubString+"}"),File.ReadAllText(SubString.Substring(7)));
+                            System.Console.WriteLine(X);
+                        }
+                    }
+                }
+
+                if(Regex.IsMatch(X, "^{GETPIX .*,.*}$"))
+                {
+                    string PH = (X.Replace("{GETPIX ",""));
+                    PH = PH.Substring(0,(PH.Length - 1));
+                    string[] PHA = PH.Split(',');
+
+                    DR.Rectangle Bounds = DR.Rectangle.FromLTRB(Convert.ToInt32(PHA[0]),Convert.ToInt32(PHA[1]),(Convert.ToInt32(PHA[0])+1),(Convert.ToInt32(PHA[1])+1));
+
+                    DR.Bitmap BMP = new DR.Bitmap(Bounds.Width, Bounds.Height);
+            
+                    DR.Graphics GR = DR.Graphics.FromImage(BMP);
+                    GR.CopyFromScreen(Bounds.Location, DR.Point.Empty, Bounds.Size);
+
+                    X = BMP.GetPixel(0,0).Name.ToUpper();
+            
+                    GR.Dispose();
+                    BMP.Dispose();
+                }
+            }
+        }
+        return X;
+    }
 }
 '@
 
@@ -296,64 +352,7 @@ Function Interpret
 {
     Param([String]$X)
 
-    $X = ($X.Replace('{COPY}','(^c)'))
-    $X = ($X.Replace('{PASTE}','(^v)'))
-    $X = ($X.Replace('{SELECTALL}','(^a)'))
-        
-    $X = ($X.Replace('{DATETIME}',([DateTime]::Now).ToString()))
-
-    $X = ($X.Replace('{GETCLIP}',([Cons.Clip]::GetT())))
-
-    $X = ($X.Replace('{GETMOUSE}',$($PH = [Cons.Curs]::GPos(); [String]$PH.X+','+[String]$PH.Y)))
-    
-    If($X -match '^{POWER .*}$')
-    {
-        $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
-    }
-
-    While($X -match '{SPACE')
-    {
-        $X.Split('{}') | ?{$_ -match 'SPACE'} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(' ' * [Int](($_ -replace '^SPACE$',' 1').Split(' '))[1])))
-            [System.Console]::WriteLine($X)
-        }
-    }
-
-    While($X -match '{RAND ')
-    {
-        $X.Split('{}') | ?{$_ -match 'RAND ' -AND $_ -match ','} | %{
-                $X = $X -replace ('{'+$_+'}'),(([Random]::New()).Next(($_.Split(' ')[1].Split(',')[0]),($_.Split(' ')[1].Split(',')[1])))
-        }
-            
-        [System.Console]::WriteLine($X)
-    }
-
-    While($X -match '{GETCON ')
-    {
-        $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(Get-Content $_.Substring(7))))
-            [System.Console]::WriteLine($X)
-        }
-    }
-
-    If($X -match '^{GETPIX .*,.*}$')
-    {
-        $PH = ($X -replace '{GETPIX ')
-        $PH = $PH.Substring(0,($PH.Length - 1))
-        $PH = $PH.Split(',')
-
-        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],($PH[0]+1),($PH[1]+1))
-
-        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-
-        $X = $BMP.GetPixel(0,0).Name.ToUpper()
-            
-        $Graphics.Dispose()
-        $BMP.Dispose()
-    }
+    $X = [Parser]::Interpret($X)
     
     While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
@@ -370,9 +369,8 @@ Function Interpret
 
             $Operator = $PH.Split(' ')[0]
             $Operands = [String[]]($PH.Substring(4).Split(','))
-            #$Operands[-1] = $Operands[-1].Substring(0, ($Operands[-1].Length))
 
-            $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)',''))}; $Index++}
+            $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))}; $Index++}
             
             $Output = ''
 
@@ -532,7 +530,7 @@ Function Interpret
     Return $X
 }
 
-Function Interact
+Function Actions
 {
     Param([String]$X)
 
@@ -541,6 +539,11 @@ Function Interact
         [System.Console]::WriteLine($X)
 
         $X = (Interpret $X)
+
+        If($X -match '^{POWER .*}$')
+        {
+            $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
+        }
 
         If($X -match '^{SETCON')
         {
@@ -571,16 +574,13 @@ Function Interact
         ElseIf($X -match '{WAIT')
         {
             $X -replace '{WAIT' -replace '}' | %{
-                If($_ -ne '{WAIT')
+                If($_ -match 'M')
                 {
-                    If($_ -match 'M')
-                    {
-                        $PH = [Int]($_ -replace 'M ')
-                    }
-                    Else
-                    {
-                        $PH = [Int]($_)*1000
-                    }
+                    $PH = [Int]($_ -replace ' M ')
+                }
+                ElseIf($_ -match ' ')
+                {
+                    $PH = [Int]($_ -replace ' ')*1000
                 }
                 Else
                 {
@@ -604,7 +604,7 @@ Function Interact
             }
             Else
             {
-                $Temp = ([Parser]::ActiveKeys(($X.Split()[-1] -replace '}')))
+                $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
                 $UndoHash.KeyList+=([String]$Temp)
                 [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
             }
@@ -679,21 +679,21 @@ Function Interact
 
             Switch($IfElHash.($IfElName+'CMP'))
             {
-                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'LE'       {If($Op1 -le $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
-                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}}
+                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'LE'       {If($Op1 -le $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
             }
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
-            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Interact $_}}
+            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
         }
         Else
         {
@@ -866,7 +866,7 @@ Function GO
                 
                 If($_ -notmatch '^\\\\#' -AND !$Commented)
                 {
-                    Interact $_
+                    Actions $_
                 }
             }
         }
