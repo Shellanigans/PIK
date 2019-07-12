@@ -323,7 +323,7 @@ public class Parser{
                     }
                 }
 
-                if(Regex.IsMatch(X, "^{GETPIX .*,.*}$"))
+                if(Regex.IsMatch(X, "^{GETPIX [0-9]*,[0-9]*}$"))
                 {
                     string PH = (X.Replace("{GETPIX ",""));
                     PH = PH.Substring(0,(PH.Length - 1));
