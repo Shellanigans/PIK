@@ -426,7 +426,7 @@ Function Interpret
                 }
                 'CNT'
                 {
-                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('[0-9]*_'+$Operands[0]+'$')}).Count
+                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^[0-9]*_'+$Operands[0]+'$')}).Count
                 }
                 'APP'
                 {
