@@ -522,6 +522,7 @@ Function Interpret
             $PHName = $PH.Split('=')[0]
             $PHValue = $PH.Replace(($PHName+'='),'')
 
+            $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,$PHValue)
             
             $X = $X.Replace(('{'+$_+'}'),'')
