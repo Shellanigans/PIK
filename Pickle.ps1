@@ -1122,7 +1122,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
                 $MouseCoordLabel.Parent = $TabPageDebug
 
-                $MouseCoordsBox = [GUI.TB]::New(120, 25, 130, 25, '')
+                $MouseCoordsBox = [GUI.TB]::New(140, 25, 130, 25, '')
                 $MouseCoordsBox.ReadOnly = $True
                 $MouseCoordsBox.Multiline = $True
                 $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
@@ -1190,7 +1190,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $PixColorLabel = [GUI.L]::New(100, 10, 130, 60, 'HexVal (ARGB):')
                 $PixColorLabel.Parent = $TabPageDebug
 
-                $PixColorBox = [GUI.TB]::New(120, 25, 130, 75, '')
+                $PixColorBox = [GUI.TB]::New(140, 25, 130, 75, '')
                 $PixColorBox.ReadOnly = $True
                 $PixColorBox.Multiline = $True
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
