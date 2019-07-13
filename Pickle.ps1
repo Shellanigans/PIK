@@ -754,8 +754,8 @@ Function GO
     $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
     $SyncHash.Stop = $False
 
-    $Commands.ReadOnly     = $True
-    $FunctionsBox.ReadOnly = $True
+    $Commands.ReadOnly      = $True
+    $FunctionsBox.ReadOnly  = $True
     $StatementsBox.ReadOnly = $True
 
     $Form.Refresh()
@@ -936,7 +936,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $Commands.Dock = 'Fill'
                 $Commands.Multiline = $True
                 $Commands.WordWrap = $False
-                $Commands.ScrollBars = 'Vertical'
+                $Commands.ScrollBars = 'Both'
                 $Commands.AcceptsTab = $True
                 $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
                 $Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction SilentlyContinue) -join [N]::L
@@ -994,7 +994,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
         $FunctionsBox.Multiline = $True
         $FunctionsBox.WordWrap = $False
-        $FunctionsBox.Scrollbars = 'Vertical'
+        $FunctionsBox.Scrollbars = 'Both'
         $FunctionsBox.AcceptsTab = $True
         $FunctionsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force})
         $FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue) -join [N]::L
@@ -1038,7 +1038,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         $StatementsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
         $StatementsBox.Multiline = $True
         $StatementsBox.WordWrap = $False
-        $StatementsBox.Scrollbars = 'Vertical'
+        $StatementsBox.Scrollbars = 'Both'
         $StatementsBox.AcceptsTab = $True
         $StatementsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force})
         $StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue) -join [N]::L
@@ -1311,10 +1311,53 @@ $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.2
 
 If($Host.Name -match 'Console'){Cls}
 
+Try
+{
+    $Config = (Get-Content ($env:APPDATA+'\Macro\Config.json') -ErrorAction Stop | ConvertFrom-Json)
+
+    $DelayTimer.Value        = $Config.DelayTimeVal
+    $DelayCheck.Checked      = $Config.DelayChecked
+    $DelayRandTimer.Value    = $Config.DelayRandVal
+
+    $CommandDelayTimer.Value = $Config.CommTimeVal
+    $CommDelayCheck.Checked  = $Config.CommChecked
+    $CommRandTimer.Value     = $Config.CommRandVal
+
+    $ShowCons.Checked        = $Config.ShowConsCheck
+    
+    $ShowCons.Checked = !$ShowCons.Checked
+    $ShowCons.Checked = !$ShowCons.Checked
+    
+}
+Catch
+{
+    [System.Console]::WriteLine('No config file found or file could not be loaded!')
+}
+Finally
+{
+    If($Config -eq $Null)
+    {
+        $Config = New-Object PSObject
+        $Config = ($Config | Select @{NAME='DelayTimeVal';EXPRESSION={0}},@{NAME='DelayChecked';EXPRESSION={$False}},@{NAME='DelayRandVal';EXPRESSION={0}},@{NAME='CommTimeVal';EXPRESSION={0}},@{NAME='CommChecked';EXPRESSION={$False}},@{NAME='CommRandVal';EXPRESSION={0}},@{NAME='ShowConsCheck';EXPRESSION={$False}})
+    }
+}
+
 $Form.ShowDialog()
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 
 $SyncHash.Kill = $True
+
+$Config.DelayTimeVal  = $DelayTimer.Value
+$Config.DelayChecked  = $DelayCheck.Checked
+$Config.DelayRandVal  = $DelayRandTimer.Value
+
+$Config.CommTimeVal   = $CommandDelayTimer.Value
+$Config.CommChecked   = $CommDelayCheck.Checked
+$Config.CommRandVal   = $CommRandTimer.Value
+
+$Config.ShowConsCheck = $ShowCons.Checked
+
+$Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\Config.json') -Width 1000 -Force
 
 If($Host.Name -match 'Console'){Exit}
 }
