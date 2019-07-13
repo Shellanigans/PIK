@@ -884,7 +884,7 @@ Function GO
 
 If($Host.Name -match 'Console')
 {
-    [Console]::Title = 'KeyMouseMacro'
+    [Console]::Title = 'Pickle'
 
     [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
     [Void][Cons.WindowDisp]::Visual()
