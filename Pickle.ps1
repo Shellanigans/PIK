@@ -144,6 +144,13 @@ namespace GUI{
             this.Text = tx;
         }
     }
+    
+    public class CB : SWF.ComboBox{
+        public CB (int sx, int sy, int lx, int ly){
+            this.Size = new DR.Size(sx,sy);
+            this.Location = new DR.Point(lx,ly);
+        }
+    }
 
     public class P : SWF.Panel{
         public P (int sx, int sy, int lx, int ly){
@@ -545,6 +552,11 @@ Function Actions
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
         }
 
+        If($X -match '^{TESSERACT .*}$')
+        {
+            $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
+        }
+
         If($X -match '^{SETCON')
         {
             $PH = ($X.Substring(8)).Split(',')
@@ -905,7 +917,8 @@ If($Host.Name -match 'Console')
     [Void][Cons.WindowDisp]::Visual()
 }
 
-If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
+If(!(Test-Path ($env:APPDATA+'\Macro'))){[Void](MKDIR ($env:APPDATA+'\Macro') -Force)}
+If(!(Test-Path ($env:APPDATA+'\Macro\Profiles'))){(MKDIR ($env:APPDATA+'\Macro\Profiles') -Force)}
 
 $Vars = [String[]]@()
 
@@ -1008,6 +1021,84 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 })
                 $GetLists.Parent = $TabPageLists
             $TabPageLists.Parent = $TabContCommLists
+
+            $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Load/Save')
+                $Profile = [GUI.L]::New(250, 20, 10, 10, 'Current Profile: None/Prev Text Vals')
+                $Profile.Parent = $TabPageProfiles
+
+                $SavedProfilesLabel = [GUI.L]::New(120, 20, 10, 36, 'Saved Profiles:')
+                $SavedProfilesLabel.Parent = $TabPageProfiles
+
+                $LoadProfile = [GUI.B]::New(75, 25, 186, 29, 'LOAD')
+                $LoadProfile.Add_Click({
+                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2)
+                    {
+                        $Profile.Text = ('Current Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
+
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
+
+                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt') -Raw)
+                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt') -Raw)
+                        $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt') -Raw)
+                    }
+                })
+                $LoadProfile.Parent = $TabPageProfiles
+
+                $SavedProfiles = [GUI.CB]::New(250, 25, 10, 60)
+                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                $SavedProfiles.Parent = $TabPageProfiles
+
+                $SaveNewProfLabel = [GUI.L]::New(170, 20, 10, 135, 'Save Current Profile As:')
+                $SaveNewProfLabel.Parent = $TabPageProfiles
+
+                $SaveProfile = [GUI.B]::New(75, 25, 186, 128, 'SAVE')
+                $SaveProfile.Add_Click({
+                    If($SaveAsProfText.Text)
+                    {
+                        $Profile.Text = ('Current Profile: ' + $SaveAsProfText.Text)
+
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
+
+                        MKDIR $TempDir
+
+                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+                        $SavedProfiles.Items.Clear()
+                        [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                        $SavedProfiles.SelectedItem = $SaveAsProfText.Text
+
+                        $SaveAsProfText.Text = ''
+                    }
+                })
+                $SaveProfile.Parent = $TabPageProfiles
+
+                $SaveAsProfText = [GUI.TB]::New(250, 25, 10, 160, '')
+                $SaveAsProfText.Parent = $TabPageProfiles
+
+                $DelProfLabel = [GUI.L]::New(170, 20, 10, 234, 'Delete Profile:')
+                $DelProfLabel.Parent = $TabPageProfiles
+
+                $DelProfile = [GUI.B]::New(75, 25, 186, 227, 'DELETE')
+                $DelProfile.Add_Click({
+                    If($Profile.Text -eq ('Current Profile: ' + $DelProfText.Text))
+                    {
+                        $Profile.Text = ('Current Profile: None/Prev Text Vals')
+                        $SavedProfiles.SelectedItem = $Null
+                    }
+
+                    (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -recurse -Force
+                    $SavedProfiles.Items.Clear()
+                    [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+
+                    $DelProfText.Text = ''
+                })
+                $DelProfile.Parent = $TabPageProfiles
+
+                $DelProfText = [GUI.TB]::New(250, 25, 10, 259, '')
+                $DelProfText.Parent = $TabPageProfiles
+            $TabPageProfiles.Parent = $TabContCommLists
         $TabContCommLists.Parent = $TabPageCommLists
     $TabPageCommLists.Parent = $TabController
 
