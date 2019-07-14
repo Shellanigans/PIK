@@ -695,6 +695,10 @@ Function Actions
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
         }
+        ElseIf($X -match '^{REFOCUS}$')
+        {
+            $Script:Refocus = $True
+        }
         Else
         {
             If($X -match '{.*}' -OR $X -match '\(.*\)' -OR $X -match '\[.*\]' -OR $X -match '{.*}')
@@ -746,6 +750,8 @@ Function Actions
 
 Function GO
 {
+    $Script:Refocus = $False
+
     $Script:Vars = [String[]]@()
 
     $Script:VarsHash = @{}
@@ -880,6 +886,15 @@ Function GO
     $StatementsBox.ReadOnly = $False
 
     $Form.Refresh()
+
+    If($Script:Refocus)
+    {
+        [Cons.App]::Act($Form.Text)
+        $Form.Focus()
+        $Commands.Focus()
+        $Commands.SelectionLength = 0
+        $Commands.SelectionStart = $Commands.Text.Length
+    }
 }
 
 If($Host.Name -match 'Console')
@@ -893,6 +908,8 @@ If($Host.Name -match 'Console')
 If(!(Test-Path ($env:APPDATA+'\Macro'))){MKDIR ($env:APPDATA+'\Macro') -Force}
 
 $Vars = [String[]]@()
+
+$Script:Refocus = $False
 
 $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
@@ -945,17 +962,17 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     If($_.KeyCode.ToString() -eq 'F1')
                     {
                         $This.SelectionLength = 0
-                        $This.SelectedText = '<\\#'
+                        $This.SelectedText = '<\\# '
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F2')
                     {
                         $This.SelectionLength = 0
-                        $This.SelectedText = '\\#>'
+                        $This.SelectedText = '\\#> '
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F3')
                     {
                         $This.SelectionLength = 0
-                        $This.SelectedText = '\\#'
+                        $This.SelectedText = '\\# '
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F5')
                     {
@@ -967,10 +984,14 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $This.SelectionLength = 0
                         $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
                     }
-                    ElseIf($_.KeyCode.ToString() -eq 'F5')
+                    ElseIf($_.KeyCode.ToString() -eq 'F6')
                     {
                         $This.SelectionLength = 0
                         $This.SelectedText = '{WAIT M 100}'
+                    }
+                    ElseIf($_.KeyCode.ToString() -eq 'F12')
+                    {
+                        $GO.PerformClick()
                     }
                 })
             $TabPageComm.Parent = $TabContCommLists
@@ -1004,17 +1025,17 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
             If($_.KeyCode.ToString() -eq 'F1')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '<\\#'
+                $This.SelectedText = '<\\# '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F2')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '\\#>'
+                $This.SelectedText = '\\#> '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F3')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '\\#'
+                $This.SelectedText = '\\# '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F5')
             {
@@ -1026,10 +1047,14 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $This.SelectionLength = 0
                 $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
             }
-            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            ElseIf($_.KeyCode.ToString() -eq 'F6')
             {
                 $This.SelectionLength = 0
                 $This.SelectedText = '{WAIT M 100}'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F12')
+            {
+                $GO.PerformClick()
             }
         })
     $TabPageFunctions.Parent = $TabController
@@ -1048,17 +1073,17 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
             If($_.KeyCode.ToString() -eq 'F1')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '<\\#'
+                $This.SelectedText = '<\\# '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F2')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '\\#>'
+                $This.SelectedText = '\\#> '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F3')
             {
                 $This.SelectionLength = 0
-                $This.SelectedText = '\\#'
+                $This.SelectedText = '\\# '
             }
             ElseIf($_.KeyCode.ToString() -eq 'F5')
             {
@@ -1070,10 +1095,14 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $This.SelectionLength = 0
                 $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
             }
-            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            ElseIf($_.KeyCode.ToString() -eq 'F6')
             {
                 $This.SelectionLength = 0
                 $This.SelectedText = '{WAIT M 100}'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F12')
+            {
+                $GO.PerformClick()
             }
         })
     $TabPageStatements.Parent = $TabController
