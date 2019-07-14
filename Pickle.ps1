@@ -968,7 +968,13 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $Commands.WordWrap = $False
                 $Commands.ScrollBars = 'Both'
                 $Commands.AcceptsTab = $True
-                $Commands.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force})
+                $Commands.Add_TextChanged({
+                    If($Form.Text -notmatch '\*$')
+                    {
+                        $Form.Text+='*'
+                    }
+                    $This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force
+                })
                 $Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction SilentlyContinue) -join [N]::L
                 $Commands.Parent = $TabPageComm
                 $Commands.Add_KeyDown({
@@ -1002,6 +1008,23 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $This.SelectionLength = 0
                         $This.SelectedText = '{WAIT M 100}'
                     }
+                    ElseIf($_.KeyCode.ToString() -eq 'F11')
+                    {
+                        If($Profile.Text -ne 'Current Profile: None/Prev Text Vals')
+                        {
+                            $Form.Text = ($Form.Text -replace '\*$')
+
+                            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Current Profile: '))
+
+                            MKDIR $TempDir
+
+                            $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                            $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                            $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+                            $SaveAsProfText.Text = ''
+                        }
+                    }
                     ElseIf($_.KeyCode.ToString() -eq 'F12')
                     {
                         $GO.PerformClick()
@@ -1009,6 +1032,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 })
             $TabPageComm.Parent = $TabContCommLists
             
+            <#
             $TabPageLists = [GUI.TP]::New(0, 0, 0, 0,'Listeners')
                 $ListsBox = [GUI.RTB]::New(260, 200, 10, 10, '')
                 $ListsBox.ReadOnly = $True
@@ -1021,7 +1045,155 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 })
                 $GetLists.Parent = $TabPageLists
             $TabPageLists.Parent = $TabContCommLists
+            #>
+        $TabContCommLists.Parent = $TabPageCommLists
+    $TabPageCommLists.Parent = $TabController
 
+    $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
+        $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
+        $FunctionsBox.Multiline = $True
+        $FunctionsBox.WordWrap = $False
+        $FunctionsBox.Scrollbars = 'Both'
+        $FunctionsBox.AcceptsTab = $True
+        $FunctionsBox.Add_TextChanged({
+            If($Form.Text -notmatch '\*$')
+            {
+                $Form.Text+='*'
+            }
+            $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
+        })
+        $FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue) -join [N]::L
+        $FunctionsBox.Dock = 'Fill'
+        $FunctionsBox.Parent = $TabPageFunctions
+        $FunctionsBox.Add_KeyDown({
+            If($_.KeyCode.ToString() -eq 'F1')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '<\\# '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F2')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#> '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F3')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\# '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $PH = [Cons.Curs]::GPos()
+
+                $XCoord.Value = $PH.X
+                $YCoord.Value = $PH.Y
+
+                $This.SelectionLength = 0
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F6')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '{WAIT M 100}'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F11')
+            {
+                If($Profile.Text -ne 'Current Profile: None/Prev Text Vals')
+                {
+                    $Form.Text = ($Form.Text -replace '\*$')
+
+                    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Current Profile: '))
+
+                    MKDIR $TempDir
+
+                    $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                    $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                    $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+                    $SaveAsProfText.Text = ''
+                }
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F12')
+            {
+                $GO.PerformClick()
+            }
+        })
+    $TabPageFunctions.Parent = $TabController
+
+    $TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
+        $StatementsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
+        $StatementsBox.Multiline = $True
+        $StatementsBox.WordWrap = $False
+        $StatementsBox.Scrollbars = 'Both'
+        $StatementsBox.AcceptsTab = $True
+        $StatementsBox.Add_TextChanged({
+            If($Form.Text -notmatch '\*$')
+            {
+                $Form.Text+='*'
+            }
+            $This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force
+        })
+        $StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue) -join [N]::L
+        $StatementsBox.Dock = 'Fill'
+        $StatementsBox.Parent = $TabPageStatements
+        $StatementsBox.Add_KeyDown({
+            If($_.KeyCode.ToString() -eq 'F1')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '<\\# '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F2')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\#> '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F3')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '\\# '
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F5')
+            {
+                $PH = [Cons.Curs]::GPos()
+
+                $XCoord.Value = $PH.X
+                $YCoord.Value = $PH.Y
+
+                $This.SelectionLength = 0
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F6')
+            {
+                $This.SelectionLength = 0
+                $This.SelectedText = '{WAIT M 100}'
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F11')
+            {
+                If($Profile.Text -ne 'Current Profile: None/Prev Text Vals')
+                {
+                    $Form.Text = ($Form.Text -replace '\*$')
+
+                    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Current Profile: '))
+
+                    MKDIR $TempDir
+
+                    $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                    $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                    $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+                    $SaveAsProfText.Text = ''
+                }
+            }
+            ElseIf($_.KeyCode.ToString() -eq 'F12')
+            {
+                $GO.PerformClick()
+            }
+        })
+    $TabPageStatements.Parent = $TabController
+
+    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
+        $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
+        $TabControllerAdvanced.Dock = 'Fill'
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Load/Save')
                 $Profile = [GUI.L]::New(250, 20, 10, 10, 'Current Profile: None/Prev Text Vals')
                 $Profile.Parent = $TabPageProfiles
@@ -1040,6 +1212,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Commands.Text = (Get-Content ($TempDir+'\Commands.txt') -Raw)
                         $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt') -Raw)
                         $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt') -Raw)
+
+                        $Form.Text = ($Form.Text -replace '\*$')
                     }
                 })
                 $LoadProfile.Parent = $TabPageProfiles
@@ -1048,13 +1222,33 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
                 $SavedProfiles.Parent = $TabPageProfiles
 
+                $QuickSave = [GUI.B]::New(75, 25, 10, 85, 'SAVE')
+                $QuickSave.Add_Click({
+                    If($Profile.Text -ne 'Current Profile: None/Prev Text Vals')
+                    {
+                        $Form.Text = ($Form.Text -replace '\*$')
+
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Current Profile: '))
+
+                        MKDIR $TempDir
+
+                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+                        $SaveAsProfText.Text = ''
+                    }
+                })
+                $QuickSave.Parent = $TabPageProfiles
+
                 $SaveNewProfLabel = [GUI.L]::New(170, 20, 10, 135, 'Save Current Profile As:')
                 $SaveNewProfLabel.Parent = $TabPageProfiles
 
-                $SaveProfile = [GUI.B]::New(75, 25, 186, 128, 'SAVE')
+                $SaveProfile = [GUI.B]::New(75, 25, 186, 128, 'SAVE AS')
                 $SaveProfile.Add_Click({
                     If($SaveAsProfText.Text)
                     {
+                        $Form.Text = ($Form.Text -replace '\*$')
                         $Profile.Text = ('Current Profile: ' + $SaveAsProfText.Text)
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
@@ -1098,109 +1292,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $DelProfText = [GUI.TB]::New(250, 25, 10, 259, '')
                 $DelProfText.Parent = $TabPageProfiles
-            $TabPageProfiles.Parent = $TabContCommLists
-        $TabContCommLists.Parent = $TabPageCommLists
-    $TabPageCommLists.Parent = $TabController
+            $TabPageProfiles.Parent = $TabControllerAdvanced
 
-    $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
-        $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
-        $FunctionsBox.Multiline = $True
-        $FunctionsBox.WordWrap = $False
-        $FunctionsBox.Scrollbars = 'Both'
-        $FunctionsBox.AcceptsTab = $True
-        $FunctionsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force})
-        $FunctionsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue) -join [N]::L
-        $FunctionsBox.Dock = 'Fill'
-        $FunctionsBox.Parent = $TabPageFunctions
-        $FunctionsBox.Add_KeyDown({
-            If($_.KeyCode.ToString() -eq 'F1')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '<\\# '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F2')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '\\#> '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F3')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '\\# '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F5')
-            {
-                $PH = [Cons.Curs]::GPos()
-
-                $XCoord.Value = $PH.X
-                $YCoord.Value = $PH.Y
-
-                $This.SelectionLength = 0
-                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F6')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '{WAIT M 100}'
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F12')
-            {
-                $GO.PerformClick()
-            }
-        })
-    $TabPageFunctions.Parent = $TabController
-
-    $TabPageStatements = [GUI.TP]::New(0, 0, 0, 0,'State')
-        $StatementsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
-        $StatementsBox.Multiline = $True
-        $StatementsBox.WordWrap = $False
-        $StatementsBox.Scrollbars = 'Both'
-        $StatementsBox.AcceptsTab = $True
-        $StatementsBox.Add_TextChanged({$This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force})
-        $StatementsBox.Text = (Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue) -join [N]::L
-        $StatementsBox.Dock = 'Fill'
-        $StatementsBox.Parent = $TabPageStatements
-        $StatementsBox.Add_KeyDown({
-            If($_.KeyCode.ToString() -eq 'F1')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '<\\# '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F2')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '\\#> '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F3')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '\\# '
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F5')
-            {
-                $PH = [Cons.Curs]::GPos()
-
-                $XCoord.Value = $PH.X
-                $YCoord.Value = $PH.Y
-
-                $This.SelectionLength = 0
-                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F6')
-            {
-                $This.SelectionLength = 0
-                $This.SelectedText = '{WAIT M 100}'
-            }
-            ElseIf($_.KeyCode.ToString() -eq 'F12')
-            {
-                $GO.PerformClick()
-            }
-        })
-    $TabPageStatements.Parent = $TabController
-
-    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
-        $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
-        $TabControllerAdvanced.Dock = 'Fill'
             $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0,'Debug/Helper')
                 $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
                 $GetMouseCoords.Add_Click({
