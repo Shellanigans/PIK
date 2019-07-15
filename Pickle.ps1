@@ -958,10 +958,12 @@ $Form = [GUI.F]::New(365, 495, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(365,495)
 
 $TabController = [GUI.TC]::New(300, 400, 25, 7)
-    $TabPageCommLists = [GUI.TP]::New(0, 0, 0, 0,'Comm/Lists')
+    $TabPageCommLists = [GUI.TP]::New(0, 0, 0, 0,'Commands')
+        <#
         $TabContCommLists = [GUI.TC]::New(0, 0, 0, 0)
         $TabContCommLists.Dock = 'Fill'
             $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
+                #>
                 $Commands = [GUI.RTB]::New(0, 0, 0, 0, '')
                 $Commands.Dock = 'Fill'
                 $Commands.Multiline = $True
@@ -976,7 +978,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $This.Text | Out-File ($env:APPDATA+'\Macro\PrevCmds.txt') -Width 1000 -Force
                 })
                 $Commands.Text = (Get-Content ($env:APPDATA+'\Macro\PrevCmds.txt') -ErrorAction SilentlyContinue) -join [N]::L
-                $Commands.Parent = $TabPageComm
+                #$Commands.Parent = $TabPageComm
+                $Commands.Parent = $TabPageCommLists
                 $Commands.Add_KeyDown({
                     If($_.KeyCode.ToString() -eq 'F1')
                     {
@@ -1030,7 +1033,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $GO.PerformClick()
                     }
                 })
-            $TabPageComm.Parent = $TabContCommLists
+            #$TabPageComm.Parent = $TabContCommLists
             
             <#
             $TabPageLists = [GUI.TP]::New(0, 0, 0, 0,'Listeners')
@@ -1046,7 +1049,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $GetLists.Parent = $TabPageLists
             $TabPageLists.Parent = $TabContCommLists
             #>
-        $TabContCommLists.Parent = $TabPageCommLists
+        #$TabContCommLists.Parent = $TabPageCommLists
     $TabPageCommLists.Parent = $TabController
 
     $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Funct')
@@ -1213,7 +1216,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt') -Raw)
                         $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt') -Raw)
 
-                        $Form.Text = ($Form.Text -replace '\*$')
+                        $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
                 })
                 $LoadProfile.Parent = $TabPageProfiles
@@ -1248,7 +1251,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $SaveProfile.Add_Click({
                     If($SaveAsProfText.Text)
                     {
-                        $Form.Text = ($Form.Text -replace '\*$')
+                        $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
                         $Profile.Text = ('Current Profile: ' + $SaveAsProfText.Text)
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
@@ -1280,6 +1283,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     {
                         $Profile.Text = ('Current Profile: None/Prev Text Vals')
                         $SavedProfiles.SelectedItem = $Null
+
+                        $Form.Text = ('Pickle')
                     }
 
                     (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -recurse -Force
@@ -1293,6 +1298,67 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $DelProfText = [GUI.TB]::New(250, 25, 10, 259, '')
                 $DelProfText.Parent = $TabPageProfiles
             $TabPageProfiles.Parent = $TabControllerAdvanced
+
+            $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0,'Config')
+                $DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
+                $DelayLabel.Parent = $TabPageConfig
+
+                $DelayTimer = [GUI.NUD]::New(150, 25, 10, 30)
+                $DelayTimer.Maximum = 999999999
+                $DelayTimer.Parent = $TabPageConfig
+                $DelayTimer.BringToFront()
+
+                $DelayCheck = [GUI.ChB]::New(150, 25, 170, 25, 'Randomize')
+                $DelayCheck.Parent = $TabPageConfig
+
+                $DelayRandLabel = [GUI.L]::New(200, 25, 10, 60, 'Key Random Weight (ms):')
+                $DelayRandLabel.Parent = $TabPageConfig
+
+                $DelayRandTimer = [GUI.NUD]::New(75, 25, 180, 55)
+                $DelayRandTimer.Maximum = 999999999
+                $DelayRandTimer.Parent = $TabPageConfig
+                $DelayRandTimer.BringToFront()
+
+                $CommDelayLabel = [GUI.L]::New(150, 25, 10, 90, 'Command Delay (ms):')
+                $CommDelayLabel.Parent = $TabPageConfig
+
+                $CommandDelayTimer = [GUI.NUD]::New(150, 25, 10, 110)
+                $CommandDelayTimer.Maximum = 999999999
+                $CommandDelayTimer.Parent = $TabPageConfig
+                $CommandDelayTimer.BringToFront()
+
+                $CommDelayCheck = [GUI.ChB]::New(150, 25, 170, 105, 'Randomize')
+                $CommDelayCheck.Parent = $TabPageConfig
+
+                $CommRandLabel = [GUI.L]::New(200, 25, 10, 140, 'Comm Random Weight (ms):')
+                $CommRandLabel.Parent = $TabPageConfig
+
+                $CommRandTimer = [GUI.NUD]::New(75, 25, 180, 135)
+                $CommRandTimer.Maximum = 999999999
+                $CommRandTimer.Parent = $TabPageConfig
+                $CommRandTimer.BringToFront()
+
+                $ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
+                $ShowCons.Add_CheckedChanged({
+                    If($Host.Name -match 'Console'){
+                        If($This.Checked)
+                        {
+                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
+                        }
+                        Else
+                        {
+                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+                        }
+                    }
+                })
+                $ShowCons.Parent = $TabPageConfig
+
+                $OnTop = [GUI.ChB]::New(150, 25, 10, 185, 'Always On Top')
+                $OnTop.Add_CheckedChanged({
+                    $Form.TopMost = !$Form.TopMost
+                })
+                $OnTop.Parent = $TabPageConfig
+            $TabPageConfig.Parent = $TabControllerAdvanced
 
             $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0,'Debug/Helper')
                 $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
@@ -1447,61 +1513,6 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $ClearCons.Add_Click({Cls})
                 $ClearCons.Parent = $TabPageDebug
             $TabPageDebug.Parent = $TabControllerAdvanced
-
-            $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0,'Config')
-                $DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
-                $DelayLabel.Parent = $TabPageConfig
-
-                $DelayTimer = [GUI.NUD]::New(150, 25, 10, 30)
-                $DelayTimer.Maximum = 999999999
-                $DelayTimer.Parent = $TabPageConfig
-                $DelayTimer.BringToFront()
-
-                $DelayCheck = [GUI.ChB]::New(150, 25, 170, 25, 'Randomize')
-                $DelayCheck.Parent = $TabPageConfig
-
-                $DelayRandLabel = [GUI.L]::New(200, 25, 10, 60, 'Key Random Weight (ms):')
-                $DelayRandLabel.Parent = $TabPageConfig
-
-                $DelayRandTimer = [GUI.NUD]::New(75, 25, 180, 55)
-                $DelayRandTimer.Maximum = 999999999
-                $DelayRandTimer.Parent = $TabPageConfig
-                $DelayRandTimer.BringToFront()
-
-                $CommDelayLabel = [GUI.L]::New(150, 25, 10, 90, 'Command Delay (ms):')
-                $CommDelayLabel.Parent = $TabPageConfig
-
-                $CommandDelayTimer = [GUI.NUD]::New(150, 25, 10, 110)
-                $CommandDelayTimer.Maximum = 999999999
-                $CommandDelayTimer.Parent = $TabPageConfig
-                $CommandDelayTimer.BringToFront()
-
-                $CommDelayCheck = [GUI.ChB]::New(150, 25, 170, 105, 'Randomize')
-                $CommDelayCheck.Parent = $TabPageConfig
-
-                $CommRandLabel = [GUI.L]::New(200, 25, 10, 140, 'Comm Random Weight (ms):')
-                $CommRandLabel.Parent = $TabPageConfig
-
-                $CommRandTimer = [GUI.NUD]::New(75, 25, 180, 135)
-                $CommRandTimer.Maximum = 999999999
-                $CommRandTimer.Parent = $TabPageConfig
-                $CommRandTimer.BringToFront()
-
-                $ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
-                $ShowCons.Add_CheckedChanged({
-                    If($Host.Name -match 'Console'){
-                        If($This.Checked)
-                        {
-                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
-                        }
-                        Else
-                        {
-                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
-                        }
-                    }
-                })
-                $ShowCons.Parent = $TabPageConfig
-            $TabPageConfig.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
 $TabController.Parent = $Form
@@ -1513,7 +1524,7 @@ $GO.Parent = $Form
 $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
-    $TabContCommLists.Size      = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
+    #$TabContCommLists.Size      = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
     #$ListsBox.Size              = [GUI.SP]::SI((([Int]$TabController.Width)-40),(([Int]$TabController.Height)-200))
     #$GetLists.Location          = [GUI.SP]::PO(10,(([Int]$TabController.Height)-180))
     $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
@@ -1524,35 +1535,33 @@ $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.2
 
 If($Host.Name -match 'Console'){Cls}
 
+$Config = New-Object PSObject
+$Config = ($Config | Select @{NAME='DelayTimeVal';EXPRESSION={0}},@{NAME='DelayChecked';EXPRESSION={$False}},@{NAME='DelayRandVal';EXPRESSION={0}},@{NAME='CommTimeVal';EXPRESSION={0}},@{NAME='CommChecked';EXPRESSION={$False}},@{NAME='CommRandVal';EXPRESSION={0}},@{NAME='ShowConsCheck';EXPRESSION={$False}},@{NAME='OnTopCheck';EXPRESSION={$False}})
+
 Try
 {
-    $Config = (Get-Content ($env:APPDATA+'\Macro\Config.json') -ErrorAction Stop | ConvertFrom-Json)
+    $LoadedConfig = (Get-Content ($env:APPDATA+'\Macro\Config.json') -ErrorAction Stop | ConvertFrom-Json)
 
-    $DelayTimer.Value        = $Config.DelayTimeVal
-    $DelayCheck.Checked      = $Config.DelayChecked
-    $DelayRandTimer.Value    = $Config.DelayRandVal
+    $DelayTimer.Value        = $LoadedConfig.DelayTimeVal
+    $DelayCheck.Checked      = $LoadedConfig.DelayChecked
+    $DelayRandTimer.Value    = $LoadedConfig.DelayRandVal
 
-    $CommandDelayTimer.Value = $Config.CommTimeVal
-    $CommDelayCheck.Checked  = $Config.CommChecked
-    $CommRandTimer.Value     = $Config.CommRandVal
+    $CommandDelayTimer.Value = $LoadedConfig.CommTimeVal
+    $CommDelayCheck.Checked  = $LoadedConfig.CommChecked
+    $CommRandTimer.Value     = $LoadedConfig.CommRandVal
 
-    $ShowCons.Checked        = $Config.ShowConsCheck
-    
+    $ShowCons.Checked        = $LoadedConfig.ShowConsCheck
+    $OnTop.Checked           = $LoadedConfig.OnTopCheck
+
     $ShowCons.Checked = !$ShowCons.Checked
     $ShowCons.Checked = !$ShowCons.Checked
-    
+
+    $OnTop.Checked = !$OnTop.Checked
+    $OnTop.Checked = !$OnTop.Checked
 }
 Catch
 {
     [System.Console]::WriteLine('No config file found or file could not be loaded!')
-}
-Finally
-{
-    If($Config -eq $Null)
-    {
-        $Config = New-Object PSObject
-        $Config = ($Config | Select @{NAME='DelayTimeVal';EXPRESSION={0}},@{NAME='DelayChecked';EXPRESSION={$False}},@{NAME='DelayRandVal';EXPRESSION={0}},@{NAME='CommTimeVal';EXPRESSION={0}},@{NAME='CommChecked';EXPRESSION={$False}},@{NAME='CommRandVal';EXPRESSION={0}},@{NAME='ShowConsCheck';EXPRESSION={$False}})
-    }
 }
 
 $Form.ShowDialog()
@@ -1569,6 +1578,7 @@ $Config.CommChecked   = $CommDelayCheck.Checked
 $Config.CommRandVal   = $CommRandTimer.Value
 
 $Config.ShowConsCheck = $ShowCons.Checked
+$Config.OnTopCheck    = $OnTop.Checked
 
 $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\Config.json') -Width 1000 -Force
 
