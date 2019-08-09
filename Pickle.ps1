@@ -552,7 +552,7 @@ Function Actions
 
         $X = (Interpret $X)
 
-        If($X -match '^{POWER .*}$')
+        <#If($X -match '^{POWER .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
         }
@@ -560,11 +560,25 @@ Function Actions
         If($X -match '^{TESSERACT .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
-        }
+        }#>
 
-        If($X -match '^{FOREACH ')
+        If($X -match '^{GOTO')
         {
-            $PH = ($X.SubString(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
+            $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
+            $Commands.Lines | %{$FoundLabel = $False}{
+                If($FoundLabel)
+                {
+                    Actions $_
+                }
+                ElseIf($_.Trim(' ') -eq (':::'+$X))
+                {
+                    $FoundLabel = $True
+                }
+            }
+        }
+        ElseIf($X -match '^{FOREACH ')
+        {
+            $PH = ($X.Substring(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
             $Script:VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                 $Script:VarsHash.Remove($PH[0])
                 $Script:VarsHash.Add($PH[0],$Script:VarsHash.$_)
@@ -644,11 +658,17 @@ Function Actions
             }
             ElseIf($X -match ' ')
             {
-                0..([Int](($X -replace '}').Split(' ')[-1])) | %{[Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}}
+                0..([Int](($X -replace '}').Split(' ')[-1])) | %{
+                    [Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
+                        [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                    }
+                }
             }
             Else
             {
-                [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{[Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)}
+                [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
+                    [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                }
             }
         }
         ElseIf($X -match 'WINDOWS}')
@@ -676,7 +696,7 @@ Function Actions
             }
             Else
             {
-                $Script:VarsHash.Remove(($X.SubString(0, $X.Length - 1) -replace '^{CLEARVAR '))
+                $Script:VarsHash.Remove(($X.Substring(0, $X.Length - 1) -replace '^{CLEARVAR '))
             }
         }
         ElseIf($X -match '^{KILL}$')
@@ -741,7 +761,7 @@ Function Actions
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
         }
-        Else
+        ElseIf($X -notmatch '{GOTO ')
         {
             If($X -match '{.*}' -OR $X -match '\(.*\)' -OR $X -match '\[.*\]' -OR $X -match '{.*}')
             {
@@ -808,7 +828,7 @@ Function GO
 
     $Form.Refresh()
 
-    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{_}',' '} | %{
+    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
         $StatementStart = $False
     }{
         If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
@@ -877,7 +897,7 @@ Function GO
         }
     }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)).Replace('(SPACE)',' ')} | %{
+    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
         $FunctionStart = $False
 
         $FunctionText = @()
@@ -906,13 +926,13 @@ Function GO
     {
         $SyncHash.Restart = $False
         
-        ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9))} | %{$Commented = $False}{
+        ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{$Commented = $False}{
             If(!$SyncHash.Stop)
             {
                 If($_ -match '^<\\\\#'){$Commented = $True}
                 If($_ -match '^\\\\#>'){$Commented = $False}
                 
-                If($_ -notmatch '^\\\\#' -AND !$Commented)
+                If($_ -notmatch '^\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
                 {
                     Actions $_
                 }
@@ -988,7 +1008,7 @@ $Form = [GUI.F]::New(365, 495, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(365,495)
 
 $TabController = [GUI.TC]::New(300, 400, 25, 7)
-    $TabPageCommLists = [GUI.TP]::New(0, 0, 0, 0,'Commands')
+    $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
         $Commands = [GUI.RTB]::New(0, 0, 0, 0, '')
         $Commands.Dock = 'Fill'
         $Commands.Multiline = $True
@@ -1012,7 +1032,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
             $This.SelectionLength = 0
         })
         $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
-        $Commands.Parent = $TabPageCommLists
+        $Commands.Parent = $TabPageComm
         $Commands.Add_KeyDown({
             If($_.KeyCode.ToString() -eq 'F1')
             {
@@ -1037,7 +1057,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $YCoord.Value = $PH.Y
 
                 $This.SelectionLength = 0
-                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
             }
             ElseIf($_.KeyCode.ToString() -eq 'F6')
             {
@@ -1066,7 +1086,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $GO.PerformClick()
             }
         })
-    $TabPageCommLists.Parent = $TabController
+    $TabPageComm.Parent = $TabController
 
     $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Functions')
         $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
@@ -1109,6 +1129,10 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $This.SelectionLength = 0
                 $This.SelectedText = '\\# '
             }
+            ElseIf($_.KeyCode.ToString() -eq 'F4')
+            {
+                $This.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+([Char][Int]9)+[N]::L+'{FUNCTION END}'+[N]::L)
+            }
             ElseIf($_.KeyCode.ToString() -eq 'F5')
             {
                 $PH = [Cons.Curs]::GPos()
@@ -1117,7 +1141,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $YCoord.Value = $PH.Y
 
                 $This.SelectionLength = 0
-                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
             }
             ElseIf($_.KeyCode.ToString() -eq 'F6')
             {
@@ -1189,6 +1213,10 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $This.SelectionLength = 0
                 $This.SelectedText = '\\# '
             }
+            ElseIf($_.KeyCode.ToString() -eq 'F4')
+            {
+                $This.Text+=([N]::L+'{STATEMENT NAME rename_me}'+[N]::L+([Char][Int]9)+'{OP1 ___}'+[N]::L+([Char][Int]9)+'{CMP ___}'+[N]::L+([Char][Int]9)+'{OP2 ___}'+[N]::L+([Char][Int]9)+([Char][Int]9)+[N]::L+([Char][Int]9)+([Char][Int]9)+'{ELSE}'+[N]::L+([Char][Int]9)+([Char][Int]9)+[N]::L+'{STATEMENT END}'+[N]::L)
+            }
             ElseIf($_.KeyCode.ToString() -eq 'F5')
             {
                 $PH = [Cons.Curs]::GPos()
@@ -1197,7 +1225,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $YCoord.Value = $PH.Y
 
                 $This.SelectionLength = 0
-                $This.SelectedText = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+                $This.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
             }
             ElseIf($_.KeyCode.ToString() -eq 'F6')
             {
@@ -1231,6 +1259,130 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Advanced')
         $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
         $TabControllerAdvanced.Dock = 'Fill'
+            $TabPageHelper = [GUI.TP]::new(0, 0, 0, 0, 'Helper')
+                $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
+                $GetMouseCoords.Add_Click({
+                    $InitialText = $This.Text
+                    $This.Text = '3s'
+                    $Form.Refresh()
+                    [System.Threading.Thread]::Sleep(1000)
+                    $This.Text = '2s'
+                    $Form.Refresh()
+                    [System.Threading.Thread]::Sleep(1000)
+                    $This.Text = '1s'
+                    $Form.Refresh()
+                    [System.Threading.Thread]::Sleep(1000)
+                    $This.Text = $InitialText
+
+                    $PH = [Cons.Curs]::GPos()
+
+                    $XCoord.Value = $PH.X
+                    $YCoord.Value = $PH.Y
+
+                    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+                    $MouseCoordsBox.Text = $Position
+
+                    $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+                    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+                    $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+
+                    $Graphics.Dispose()
+                    $BMP.Dispose()
+                })
+                $GetMouseCoords.Parent = $TabPageHelper
+
+                $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
+                $MouseCoordLabel.Parent = $TabPageHelper
+
+                $MouseCoordsBox = [GUI.TB]::New(140, 25, 130, 25, '')
+                $MouseCoordsBox.ReadOnly = $True
+                $MouseCoordsBox.Multiline = $True
+                $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+                $MouseCoordsBox.Parent = $TabPageHelper
+
+                $MouseManualLabel = [GUI.L]::New(100, 10, 10, 60, 'Manual Mouse:')
+                $MouseManualLabel.Parent = $TabPageHelper
+
+                $XCoord = [GUI.NUD]::New(50, 25, 10, 75)
+                $XCoord.Maximum = 99999
+                $XCoord.Minimum = -99999
+                $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value)})
+                $XCoord.Add_KeyUp({
+                    If($_.KeyCode -eq 'Return')
+                    {
+                        [Cons.Curs]::SPos($This.Value,$YCoord.Value)
+
+                        $PH = [Cons.Curs]::GPos()
+
+                        $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+                        $MouseCoordsBox.Text = $Position
+
+                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+
+                        $Graphics.Dispose()
+                        $BMP.Dispose()
+                    }
+                })
+                $XCoord.Parent = $TabPageHelper
+                
+                $YCoord = [GUI.NUD]::New(50, 25, 70, 75)
+                $YCoord.Maximum = 99999
+                $YCoord.Minimum = -99999
+                $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value)})
+                $YCoord.Add_KeyUp({
+                    If($_.KeyCode -eq 'Return')
+                    {
+                        [Cons.Curs]::SPos($XCoord.Value,$This.Value)
+
+                        $PH = [Cons.Curs]::GPos()
+
+                        $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+                        $MouseCoordsBox.Text = $Position
+
+                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+
+                        $Graphics.Dispose()
+                        $BMP.Dispose()
+                    }
+                })
+                $YCoord.Parent = $TabPageHelper
+
+                $PixColorLabel = [GUI.L]::New(100, 10, 130, 60, 'HexVal (ARGB):')
+                $PixColorLabel.Parent = $TabPageHelper
+
+                $PixColorBox = [GUI.TB]::New(140, 25, 130, 75, '')
+                $PixColorBox.ReadOnly = $True
+                $PixColorBox.Multiline = $True
+                $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+                $PixColorBox.Parent = $TabPageHelper
+
+                $Help = [GUI.B]::New(230, 25, 10, 265, 'About/Help')
+                $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
+                $Help.Parent = $TabPageHelper
+            $TabPageHelper.Parent = $TabControllerAdvanced
+
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Load/Save')
                 $Profile = [GUI.L]::New(250, 20, 10, 10, 'Working Profile: None/Prev Text Vals')
                 $Profile.Parent = $TabPageProfiles
@@ -1409,125 +1561,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $OnTop.Parent = $TabPageConfig
             $TabPageConfig.Parent = $TabControllerAdvanced
 
-            $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0,'Debug/Helper')
-                $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
-                $GetMouseCoords.Add_Click({
-                    $InitialText = $This.Text
-                    $This.Text = '3s'
-                    $Form.Refresh()
-                    [System.Threading.Thread]::Sleep(1000)
-                    $This.Text = '2s'
-                    $Form.Refresh()
-                    [System.Threading.Thread]::Sleep(1000)
-                    $This.Text = '1s'
-                    $Form.Refresh()
-                    [System.Threading.Thread]::Sleep(1000)
-                    $This.Text = $InitialText
-
-                    $PH = [Cons.Curs]::GPos()
-
-                    $XCoord.Value = $PH.X
-                    $YCoord.Value = $PH.Y
-
-                    $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                    $MouseCoordsBox.Text = $Position
-
-                    $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                    $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
-
-                    $Graphics.Dispose()
-                    $BMP.Dispose()
-                })
-                $GetMouseCoords.Parent = $TabPageDebug
-
-                $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
-                $MouseCoordLabel.Parent = $TabPageDebug
-
-                $MouseCoordsBox = [GUI.TB]::New(140, 25, 130, 25, '')
-                $MouseCoordsBox.ReadOnly = $True
-                $MouseCoordsBox.Multiline = $True
-                $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
-                $MouseCoordsBox.Parent = $TabPageDebug
-
-                $MouseManualLabel = [GUI.L]::New(100, 10, 10, 60, 'Manual Mouse:')
-                $MouseManualLabel.Parent = $TabPageDebug
-
-                $XCoord = [GUI.NUD]::New(50, 25, 10, 75)
-                $XCoord.Maximum = 99999
-                $XCoord.Minimum = -99999
-                $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value)})
-                $XCoord.Add_KeyUp({
-                    If($_.KeyCode -eq 'Return')
-                    {
-                        [Cons.Curs]::SPos($This.Value,$YCoord.Value)
-
-                        $PH = [Cons.Curs]::GPos()
-
-                        $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                        $MouseCoordsBox.Text = $Position
-
-                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
-
-                        $Graphics.Dispose()
-                        $BMP.Dispose()
-                    }
-                })
-                $XCoord.Parent = $TabPageDebug
-                
-                $YCoord = [GUI.NUD]::New(50, 25, 70, 75)
-                $YCoord.Maximum = 99999
-                $YCoord.Minimum = -99999
-                $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value)})
-                $YCoord.Add_KeyUp({
-                    If($_.KeyCode -eq 'Return')
-                    {
-                        [Cons.Curs]::SPos($XCoord.Value,$This.Value)
-
-                        $PH = [Cons.Curs]::GPos()
-
-                        $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                        $MouseCoordsBox.Text = $Position
-
-                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
-
-                        $Graphics.Dispose()
-                        $BMP.Dispose()
-                    }
-                })
-                $YCoord.Parent = $TabPageDebug
-
-                $PixColorLabel = [GUI.L]::New(100, 10, 130, 60, 'HexVal (ARGB):')
-                $PixColorLabel.Parent = $TabPageDebug
-
-                $PixColorBox = [GUI.TB]::New(140, 25, 130, 75, '')
-                $PixColorBox.ReadOnly = $True
-                $PixColorBox.Multiline = $True
-                $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
-                $PixColorBox.Parent = $TabPageDebug
-
+            $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0, 'Debug')
                 $GetFuncts = [GUI.B]::New(110, 25, 10, 125, 'Get Functs')
                 $GetFuncts.Add_Click({
                     $Script:FuncHash.Keys | Sort | %{
@@ -1573,10 +1607,6 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $OpenFolder = [GUI.B]::New(230, 25, 10, 230, 'Open Data Folder')
                 $OpenFolder.Add_Click({Explorer ($env:APPDATA+'\Macro')})
                 $OpenFolder.Parent = $TabPageDebug
-
-                $Help = [GUI.B]::New(230, 25, 10, 265, 'About/Help')
-                $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
-                $Help.Parent = $TabPageDebug
             $TabPageDebug.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
