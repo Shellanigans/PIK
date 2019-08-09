@@ -231,20 +231,26 @@ You can also FIND variables. The command is {FINDVAR some_regex}. This will retu
 
 There are too many commands to mention in paragraph form and some commands are simply for your convenience. Below is a table of the actions you may perform that may help you:
 
-|Command                   |Action                                                                                      |
-|:-------------------------|:-------------------------------------------------------------------------------------------|
-|{CLEARVARS}               |Deletes all variables in memory while running.                                              |
-|{FINDVAR regex}           |Returns comma separated string of all vars matching the regex.                              |
-|{SETCON(A) data,file_path}|Sets content of file_path to data. The "A" is optional and specifies appending.             |
-|{GETCON file_path}        |The line is converted to the contents of a file. Useful for variable storage and retrieval. |
-|{GETPIX x,y}              |Returns pixel color on screen in hex ARGB from coords x,y. Useful for verifying screen data.|
-|{GETCLIP}                 |Returns the data on the clipboard.                                                          |
-|{SETCLIP data}            |Sets the clipboard to the data specified.                                                   |
-|{RAND x,y}                |Returns a random number from the x to (y - 1)                                               |
-|{DATETIME}                |Returns the time and date. Useful for logging or time stamping.                             |
-|{COPY}                    |An alias for ^C (Ctrl+C).                                                                   |
-|{PASTE}                   |An alias for ^V (Ctrl+V).                                                                   |
-|{SELECTALL}               |An alias for ^A (Ctrl+A).                                                                   |
+|Command                         |Action                                                                                      |
+|:-------------------------------|:-------------------------------------------------------------------------------------------|
+|{CLEARVARS}*                    |Deletes all variables in memory while running.                                              |
+|{FINDVAR regex}                 |Returns comma separated string of all vars matching the regex.                              |
+|{SETCON(A) data,path}*          |Sets content of "path" to "data". The "A" is optional and specifies appending.              |
+|{GETCON file_path}              |The line is converted to the contents of a file. Useful for long term variable storage.     |
+|{GETPIX x,y}                    |Returns pixel color on screen in hex ARGB from the coords x,y.                              |
+|{GETCLIP}                       |Returns the data on the clipboard.                                                          |
+|{SETCLIP data}*                 |Sets the clipboard to the data specified.                                                   |
+|{RAND x,y}                      |Returns a random number from the x to (y - 1)                                               |
+|{DATETIME}*                     |Returns the time and date. Useful for logging or time stamping.                             |
+|{COPY}*                         |An alias for ^C (Ctrl+C).                                                                   |
+|{PASTE}*                        |An alias for ^V (Ctrl+V).                                                                   |
+|{SELECTALL}*                    |An alias for ^A (Ctrl+A).                                                                   |
+|{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom right pixel brx,bry at path        |
+|{RESTART}*                      |Essentially a GOTO top. Useful for restarting automatically.                                |
+|{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
+|{REFOCUS}*                      |Tells the program to focus on itself after. This is a flag and can be set anywhere.         |
+
+\*This command needs to be on its own line.
 
 ## Manipulation and Variables
 
