@@ -6,7 +6,7 @@ The purpose of this program is to simulate keystrokes and mouse input to the Win
 
 Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the commands textbox. To represent more than one character, append each additional character. To represent the letters A, B, and C, specify the parameter as "ABC". In the "commands", "functions", and the "statement" textboxes any spaces or tabs at the beginning of each line will be ignored. In order to actually specify a line that starts with either you must use {TAB} or {SPACE} 
 
-The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([]) have no special meaning to SendKeys, but you must enclose them in braces. 
+The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([]) have no special meaning, but they still require braces. 
 
 The following are other special keys you can specify:
 
@@ -50,7 +50,7 @@ To specify that any combination of SHIFT, CTRL, and ALT should be held down whil
 
 To specify repeating keys, use the form {key number}. You must put a space between key and number. For example, {LEFT 42} means press the LEFT ARROW key 42 times; {h 10} means press H 10 times.
 
-### Special Keywords
+### Special Keywords and Mouse Info
 
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
@@ -60,7 +60,7 @@ You can specify mouse locations for the cursor by putting {MOUSE 10,10} (The num
 
 If you need to figure out the X and Y coordinates of your cursor at a specific position, you can click "Get Mouse Inf" button on the advanced tab under "Debug/Helper" and you will be given 3 seconds to place your cursor where you would like it and when the timer runs out, the "Mouse Coords" box will populate. You may double click the textbox to have the command copied to your clipboard. The "HexVal (ARGB)" box tells you the specific hex color (Alpha Red Green Blue) of the pixel beneath the "action point" of the cursor.
 
-The manual mouse coords allow you to fine tune mouse placement. Simply click in either box and use the up/down arrow keys to fine tune the cursor's position. Use Tab and Shift+Tab to switch between the boxes without using the mouse. Pressing enter in either box will perform the same action as the "Get Mouse Inf" button without the delay.
+The manual mouse coords allow you to fine tune mouse placement. Simply click in either box and use the up/down arrow keys to fine tune the cursor's position. Use Tab and Shift+Tab to switch between the boxes without using the mouse. Pressing enter in either box will perform the same action as the "Get Mouse Inf" button without the delay, but it will force the mouse to the coords specified if it is not there already.
 
 You may also HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
@@ -176,7 +176,7 @@ Anything below these lines will be interpreted as the actions to take when the c
 {STATEMENT END}
 ```
 
-(Remember: You CAN use leading tabs and spaces in both the commands textbox and the functions textbox)
+(Remember: You CAN use leading tabs and spaces in in all the main textboxes)
 
 In this example you could call in the commands box:
 
@@ -200,6 +200,62 @@ Below are the comparators you may use:
 |NOT MATCH                | NOTMATCH|
 |NOT EQUAL                |       NE|
 |NOT LIKE                 |  NOTLIKE|
+
+## GUI Explanations
+
+There are four main tabs. The Commands, the Functions, the Statements, and the Advanced tabs.
+
+The first three are pretty self-explanatory. The fourth tab, Advanced, has some niceties.
+
+### Load/Save
+
+The first sub-panel, Load/Save, allows you to save current whatever you have in the main three tabs as a profile. This way you can switch between several macros at ease. To create a new one. Simply type a name into the "Save Current Profile As" box and click "SAVE AS". You can see which profiles have been saved via the drop down menu underneath "Saved Profiles". You are also able to save over any profiles of the same name.
+
+Whatever you save the profile as will become the currently loaded profile and will display in the title bar and just after "Working Profile". If you have a profile loaded and you make some changes, you will see an asterisk on the title bar after the loaded profile's name. This is to let you know you haven't saved. To save to an already loaded profile simply click "SAVE" or press F11 with the cursor in any of the main three textboxes.
+
+You may delete a profile by typing out the name as it appears in the drop down menu and clicking "DELETE".
+
+The "BLANK" button, unloads any profiles already loaded, WITHOUT SAVING, and blanks out the main text boxes.
+
+### Settings
+
+There are four major settings in the settings tab. The "Keystroke" and "Command" delays and the "Show Console" and "Always On Top" settings.
+
+The delays are simple. The keystroke delay is the number of milliseconds you would like to get between the actual key presses. The command delay is the amount of time in milliseconds that you want the program to wait between each line. Remember that functions are more like aliases in this regard so a function will have delays between its own lines as well.
+
+Please note that delays are less accurate the smaller they are.
+
+The random checkboxes near the delays are if you would like to add some "noise" to the delays. This can help with bot detection, though detection is still very possible. The weight category beneath is how many milliseconds to use for the noise. (e.g. A delay of 40 milliseconds with the random box checked and a weight of 5 will have a delay ranging from 35 to 45 milliseconds per delay)
+
+"Show Console" is for debugging pruposes. It makes the main console window visible. This will allow you to see what the program is interpretting each line as. This is very useful for debugging as well. (See Debug/Helper below)
+
+The "Always On Top" checkbox is to allow the program to always sit on top of everything on screen regardless of what has focus.
+
+Please note that any other programs that are also always on top need to be open first if you want this program on top. Windows gives the last window to open priority when determining the order of multiple windows with this flag set.
+
+### Debug/Helper
+
+The debug/Helper tab is to help you troubleshoot and fine tune your macros.
+
+The mouse info stuff is covered above in "Special Keywords and Mouse Info".
+
+The next buttons down to and including clear console require the console to be on. (See Settings above)
+
+When a program is run the "memory" of the last run is cleared and all functions and statements are redefined and the variables are set as they are parsed in each run through. However, they still exist after each run and you are able to view what the program has with some of the buttons on this tab.
+
+"Get Functs" will display in the console what functions were defined and what their values are.
+"Get States" will display in the console what statements were defined and what their values are.
+"Get Vars" will display in the console what variables were defined and what their values are.
+
+"Clear Vars" will erase all variables in the program. Though this shouldn't be needed before each run. You can achieve the same effect by putting {CLEARVARS} at the endof your macro.
+
+"Clear Console" will clear the console host. This is essentially just "clear screen" or "cls" and is purely visual.
+
+The last buttons are for the program itself.
+
+"Open Data Folder" will open the folder where this program resides for your convenience.
+
+"About/Help" will open Notepad with this help file.
 
 ## Advanced Functionality
 
