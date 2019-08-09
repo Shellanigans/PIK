@@ -229,13 +229,13 @@ These are pretty well covered elsewhere, but in a GUI sense, they all have some 
 
 |Key |Action                                                                         |
 |:---|:------------------------------------------------------------------------------|
-|F1  |Insert <\\# (block comment start)                                              |
-|F2  |Insert \\#> (block comment end)                                                |
-|F3  |Insert \\# (line comment)                                                      |
+|F1  |Insert <\\\\# block comment start                                              |
+|F2  |Insert \\\\#> block comment end                                                |
+|F3  |Insert \\\\# line comment                                                      |
 |F5  |Insert {MOUSE X,Y} where the X and Y coords are of the mouse's current position|
 |F6  |Insert {WAIT M 100}                                                            |
-|F11 |Save (only works if a profile is currently loaded)                             |
-|F12 |Run (same as clicking the go button)                                           |
+|F11 |Save; only works if a profile is currently loaded                              |
+|F12 |Run; same as clicking the go button                                            |
 
 ### Load/Save
 
