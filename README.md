@@ -57,18 +57,22 @@ You can comment out any line by starting it with "\\#" (no quotes). You can also
 ```
 {MOUSE 1,1}
 {LMOUSE}
-\\# This line does nothing
+\\# This line does nothing. {WAIT 10}
 {WAIT 5}
 <\\#
- Everything
- between
- these
- lines
- is 
- ignored
+    {SPACE}
+    Everything
+    between
+    these
+    lines
+    is 
+    ignored.
+    {RMOUSE}
 \\#>
 TEST
 ```
+
+In this example the mouse will be moved to the point 1,1 (basically the top-right of the screen). It will then left click and wait five seconds. Finally, it will type out the word TEST. 
 
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
