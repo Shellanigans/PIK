@@ -360,6 +360,11 @@ Function Interpret
     Param([String]$X)
 
     $X = [Parser]::Interpret($X)
+
+    While($X -match '{FINDVAR ')
+    {
+        $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
+    }
     
     While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
@@ -557,7 +562,17 @@ Function Actions
             $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
         }
 
-        If($X -match '^{SETCON')
+        If($X -match '^{FOREACH ')
+        {
+            $PH = ($X.SubString(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
+            $Script:VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
+                $Script:VarsHash.Remove($PH[0])
+                $Script:VarsHash.Add($PH[0],$Script:VarsHash.$_)
+                Actions $PH[2]
+            }
+            $Script:VarsHash.Remove($PH[0])
+        }
+        ElseIf($X -match '^{SETCON')
         {
             $PH = ($X.Substring(8)).Split(',')
             $PH[0] = ($PH[0].Replace('(COMMA)',','))
@@ -649,6 +664,25 @@ Function Actions
         {
             $SyncHash.Restart = $True
         }
+        ElseIf($X -match '^{REFOCUS}$')
+        {
+            $Script:Refocus = $True
+        }
+        ElseIf($X -match '^{CLEARVAR')
+        {
+            If($X -match '^{CLEARVARS}$')
+            {
+                $Script:VarsHash = @{}
+            }
+            Else
+            {
+                $Script:VarsHash.Remove(($X.SubString(0, $X.Length - 1) -replace '^{CLEARVAR '))
+            }
+        }
+        ElseIf($X -match '^{KILL}$')
+        {
+            $SyncHash.Stop = $True
+        }
         ElseIf($X -match '^{SCRNSHT ')
         {
             $PH = ($X -replace '{SCRNSHT ')
@@ -706,14 +740,6 @@ Function Actions
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
-        }
-        ElseIf($X -match '^{REFOCUS}$')
-        {
-            $Script:Refocus = $True
-        }
-        ElseIf($X -match '^{CLEARVARS}$')
-        {
-            $Script:VarsHash = @{}
         }
         Else
         {
@@ -1202,7 +1228,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
         })
     $TabPageStatements.Parent = $TabController
 
-    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
+    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Advanced')
         $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
         $TabControllerAdvanced.Dock = 'Fill'
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Load/Save')
@@ -1440,6 +1466,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $XCoord.Add_KeyUp({
                     If($_.KeyCode -eq 'Return')
                     {
+                        [Cons.Curs]::SPos($This.Value,$YCoord.Value)
+
                         $PH = [Cons.Curs]::GPos()
 
                         $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
@@ -1468,6 +1496,8 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $YCoord.Add_KeyUp({
                     If($_.KeyCode -eq 'Return')
                     {
+                        [Cons.Curs]::SPos($XCoord.Value,$This.Value)
+
                         $PH = [Cons.Curs]::GPos()
 
                         $Position = ('{MOUSE '+((($PH).ToString().SubString(3) -replace 'Y=').TrimEnd('}'))+'}')
@@ -1524,7 +1554,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $GetVars = [GUI.B]::New(110, 25, 10, 160, 'Get Vars')
                 $GetVars.Add_Click({
-                    $Script:VarsHash.Keys | Sort -Unique | %{
+                    $Script:VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                         [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $Script:VarsHash.$_ + [N]::L + [N]::L)
 
                         [System.Console]::WriteLine([N]::L * 3)
@@ -1543,6 +1573,10 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $OpenFolder = [GUI.B]::New(230, 25, 10, 230, 'Open Data Folder')
                 $OpenFolder.Add_Click({Explorer ($env:APPDATA+'\Macro')})
                 $OpenFolder.Parent = $TabPageDebug
+
+                $Help = [GUI.B]::New(230, 25, 10, 265, 'About/Help')
+                $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
+                $Help.Parent = $TabPageDebug
             $TabPageDebug.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
