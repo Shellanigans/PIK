@@ -245,7 +245,7 @@ There are too many commands to mention in paragraph form and some commands are s
 |{COPY}*                         |An alias for ^C (Ctrl+C).                                                                   |
 |{PASTE}*                        |An alias for ^V (Ctrl+V).                                                                   |
 |{SELECTALL}*                    |An alias for ^A (Ctrl+A).                                                                   |
-|{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom right pixel brx,bry at path        |
+|{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom-right pixel brx,bry at path        |
 |{RESTART}*                      |Essentially a GOTO top. Useful for restarting automatically.                                |
 |{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
 |{REFOCUS}*                      |Tells the program to focus on itself after. This is a flag and can be set anywhere.         |
