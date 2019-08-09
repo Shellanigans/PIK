@@ -1,12 +1,12 @@
 # Macro
 
-The purpose of this program is to simulate keystrokes and mouse input to the windows operating system.
+The purpose of this program is to simulate keystrokes and mouse input to the Windows operating system.
 
 ## Basic Functionality 
 
-Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the method. To represent more than one character, append each additional character to the one preceding it. To represent the letters A, B, and C, specify the parameter as "ABC". In both the "commands" and the "functions" textboxes any spaces or tabs at the beginning of each line will be ignored. In order to actually specify a line that starts with either you must use {TAB} or {SPACE} 
+Each key is represented by one or more characters. To specify a single keyboard character, use the character itself. For example, to represent the letter A, pass in the string "A" to the commands textbox. To represent more than one character, append each additional character. To represent the letters A, B, and C, specify the parameter as "ABC". In the "commands", "functions", and the "statement" textboxes any spaces or tabs at the beginning of each line will be ignored. In order to actually specify a line that starts with either you must use {TAB} or {SPACE} 
 
-The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([ ]) have no special meaning to SendKeys, but you must enclose them in braces. 
+The plus sign (+), caret (^), percent sign (%), tilde (~), and parentheses () have special meanings. To specify one of these characters, enclose it within braces ({}). For example, to specify the plus sign, use "{+}". To specify brace characters, use "{{}" and "{}}". Brackets ([]) have no special meaning to SendKeys, but you must enclose them in braces. 
 
 The following are other special keys you can specify:
 
@@ -54,13 +54,15 @@ To specify repeating keys, use the form {key number}. You must put a space betwe
 
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
-You can also specify that you want to focus on the specified window by using {FOCUS APPLICATION TITLE} on its own line. (e.g. {FOCUS Untitled - Notepad})
+You can also specify that you want to focus on the specified window by using {FOCUS APPLICATION_TITLE} on its own line. (e.g. {FOCUS Untitled - Notepad})
 
-You can specify mouse locations for the cursor by putting {MOUSE 10,10} (The numbers are in pixels with 0,0 being the top left) and clicking with {LMOUSE}, {RMOUSE}, or {MMOUSE}. This will do left, right, and middle click respectively. You must place all mouse functions on independent lines.
+You can specify mouse locations for the cursor by putting {MOUSE 10,10} (The numbers are in pixels with 0,0 being the top left) and clicking with {LMOUSE}, {RMOUSE}, or {MMOUSE}. This will do left, right, and middle click respectively. You must place all mouse functions on independent lines. All mouse clicks can also make use of the {key number} format. (e.g. {LMOUSE 1000} will click the left mouse button 1000 times)
 
-If you need to figure out the X and Y coordinates of your cursor at a specific position, you can click "Mouse X,Y" and you will be given 3 seconds to place your cursor where you would like it and the command to place the mouse at the specified coords will be copied to your clipboard for you to simply paste into the main window. It will also be appended to the end of the commands textbox.
+If you need to figure out the X and Y coordinates of your cursor at a specific position, you can click "Get Mouse Inf" button on the advanced tab under "Debug/Helper" and you will be given 3 seconds to place your cursor where you would like it and when the timer runs out, the "Mouse Coords" box will populate. You may double click the textbox to have the command copied to your clipboard. The "HexVal (ARGB)" box tells you the specific hex color (Alpha Red Green Blue) of the pixel beneath the "action point" of the cursor.
 
-You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
+The manual mouse coords allow you to fine tune mouse placement. Simply click in either box and use the up/down arrow keys to fine tune the cursor's position. Use Tab and Shift+Tab to switch between the boxes without using the mouse. Pressing enter in either box will perform the same action as the "Get Mouse Inf" button without the delay.
+
+You may also HOLD certain keys or mouse clicks down using {HOLD KEY} remember to replace "KEY" with the actual key or mouse button you want from the specified keys below. You must specify when to let go using {/HOLD KEY} or {\HOLD KEY}. This will ensure that the key is not continuously held down. As with LOOP, WAIT, FOCUS, and MOUSE functions, the HOLD function requires a dedicated line in the keystrokes. Your possible options for this function are as follows:
 
 |                   |                    |                    |                    |
 |:----------------- |:------------------ |:------------------ |:------------------ |
@@ -74,88 +76,6 @@ You may also specify to HOLD certain keys or mouse clicks down using {HOLD KEY} 
 |HELP               | NUMLOCK            | NUM# (0-9)         | NUMMULT            |
 |NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
 |NUMDIV             | All letters        | All numbers        | F(1-16)            |
-
-## Advanced Functionality
-
-There are some pretty cool things you can do in a programmatic sense. This program allows you to create and store variables, as well as, manipulate data.
-
-When it comes to storing/getting variables, both are enclosed within braces. To GET, simply call the variable name with {VAR variable_name} and to SET variables, simply include an equals sign (=) without spaces to set a variable to the value after the space and not including the end brace. (i.e. {VAR variable_name=test} will create and store the variable 'variable_name' and set the value to the string 'test')
-
-Every value will always be stored as a string, but comparisons with strings interpreted as numbers is possible. (See below)
-
-When you call a variable, remember that the {VAR var_name} will be interpreted as the value it represents in keystrokes (unless nested within something else, like another {VAR}). Thus, if you had focus of notepad and a variable named 'test' with the value 'abcd', then in the commands window you were to call {VAR test}, the command would be interpreted as the keystrokes 'abcd'.
-
-When it comes to data manipulation, you can make use of the MANIP operator. Every MANIP must be formmatted like so:
-
-```
-{MANIP OPT ARG1,ARG2}
-```
-
-Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage. Spacing and commas are reserved for MANIPS, so if you need to specify those, newline, or null values use (COMMA),  (SPACE), (NEWLINE), and (NULL).
-
-|Operation |No. Args             |Syntax                      |Action                                                   |
-|:---------|:--------------------|:---------------------------|:--------------------------------------------------------|
-|ADD       |2                    |{MANIP ADD ARG1,ARG2}       | Adds ARG2 to ARG1                                       |
-|SUB       |2                    |{MANIP SUB ARG1,ARG2}       | Subtracts ARG2 from ARG1                                |
-|MUL       |2                    |{MANIP MUL ARG1,ARG2}       | Multiplies ARG1 and ARG2                                |
-|DIV       |2                    |{MANIP DIV ARG1,ARG2}       | Divides ARG1 by ARG2                                    |
-|POW       |2                    |{MANIP POW ARG1,ARG2}       | Takes ARG1 to the power of ARG2                         |
-|MOD       |2                    |{MANIP MOD ARG1,ARG2}       | Modularly divides ARG1 by ARG2                          |
-|APP       |2                    |{MANIP APP ARG1,ARG2}       | Appends the string value ARG2 to ARG1                   |
-|TRS       |2                    |{MANIP TRS ARG1,ARG2}       | Trims the chars in ARG2 from the start of ARG1          |
-|TRE       |2                    |{MANIP TRE ARG1,ARG2}       | Trims the chars in ARG2 from the end of ARG1            |
-|SPL       |2                    |{MANIP SPL ARG1,ARG2}*      | Splits the **VARIABLE NAMED** ARG1 on the chars in ARG2 |
-|JOI       |2                    |{MANIP JOI ARG1,ARG2}       | Joins the **ARRAY NAMED** ARG1 with the string ARG2     |
-|TCA       |1                    |{MANIP TCA ARG1,(NULL)}*    | Converts the **VARIABLE NAMED** ARG1 to a char array    |
-|REV       |1                    |{MANIP REV ARG1,(NULL)}*    | Reverses the order of the **ARRAY NAMED** ARG1          |
-|SIN       |1                    |{MANIP SIN ARG1,(NULL)}     | Returns the SIN of ARG1                                 |
-|COS       |1                    |{MANIP COS ARG1,(NULL)}     | Returns the COS of ARG1                                 |
-|TAN       |1                    |{MANIP TAN ARG1,(NULL)}     | Returns the TAN of ARG1                                 |
-|FLR       |1                    |{MANIP FLR ARG1,(NULL)}     | Returns the floor of ARG1                               |
-|CEI       |1                    |{MANIP CEI ARG1,(NULL)}     | Returns the ceiling of ARG1                             |
-|LEN       |1                    |{MANIP LEN ARG1,(NULL)}     | Returns the length of the **VARIABLE NAMED** ARG1       |
-|CNT       |1                    |{MANIP CNT ARG1,(NULL)}     | Returns the count of the **ARRAY NAMED** ARG1           |
-|RPL       |3                    |{MANIP RPL ARG1,ARG2,ARG3}  | Returns ARG1 after replacing the regex of ARG2 with ARG3|
-
-\*This MANIP command doesn't actually return anything, it only performs the action described.
-
-Note: When a variable has been split into an array of any kind, the index goes in the front of the variable name followed by an underscore. (i.e. The first variable in an array {VAR TEST} would be {VAR 0_TEST})
-
-MANIPS that have an output can be set to a variable through nesting like so:
-
-```
-{VAR TEST={MANIP ADD 3,4}}
-```
-
-Which would set the value of 7 to the variable TEST. You may also call variables within the ARG portions, just be aware that some MANIPS require the actual variable NAME istelf and NOT the {VAR variable_name} syntax. This would look for a variable with the name of the VALUE contained WITHIN 'variable_name'. Below is an example:
-
-In this example of MANIPS referencing variables, say we have a variable named 'TEST' that contains the string 'split me' In order to split this string on the space we would do the following:
-
-```
-{MANIP SPL TEST,(SPACE)}
-```
-
-This will create the variables '0_TEST' which contains the value 'split' and '1_TEST' which contains 'me'. Note how we referenced the variable by name but did NOT use the normal syntax of {VAR TEST}.
-
-For other MANIPS like add, we would use the normal {VAR} syntax. In this way if 'TEST' had a value of 5 and we wanted to add one to it we could do the following:
-
-```
-{VAR TEST={MANIP ADD {VAR TEST},1}}
-```
-
-This will get interpreted as:
-
-```
-{VAR TEST={MANIP ADD 5,1}}
-```
-
-Then as:
-
-```
-{VAR TEST=6}
-```
-
-Which will set the value of 6 to TEST.
 
 ## Functions
 
@@ -294,3 +214,108 @@ Below are the comparators you may use:
 |NOT MATCH                | NOTMATCH|
 |NOT EQUAL                |       NE|
 |NOT LIKE                 |  NOTLIKE|
+
+# Advanced Functionality
+
+There are some pretty cool things you can do in a programmatic sense. This program allows you to create and store variables as well as manipulate data.
+
+When it comes to storing/getting variables, both are enclosed within braces. To GET, simply call the variable name with {VAR variable_name} and to SET variables, simply include an equals sign (=) without spaces to set a variable to the value after the space and not including the end brace. (i.e. {VAR variable_name=test} will create and store the variable 'variable_name' and set the value to the string 'test')
+
+Every value will always be stored as a string, but numeric comparisons with strings are possible. (See below)
+
+When you call a variable, remember that the {VAR var_name} will be interpreted as the value it represents in keystrokes (unless nested within something else, like another {VAR}). Thus, if you had focus of notepad and a variable named 'test' with the value 'abcd', then in the commands window you were to call {VAR test}, the command would be interpreted as the keystrokes 'abcd'.
+
+You can clear any variables that have been set while running with the command {CLEARVARS}. This will clear the "memory" so to speak while the program is running. It doesn't matter between runs as the memory is reset on each run, but sometimes it may be useful to know that all previous values are cleared. It will only happen when that line is hit as this program runs top to bottom so if the line is never hit, then those values will remain. Think of this like a garbage cleanup, though the memory management is terrible.
+
+You can also FIND variables. The command is {FINDVAR some_regex}. This will return a comma separated string of all the variable names that match that regex.
+
+There are too many commands to mention in paragraph form and some commands are simply for your convenience. Below is a table of the actions you may perform that may help you:
+
+|Command                   |Action                                                                                      |
+|:-------------------------|:-------------------------------------------------------------------------------------------|
+|{CLEARVARS}               |Deletes all variables in memory while running.                                              |
+|{FINDVAR regex}           |Returns comma separated string of all vars matching the regex.                              |
+|{SETCON(A) data,file_path}|Sets content of file_path to data. The "A" is optional and specifies appending.             |
+|{GETCON file_path}        |The line is converted to the contents of a file. Useful for variable storage and retrieval. |
+|{GETPIX x,y}              |Returns pixel color on screen in hex ARGB from coords x,y. Useful for verifying screen data.|
+|{GETCLIP}                 |Returns the data on the clipboard.                                                          |
+|{SETCLIP data}            |Sets the clipboard to the data specified.                                                   |
+|{RAND x,y}                |Returns a random number from the x to (y - 1)                                               |
+|{DATETIME}                |Returns the time and date. Useful for logging or time stamping.                             |
+|{COPY}                    |An alias for ^C (Ctrl+C).                                                                   |
+|{PASTE}                   |An alias for ^V (Ctrl+V).                                                                   |
+|{SELECTALL}               |An alias for ^A (Ctrl+A).                                                                   |
+
+## Manipulation and Variables
+
+When it comes to data manipulation, you can make use of the MANIP operator. Every MANIP must be formatted like so:
+
+```
+{MANIP OPT ARG1,ARG2}
+```
+
+Where OPT is one of the possible operations to perform (See below) and the ARG1 and ARG2 are the arguments. All MANIPS must have at least two ARGS even if one needs to be (NULL). Some operations can even take three arguments. See the chart below for example usage. Spacing and commas are reserved for MANIPS, so if you need to specify those, newline, or null values use (COMMA),  (SPACE), (NEWLINE), and (NULL).
+
+|Operation |No. Args             |Syntax                      |Action                                                   |
+|:---------|:--------------------|:---------------------------|:--------------------------------------------------------|
+|ADD       |2                    |{MANIP ADD ARG1,ARG2}       | Adds ARG2 to ARG1                                       |
+|SUB       |2                    |{MANIP SUB ARG1,ARG2}       | Subtracts ARG2 from ARG1                                |
+|MUL       |2                    |{MANIP MUL ARG1,ARG2}       | Multiplies ARG1 and ARG2                                |
+|DIV       |2                    |{MANIP DIV ARG1,ARG2}       | Divides ARG1 by ARG2                                    |
+|POW       |2                    |{MANIP POW ARG1,ARG2}       | Takes ARG1 to the power of ARG2                         |
+|MOD       |2                    |{MANIP MOD ARG1,ARG2}       | Modularly divides ARG1 by ARG2                          |
+|APP       |2                    |{MANIP APP ARG1,ARG2}       | Appends the string value ARG2 to ARG1                   |
+|TRS       |2                    |{MANIP TRS ARG1,ARG2}       | Trims the chars in ARG2 from the start of ARG1          |
+|TRE       |2                    |{MANIP TRE ARG1,ARG2}       | Trims the chars in ARG2 from the end of ARG1            |
+|SPL       |2                    |{MANIP SPL ARG1,ARG2}*      | Splits the **VARIABLE NAMED** ARG1 on the chars in ARG2 |
+|JOI       |2                    |{MANIP JOI ARG1,ARG2}       | Joins the **ARRAY NAMED** ARG1 with the string ARG2     |
+|TCA       |1                    |{MANIP TCA ARG1,(NULL)}*    | Converts the **VARIABLE NAMED** ARG1 to a char array    |
+|REV       |1                    |{MANIP REV ARG1,(NULL)}*    | Reverses the order of the **ARRAY NAMED** ARG1          |
+|SIN       |1                    |{MANIP SIN ARG1,(NULL)}     | Returns the SIN of ARG1                                 |
+|COS       |1                    |{MANIP COS ARG1,(NULL)}     | Returns the COS of ARG1                                 |
+|TAN       |1                    |{MANIP TAN ARG1,(NULL)}     | Returns the TAN of ARG1                                 |
+|FLR       |1                    |{MANIP FLR ARG1,(NULL)}     | Returns the floor of ARG1                               |
+|CEI       |1                    |{MANIP CEI ARG1,(NULL)}     | Returns the ceiling of ARG1                             |
+|LEN       |1                    |{MANIP LEN ARG1,(NULL)}     | Returns the length of the **VARIABLE NAMED** ARG1       |
+|CNT       |1                    |{MANIP CNT ARG1,(NULL)}     | Returns the count of the **ARRAY NAMED** ARG1           |
+|RPL       |3                    |{MANIP RPL ARG1,ARG2,ARG3}  | Returns ARG1 after replacing the regex of ARG2 with ARG3|
+
+\*This MANIP command doesn't actually return anything, it only performs the action described.
+
+Note: When a variable has been split into an array of any kind, the index goes in the front of the variable name followed by an underscore. (i.e. The first variable in an array {VAR TEST} would be {VAR 0_TEST})
+
+MANIPS that have an output can be set to a variable through nesting like so:
+
+```
+{VAR TEST={MANIP ADD 3,4}}
+```
+
+Which would set the value of 7 to the variable TEST. You may also call variables within the ARG portions, just be aware that some MANIPS require the actual variable NAME istelf and NOT the {VAR variable_name} syntax. This would look for a variable with the name of the VALUE contained WITHIN 'variable_name'. Below is an example:
+
+In this example of MANIPS referencing variables, say we have a variable named 'TEST' that contains the string 'split me' In order to split this string on the space we would do the following:
+
+```
+{MANIP SPL TEST,(SPACE)}
+```
+
+This will create the variables '0_TEST' which contains the value 'split' and '1_TEST' which contains 'me'. Note how we referenced the variable by name but did NOT use the normal syntax of {VAR TEST}.
+
+For other MANIPS like add, we would use the normal {VAR} syntax. In this way if 'TEST' had a value of 5 and we wanted to add one to it we could do the following:
+
+```
+{VAR TEST={MANIP ADD {VAR TEST},1}}
+```
+
+This will get interpreted as:
+
+```
+{VAR TEST={MANIP ADD 5,1}}
+```
+
+Then as:
+
+```
+{VAR TEST=6}
+```
+
+Which will set the value of 6 to TEST.
