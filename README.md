@@ -282,11 +282,11 @@ There are too many commands to mention in paragraph form and some commands are s
 |{GETPIX x,y}                    |Returns pixel color on screen in hex ARGB from the coords x,y.                              |
 |{GETCLIP}                       |Returns the data on the clipboard.                                                          |
 |{SETCLIP data}*                 |Sets the clipboard to the data specified.                                                   |
-|{RAND x,y}                      |Returns a random number from the x to (y - 1)                                               |
+|{RAND x,y}                      |Returns a random number from x to (y - 1)                                                   |
 |{DATETIME}*                     |Returns the time and date. Useful for logging or time stamping.                             |
-|{COPY}*                         |An alias for ^C (Ctrl+C).                                                                   |
-|{PASTE}*                        |An alias for ^V (Ctrl+V).                                                                   |
-|{SELECTALL}*                    |An alias for ^A (Ctrl+A).                                                                   |
+|{COPY}                          |An alias for ^C (Ctrl+C).                                                                   |
+|{PASTE}                         |An alias for ^V (Ctrl+V).                                                                   |
+|{SELECTALL}                     |An alias for ^A (Ctrl+A).                                                                   |
 |{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom-right pixel brx,bry at path        |
 |{RESTART}*                      |Essentially a GOTO top. Useful for restarting automatically.                                |
 |{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
