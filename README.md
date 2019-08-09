@@ -50,7 +50,7 @@ To specify that any combination of SHIFT, CTRL, and ALT should be held down whil
 
 To specify repeating keys, use the form {key number}. You must put a space between key and number. For example, {LEFT 42} means press the LEFT ARROW key 42 times; {h 10} means press H 10 times.
 
-## Special Keywords
+### Special Keywords
 
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
@@ -77,7 +77,7 @@ You may also HOLD certain keys or mouse clicks down using {HOLD KEY} remember to
 |NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
 |NUMDIV             | All letters        | All numbers        | F(1-16)            |
 
-## Functions
+### Functions
 
 If you want to get really fancy then you can actually create shorthand for yourself to repeat specific parts multiple times. To do this, create a function by starting a line below that with {FUNCTION NAME THING} like so:
 
@@ -134,7 +134,7 @@ This will call the {THING} function 5 times.
 
 You should be aware that functions DO support recursion (i.e. A function can call upon itself). They can even create a loop or chain of functions (i.e. {FUNCTION1} calls {FUNCTION2} which calls {FUNCTION1}).
 
-## Statements
+### Statements
 
 Like functions, you can create statements which are, at their most basic form, an 'IF/ELSE' statement. They only accept two operands and one comparator. You also must always specify actions for both the true AND false cases; even if they are (NULL). You may begin and name each statement like so:
 
@@ -201,7 +201,7 @@ Below are the comparators you may use:
 |NOT EQUAL                |       NE|
 |NOT LIKE                 |  NOTLIKE|
 
-# Advanced Functionality
+## Advanced Functionality
 
 There are some pretty cool things you can do in a programmatic sense. This program allows you to create and store variables as well as manipulate data.
 
@@ -238,7 +238,7 @@ There are too many commands to mention in paragraph form and some commands are s
 
 \*This command needs to be on its own line.
 
-## Variable Manipulation
+### Variable Manipulation
 
 When it comes to data manipulation, you can make use of the MANIP operator. Every MANIP must be formatted like so:
 
