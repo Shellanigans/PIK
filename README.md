@@ -303,6 +303,8 @@ When you call a variable, remember that the {VAR var_name} will be interpreted a
 
 You can clear any variables that have been set while running with the command {CLEARVARS}. This will clear the "memory" so to speak while the program is running. It doesn't matter between runs as the memory is reset on each run, but sometimes it may be useful to know that all previous values are cleared. It will only happen when that line is hit as this program runs top to bottom so if the line is never hit, then those values will remain. Think of this like a garbage cleanup, though the memory management is terrible.
 
+You may also clear just a single variable with {CLEARVAR var_name}. This will completely remove the variable.
+
 You can also FIND variables. The command is {FINDVAR some_regex}. This will return a comma separated string of all the variable names that match that regex.
 
 There are too many commands to mention in paragraph form and some commands are simply for your convenience. Below is a table of the actions you may perform that may help you:
