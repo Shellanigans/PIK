@@ -52,6 +52,24 @@ To specify repeating keys, use the form {key number}. You must put a space betwe
 
 ### Special Keywords and Mouse Info
 
+You can comment out any line by starting it with "\\#" (no quotes). You can also create block comments that are basically just ignored by the program. To start a block comment use "<\\#" and to end a block comment use "\\#>" (no quotes). Both the block comment tags should be on their own line. You CAN use them on the same line but everything on the block close line will be ignored as though the whole line was commented out. See below:
+
+```
+{MOUSE 1,1}
+{LMOUSE}
+\\# This line does nothing
+{WAIT 5}
+<\\#
+ Everything
+ between
+ these
+ lines
+ is 
+ ignored
+\\#>
+TEST
+```
+
 Do nothing {WAIT} (Nullifies entire line. I.e. putting {WAIT} anywhere on a line turns that line into a delay with a default value of one second. More time can be specified like the others. So {WAIT 5} is a 5 second delay and {WAIT M 300} is a 300 millisecond delay)
 
 You can also specify that you want to focus on the specified window by using {FOCUS APPLICATION_TITLE} on its own line. (e.g. {FOCUS Untitled - Notepad})
@@ -203,9 +221,21 @@ Below are the comparators you may use:
 
 ## GUI Explanations
 
-There are four main tabs. The Commands, the Functions, the Statements, and the Advanced tabs.
+There are four main tabs. The Commands, the Functions, the Statements, and the Advanced tabs. The first three are pretty self-explanatory. The fourth tab, Advanced, has some niceties.
 
-The first three are pretty self-explanatory. The fourth tab, Advanced, has some niceties.
+### Commands, Functions, and Statements
+
+These are pretty well covered elsewhere, but in a GUI sense, they all have some nifty shortcuts. Just click anywhere in any of the three main text boxes and press any of the following keys:
+
+|Key |Action                                                                         |
+|:---|:------------------------------------------------------------------------------|
+|F1  |Insert <\\# (block comment start)                                              |
+|F2  |Insert \\#> (block comment end)                                                |
+|F3  |Insert \\# (line comment)                                                      |
+|F5  |Insert {MOUSE X,Y} where the X and Y coords are of the mouse's current position|
+|F6  |Insert {WAIT M 100}                                                            |
+|F11 |Save (only works if a profile is currently loaded)                             |
+|F12 |Run (same as clicking the go button)                                           |
 
 ### Load/Save
 
