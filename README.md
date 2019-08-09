@@ -166,20 +166,6 @@ Anything below these lines will be interpreted as the actions to take when the c
 
 ```
 {STATEMENT NAME IF_ELSE_STATEMENT_NAME}
-{NUMERIC}
-{OP1 3}
-{CMP LT}
-{OP2 5}
-This is what to type or the actions or functions or statements to call on true condition
-{ELSE}
-This is what to type or the actions or functions or statements to call on false condition
-{STATEMENT END}
-```
-
-A complete statements section would look like:
-
-```
-{STATEMENT NAME IF_ELSE_STATEMENT_NAME}
     {NUMERIC}
     {OP1 3}
     {CMP LT}
