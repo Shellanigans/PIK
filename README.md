@@ -238,7 +238,7 @@ There are too many commands to mention in paragraph form and some commands are s
 
 \*This command needs to be on its own line.
 
-## Manipulation and Variables
+## Variable Manipulation
 
 When it comes to data manipulation, you can make use of the MANIP operator. Every MANIP must be formatted like so:
 
