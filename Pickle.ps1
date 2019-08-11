@@ -552,7 +552,7 @@ Function Actions
 
         $X = (Interpret $X)
 
-        <#If($X -match '^{POWER .*}$')
+        If($X -match '^{POWER .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
         }
@@ -560,7 +560,7 @@ Function Actions
         If($X -match '^{TESSERACT .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
-        }#>
+        }
 
         If($X -match '^{GOTO')
         {
