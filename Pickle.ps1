@@ -1,4 +1,6 @@
-Remove-Variable * -EA SilentlyContinue
+Param([String]$Macro = $Null)
+
+Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
@@ -970,6 +972,8 @@ If($Host.Name -match 'Console')
 If(!(Test-Path ($env:APPDATA+'\Macro'))){[Void](MKDIR ($env:APPDATA+'\Macro') -Force)}
 If(!(Test-Path ($env:APPDATA+'\Macro\Profiles'))){[Void](MKDIR ($env:APPDATA+'\Macro\Profiles') -Force)}
 
+$CommandLine = $False
+
 $Vars = [String[]]@()
 
 $Script:Refocus = $False
@@ -979,6 +983,8 @@ $Script:VarsHash = @{}
 $Script:IfElHash = @{}
 $Script:FuncHash = @{}
 $SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})
+
+$ClickHelperParent = [HashTable]::Synchronized(@{})
 
 $Script:AutoChange = $False
 
@@ -1294,9 +1300,31 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $PixColorBox.Parent = $TabPageHelper
 
-                $Reparse = [GUI.B]::New(260, 25, 10, 285, 'Reparse')
-                $Reparse.Add_Click({$SyncHash.Stop = $True; GO})
-                $Reparse.Parent = $TabPageHelper
+                #$Reparse = [GUI.B]::New(260, 25, 10, 285, 'Reparse')
+                #$Reparse.Add_Click({$SyncHash.Stop = $True; GO})
+                #$Reparse.Parent = $TabPageHelper
+
+                <#$SpawnClicker = [GUI.B]::New(260, 25, 10, 285, 'Spawn Click Helper')
+                $SpawnClicker.Add_Click({
+                    $Pow = [Powershell]::Create()
+                    $Run = [RunspaceFactory]::CreateRunspace()
+                    $Run.Open()
+                    $Pow.Runspace = $Run
+                    $Pow.AddScript({
+                        Param($ClickHelperParent)
+                        
+                        Add-Type -AssemblyName System.Windows.Forms,System.Drawing
+
+                        $TempForm = [System.Windows.Forms.Form]::New()
+                        $TempForm.Add_DoubleClick({$This.Close()})
+                        $TempForm.ShowDialog()
+
+                    }) | Out-Null
+                    $Pow.AddParameter('ClickHelperParent', $ClickHelperParent) | Out-Null
+                    $Pow.BeginInvoke() | Out-Null
+
+                })
+                $SpawnClicker.Parent = $TabPageHelper#>
 
                 $Help = [GUI.B]::New(260, 25, 10, 315, 'About/Help')
                 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
@@ -1919,11 +1947,29 @@ Try
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
 
-    If($LoadedConfig.PrevProfile)
+    If($LoadedConfig.PrevProfile -OR $Macro)
     {
-        $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
-        $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
-        $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
+        If($Macro)
+        {
+            If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$Macro))
+            {
+                $Profile.Text = ('Working Profile: ' + $Macro)
+                $Form.Text = ('Pickle - ' + $Macro)
+                $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($Macro)
+            }
+            Else
+            {
+                [System.Console]::WriteLine('No macro by that name!')
+            }
+
+            $CommandLine = $True
+        }
+        Else
+        {
+            $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
+            $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
+            $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
+        }
     }
 
     If($LoadedConfig.LastLoc)
@@ -1942,18 +1988,25 @@ Catch
     [System.Console]::WriteLine('No config file found or file could not be loaded!')
 }
 
-$Form.Show()
+If($CommandLine)
+{
+    GO
+}
+Else
+{
+    $Form.Show()
 
-$TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
+    $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
 
-$TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
+    $TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
 
-[Void]$TempTextBox.Focus()
-$TempTextBox.SelectionStart = $TempTextBox.Text.Length
+    [Void]$TempTextBox.Focus()
+    $TempTextBox.SelectionStart = $TempTextBox.Text.Length
 
-$Form.Visible = $False
+    $Form.Visible = $False
 
-[Void]$Form.ShowDialog()
+    [Void]$Form.ShowDialog()
+}
 
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 
@@ -2004,4 +2057,4 @@ If($PSVersionTable.CLRVersion.Major -le 2)
     $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{$FlipFlop = $True}{If($FlipFLop){$_}; $FlipFlop = !$FlipFlop} | %{If($_ -match '::New\('){($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '}Else{$_}}) -join [System.Environment]::NewLine)
 }
 
-$MainBlock.Invoke()
+$MainBlock.Invoke($Macro)
