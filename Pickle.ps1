@@ -1759,11 +1759,11 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $ClearVars.Add_Click({$Script:VarsHash = @{}})
                 $ClearVars.Parent = $TabPageDebug
 
-                $ClearCons = [GUI.B]::New(255, 25, 10, 195, 'Clear Console')
+                $ClearCons = [GUI.B]::New(260, 25, 10, 195, 'Clear Console')
                 $ClearCons.Add_Click({Cls})
                 $ClearCons.Parent = $TabPageDebug
 
-                $OpenFolder = [GUI.B]::New(255, 25, 10, 230, 'Open Data Folder')
+                $OpenFolder = [GUI.B]::New(260, 25, 10, 230, 'Open Data Folder')
                 $OpenFolder.Add_Click({Explorer ($env:APPDATA+'\Macro')})
                 $OpenFolder.Parent = $TabPageDebug
             $TabPageDebug.Parent = $TabControllerAdvanced
@@ -1773,6 +1773,13 @@ $TabController.Add_SelectedIndexChanged({
     If($This.SelectedTab -ne $TabPageAdvanced)
     {
         $TabPageHelper.Parent = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
+        
+        $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
+
+        $TempTextBox = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
+
+        $TempTextBox.Focus()
+        $TempTextBox.SelectionStart = $TempTextBox.Text.Length
     }
 })
 $TabController.Parent = $Form
@@ -1841,6 +1848,17 @@ Catch
 {
     [System.Console]::WriteLine('No config file found or file could not be loaded!')
 }
+
+[Void]$Form.Show()
+
+$TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
+
+$TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
+
+$TempTextBox.Focus()
+$TempTextBox.SelectionStart = $TempTextBox.Text.Length
+
+$Form.Visible = $False
 
 $Form.ShowDialog()
 
