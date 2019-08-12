@@ -1035,9 +1035,41 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $This.SelectionLength = $This.Text.Length
                     $This.SelectionColor = [System.Drawing.Color]::Black
                     
-                    ($This.Lines | %{$Count = 0}{If($_.TrimStart(' ').TrimStart([Char][Int]9) -match '^\\\\#'){$Count};$Count++}) | %{$This.SelectionStart = $This.GetFirstCharIndexFromLine($_); $This.SelectionLength = $This.Lines[$_].Length; $This.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                    ($This.Lines | %{$Count = 0}{If($_.TrimStart(' ').TrimStart([Char][Int]9) -match '^:::'){$Count};$Count++}) | %{$This.SelectionStart = $This.GetFirstCharIndexFromLine($_); $This.SelectionLength = $This.Lines[$_].Length; $This.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                    ($This.Lines | %{$Count = 0; $Commented = $False}{
+                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
 
+                        If($PH -match '^<\\\\#')
+                        {
+                            $Commented = $True
+                        }
+
+                        If($PH -match '^\\\\#' -OR $Commented)
+                        {
+                            'G,'+$Count
+                        }
+
+                        If($PH -match '^\\\\#>')
+                        {
+                            $Commented = $False
+                        }
+
+                        If($PH -match '^:::')
+                        {
+                            'B,'+$Count
+                        }
+                        
+                        $Count++
+                    }) | %{
+                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                        Switch($_.Split(',')[0])
+                        {
+                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                            'B' {$This.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                        }
+                    }
+                    
                     $This.SelectionStart = $TempSelectionIndex
                     $This.SelectionLength = $TempSelectionLength
                 })
@@ -1262,7 +1294,11 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $PixColorBox.Parent = $TabPageHelper
 
-                $Help = [GUI.B]::New(260, 25, 10, 265, 'About/Help')
+                $Reparse = [GUI.B]::New(260, 25, 10, 285, 'Reparse')
+                $Reparse.Add_Click({$SyncHash.Stop = $True; GO})
+                $Reparse.Parent = $TabPageHelper
+
+                $Help = [GUI.B]::New(260, 25, 10, 315, 'About/Help')
                 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
                 $Help.Parent = $TabPageHelper
             $TabPageHelper.Parent = $TabControllerComm
@@ -1291,8 +1327,34 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $This.SelectionLength = $This.Text.Length
                     $This.SelectionColor = [System.Drawing.Color]::Black
                     
-                    ($This.Lines | %{$Count = 0}{If($_.TrimStart(' ').TrimStart([Char][Int]9) -match '^\\\\#'){$Count};$Count++}) | %{$This.SelectionStart = $This.GetFirstCharIndexFromLine($_); $This.SelectionLength = $This.Lines[$_].Length; $This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                    ($This.Lines | %{$Count = 0; $Commented = $False}{
+                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
+                        
+                        If($PH -match '^<\\\\#')
+                        {
+                            $Commented = $True
+                        }
 
+                        If($PH -match '^\\\\#' -OR $Commented)
+                        {
+                            'G,'+$Count
+                        }
+
+                        If($PH -match '^\\\\#>')
+                        {
+                            $Commented = $False
+                        }
+                        
+                        $Count++
+                    }) | %{
+                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                        Switch($_.Split(',')[0])
+                        {
+                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                        }
+                    }
                     $This.SelectionStart = $TempSelectionIndex
                     $This.SelectionLength = 0
                 })
@@ -1422,8 +1484,34 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $This.SelectionLength = $This.Text.Length
                     $This.SelectionColor = [System.Drawing.Color]::Black
                     
-                    ($This.Lines | %{$Count = 0}{If($_.TrimStart(' ').TrimStart([Char][Int]9) -match '^\\\\#'){$Count};$Count++}) | %{$This.SelectionStart = $This.GetFirstCharIndexFromLine($_); $This.SelectionLength = $This.Lines[$_].Length; $This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                    ($This.Lines | %{$Count = 0; $Commented = $False}{
+                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
 
+                        If($PH -match '^<\\\\#')
+                        {
+                            $Commented = $True
+                        }
+
+                        If($PH -match '^\\\\#' -OR $Commented)
+                        {
+                            'G,'+$Count
+                        }
+
+                        If($PH -match '^\\\\#>')
+                        {
+                            $Commented = $False
+                        }
+                        
+                        $Count++
+                    }) | %{
+                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                        Switch($_.Split(',')[0])
+                        {
+                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                        }
+                    }
                     $This.SelectionStart = $TempSelectionIndex
                     $This.SelectionLength = 0
             })
@@ -1803,7 +1891,9 @@ $Config = ($Config | Select `
 
     @{NAME='ShowConsCheck';EXPRESSION={$False}},`
     @{NAME='OnTopCheck';EXPRESSION={$False}},`
-    @{NAME='PrevProfile';EXPRESSION={$Null}}
+    @{NAME='PrevProfile';EXPRESSION={$Null}},`
+    @{NAME='LastLoc';EXPRESSION={$Null}},`
+    @{NAME='SavedSize';EXPRESSION={$Null}}
 )
 
 Try
@@ -1821,11 +1911,30 @@ Try
     $ShowCons.Checked        = $LoadedConfig.ShowConsCheck
     $OnTop.Checked           = $LoadedConfig.OnTopCheck
 
+    $ShowCons.Checked = !$ShowCons.Checked
+    Sleep -Milliseconds 40
+    $ShowCons.Checked = !$ShowCons.Checked
+
+    $OnTop.Checked = !$OnTop.Checked
+    Sleep -Milliseconds 40
+    $OnTop.Checked = !$OnTop.Checked
+
     If($LoadedConfig.PrevProfile)
     {
         $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
         $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
         $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
+    }
+
+    If($LoadedConfig.LastLoc)
+    {
+        $Form.StartPosition = 'Manual'
+        $Form.Location = [GUI.SP]::PO($LoadedConfig.LastLoc.Split(',')[0],$LoadedConfig.LastLoc.Split(',')[1])
+    }
+
+    If($LoadedConfig.SavedSize)
+    {
+        $Form.Size = [GUI.SP]::SI($LoadedConfig.SavedSize.Split(',')[0],$LoadedConfig.SavedSize.Split(',')[1])
     }
 }
 Catch
@@ -1833,26 +1942,18 @@ Catch
     [System.Console]::WriteLine('No config file found or file could not be loaded!')
 }
 
-[Void]$Form.Show()
+$Form.Show()
 
 $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
 
 $TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
 
-$TempTextBox.Focus()
+[Void]$TempTextBox.Focus()
 $TempTextBox.SelectionStart = $TempTextBox.Text.Length
-
-$ShowCons.Checked = !$ShowCons.Checked
-Sleep -Milliseconds 40
-$ShowCons.Checked = !$ShowCons.Checked
-
-$OnTop.Checked = !$OnTop.Checked
-Sleep -Milliseconds 40
-$OnTop.Checked = !$OnTop.Checked
 
 $Form.Visible = $False
 
-$Form.ShowDialog()
+[Void]$Form.ShowDialog()
 
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
 
@@ -1889,6 +1990,9 @@ Else
 {
     $Config.PrevProfile = $Null
 }
+
+$Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
+$Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
 
 $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
 
