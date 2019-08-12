@@ -321,14 +321,6 @@ public class Parser{
             else if(Regex.IsMatch(X, "{GET[CMP]")){
                 X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
                 X = X.Replace("{GETMOUSE}",(Cons.Curs.GPos().X.ToString()+","+Cons.Curs.GPos().Y.ToString()));
-                //while(Regex.IsMatch(X, "{GETCON ")){
-                //    foreach(string SubString in X.Split("{}".ToCharArray())){
-                //        if(Regex.IsMatch(SubString, "GETCON ")){
-                //            X = X.Replace(("{"+SubString+"}"),File.ReadAllText(SubString.Substring(7)));
-                //            System.Console.WriteLine(X);
-                //        }
-                //    }
-                //}
 
                 if(Regex.IsMatch(X, "^{GETPIX [0-9]*,[0-9]*}$"))
                 {
