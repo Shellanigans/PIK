@@ -1315,9 +1315,31 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         
                         Add-Type -AssemblyName System.Windows.Forms,System.Drawing
 
+                        $Temp = [DateTime]::UtcNow.Ticks
+
                         $TempForm = [System.Windows.Forms.Form]::New()
-                        $TempForm.Add_DoubleClick({$This.Close()})
-                        $TempForm.ShowDialog()
+                        $TempForm.Size = [System.Drawing.Size]::New(150,25)
+                        $TempForm.FormBorderStyle = 'None'
+                        $TempForm.Add_DoubleClick({$This.Close();$ClickHelperParent.Remove($Temp)})
+
+                        $TempName = [System.Windows.Forms.TextBox]::New()
+                        $TempName.ReadOnly = $True
+                        $TempName.Location = [System.Drawing.Point]::New(0,9)
+                        $TempName.Size = [System.Drawing.Size]::New(130,20)
+                        $TempName.Text = $Temp
+                        $TempName.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
+                        $TempName.Parent = $TempForm
+                        
+                        $TempTarget = [System.Windows.Forms.Label]::New()
+                        $TempTarget.Location = [System.Drawing.Point]::New(130,12)
+                        $TempTarget.Size = [System.Drawing.Size]::New(20,20)
+                        $TempTarget.Text = ' +'
+                        $TempTarget.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
+                        $TempTarget.Parent = $TempForm
+
+                        $ClickHelperParent.Add($Temp,$Temp)
+                        
+                        If($TempForm.ShowDialog() -eq 'Cancel'){$ClickHelperParent.Remove($Temp)}
 
                     }) | Out-Null
                     $Pow.AddParameter('ClickHelperParent', $ClickHelperParent) | Out-Null
@@ -2020,34 +2042,37 @@ $Config.CommTimeVal   = $CommandDelayTimer.Value
 $Config.CommChecked   = $CommDelayCheck.Checked
 $Config.CommRandVal   = $CommRandTimer.Value
 
-$Config.ShowConsCheck = $ShowCons.Checked
-$Config.OnTopCheck    = $OnTop.Checked
-
-If($Profile.Text -ne 'Working Profile: None/Prev Text Vals')
+If(!$CommandLine)
 {
-    $Config.PrevProfile = ($Profile.Text -replace '^Working Profile: ')
+    $Config.ShowConsCheck = $ShowCons.Checked
+    $Config.OnTopCheck    = $OnTop.Checked
+
+    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals')
+    {
+        $Config.PrevProfile = ($Profile.Text -replace '^Working Profile: ')
     
-    $Form.Text = ($Form.Text -replace '\*$')
+        $Form.Text = ($Form.Text -replace '\*$')
 
-    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
+        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
 
-    [Void](MKDIR $TempDir)
+        [Void](MKDIR $TempDir)
 
-    $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-    $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-    $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+        $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
 
-    $SaveAsProfText.Text = ''
+        $SaveAsProfText.Text = ''
+    }
+    Else
+    {
+        $Config.PrevProfile = $Null
+    }
+
+    $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
+    $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
+
+    $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
 }
-Else
-{
-    $Config.PrevProfile = $Null
-}
-
-$Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
-$Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
-
-$Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
 
 If($Host.Name -match 'Console'){Exit}
 }
