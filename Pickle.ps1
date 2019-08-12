@@ -353,14 +353,6 @@ Function Interpret
 
     $X = [Parser]::Interpret($X)
 
-    While($X -match '{GETCON ')
-    {
-        $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
-            Write-Host $X
-        }
-    }
-
     While($X -match '{FINDVAR ')
     {
         $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
@@ -560,6 +552,14 @@ Function Actions
         If($X -match '^{TESSERACT .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
+        }
+
+        While($X -match '{GETCON ')
+        {
+            $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
+                $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
+                Write-Host $X
+            }
         }
 
         If($X -match '^{GOTO')
@@ -1827,14 +1827,6 @@ Try
         $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
         $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
     }
-
-    $ShowCons.Checked = !$ShowCons.Checked
-    Sleep -Milliseconds 40
-    $ShowCons.Checked = !$ShowCons.Checked
-
-    $OnTop.Checked = !$OnTop.Checked
-    Sleep -Milliseconds 40
-    $OnTop.Checked = !$OnTop.Checked
 }
 Catch
 {
@@ -1849,6 +1841,14 @@ $TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).Sel
 
 $TempTextBox.Focus()
 $TempTextBox.SelectionStart = $TempTextBox.Text.Length
+
+$ShowCons.Checked = !$ShowCons.Checked
+Sleep -Milliseconds 40
+$ShowCons.Checked = !$ShowCons.Checked
+
+$OnTop.Checked = !$OnTop.Checked
+Sleep -Milliseconds 40
+$OnTop.Checked = !$OnTop.Checked
 
 $Form.Visible = $False
 
