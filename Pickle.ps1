@@ -2,6 +2,16 @@ Param([String]$Macro = $Null)
 
 Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
+$ReparseRequired = $False
+Try
+{
+    [Void][System.Windows.Forms.Form]::New(0,0,'')
+}
+Catch
+{
+    $ReparseRequired = $True
+}
+
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
@@ -2077,9 +2087,26 @@ If(!$CommandLine)
 If($Host.Name -match 'Console'){Exit}
 }
 
-If($PSVersionTable.CLRVersion.Major -le 2)
+If($PSVersionTable.CLRVersion.Major -le 2 -OR $ReparseRequired)
 {
-    $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{$FlipFlop = $True}{If($FlipFLop){$_}; $FlipFlop = !$FlipFlop} | %{If($_ -match '::New\('){($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '}Else{$_}}) -join [System.Environment]::NewLine)
+    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | %{
+        $FlipFlop = $True
+    }{
+        If($FlipFLop){$_}
+        
+        $FlipFlop = !$FlipFlop
+    } | %{
+        If($_ -match '::New\(')
+        {
+            (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
+        }
+        Else
+        {
+            $_
+        }
+    }) -join [System.Environment]::NewLine
+    
+    $MainBlock = [ScriptBlock]::Create($MainBlock)
 }
 
 $MainBlock.Invoke($Macro)
