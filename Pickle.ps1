@@ -5,7 +5,7 @@ Remove-Variable * -Exclude Macro -EA SilentlyContinue
 $ReparseRequired = $False
 Try
 {
-    [Void][System.Windows.Forms.Form]::New(0,0,'')
+    [Void][System.Windows.Forms.Form]::New()
 }
 Catch
 {
