@@ -231,15 +231,16 @@ There are four main tabs. The Commands, the Functions, the Statements, and the A
 
 These are pretty well covered elsewhere, but in a GUI sense, they all have some nifty shortcuts. Just click anywhere in any of the three main text boxes and press any of the following keys:
 
-|Key |Action                                                                         |
-|:---|:------------------------------------------------------------------------------|
-|F1  |Insert <\\\\# block comment start                                              |
-|F2  |Insert \\\\#> block comment end                                                |
-|F3  |Insert \\\\# line comment                                                      |
-|F5  |Insert {MOUSE X,Y} where the X and Y coords are of the mouse's current position|
-|F6  |Insert {WAIT M 100}                                                            |
-|F11 |Save; only works if a profile is currently loaded                              |
-|F12 |Run; same as clicking the go button                                            |
+|Key |Action                                                                                       |
+|:---|:--------------------------------------------------------------------------------------------|
+|F1  |Insert <\\\\# block comment start                                                            |
+|F2  |Insert \\\\#> block comment end                                                              |
+|F3  |Insert \\\\# line comment                                                                    |
+|F4  |Insert page-dependent code; Commands=:::Label, Functions=NewFunction, Statements=NewStatement|
+|F5  |Insert {MOUSE X,Y} where the X and Y coords are of the mouse's current position              |
+|F6  |Insert {WAIT M 100}                                                                          |
+|F11 |Save; only works if a profile is currently loaded                                            |
+|F12 |Run; same as clicking the "Start" button                                                     |
 
 ### Load/Save
 
@@ -269,19 +270,17 @@ Please note that any other programs that are also always on top need to be open 
 
 ### Debug/Helper
 
-The debug/Helper tab is to help you troubleshoot and fine tune your macros.
+The Debug tab is to help you troubleshoot and fine tune your macros.
 
-The mouse info stuff is covered above in "Special Keywords and Mouse Info".
+The buttons from the top down to and including clear console require the console to be on. (See Settings above)
 
-The next buttons down to and including clear console require the console to be on. (See Settings above)
-
-When a program is run the "memory" of the last run is cleared and all functions and statements are redefined and the variables are set as they are parsed in each run through. However, they still exist after each run and you are able to view what the program has with some of the buttons on this tab.
+When a program is run the "memory" of the last run is cleared and all functions and statements are redefined and the variables are set as they are parsed in each run through. However, they still exist AFTER each run and you are able to view what the program has with some of the buttons on this tab.
 
 "Get Functs" will display in the console what functions were defined and what their values are.
 "Get States" will display in the console what statements were defined and what their values are.
 "Get Vars" will display in the console what variables were defined and what their values are.
 
-"Clear Vars" will erase all variables in the program. Though this shouldn't be needed before each run. You can achieve the same effect by putting {CLEARVARS} at the endof your macro.
+"Clear Vars" will erase all variables in the program memory. Though this shouldn't be needed before each run. You can achieve the same effect by putting {CLEARVARS} at the end of your macro.
 
 "Clear Console" will clear the console host. This is essentially just "clear screen" or "cls" and is purely visual.
 
@@ -312,6 +311,7 @@ There are too many commands to mention in paragraph form and some commands are s
 |Command                         |Action                                                                                      |
 |:-------------------------------|:-------------------------------------------------------------------------------------------|
 |{CLEARVARS}*                    |Deletes all variables in memory while running.                                              |
+|{CLEARVAR var_name}*            |Delete the variable var_name from memory. Useful for verifying a var has been cleared.      |
 |{FINDVAR regex}                 |Returns comma separated string of all vars matching the regex.                              |
 |{SETCON(A) data,path}*          |Sets content of "path" to "data". The "A" is optional and specifies appending.              |
 |{GETCON file_path}              |The line is converted to the contents of a file. Useful for long term variable storage.     |
@@ -323,10 +323,11 @@ There are too many commands to mention in paragraph form and some commands are s
 |{COPY}                          |An alias for ^C (Ctrl+C).                                                                   |
 |{PASTE}                         |An alias for ^V (Ctrl+V).                                                                   |
 |{SELECTALL}                     |An alias for ^A (Ctrl+A).                                                                   |
-|{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom-right pixel brx,bry at path        |
+|{SCRNSHT tlx,tly,brx,bry,path}* |Saves a screenshot from top-left pixel tlx,tly to bottom-right pixel brx,bry to path (.bmp) |
 |{RESTART}*                      |Essentially a GOTO top. Useful for restarting automatically.                                |
 |{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
 |{REFOCUS}*                      |Tells the program to focus on itself after. This is a flag and can be set anywhere.         |
+|{GOTO label_name}*              |Go to the first label defined in the commands tab by ":::label_name" and continue           |
 
 \*This command needs to be on its own line.
 
