@@ -68,7 +68,7 @@ You can comment out any line by starting it with "\\\\#" (no quotes). You can al
     is 
     ignored.
     {RMOUSE}
-\\#>
+\\#> (Anything here is also ignored)
 TEST
 ```
 
