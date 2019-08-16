@@ -52,7 +52,7 @@ To specify repeating keys, use the form {key number}. You must put a space betwe
 
 ### Special Keywords and Mouse Info
 
-You can comment out any line by starting it with "\\#" (no quotes). You can also create block comments that are basically just ignored by the program. To start a block comment use "<\\#" and to end a block comment use "\\#>" (no quotes). Both the block comment tags should be on their own line. You CAN use them on the same line but everything on the block close line will be ignored as though the whole line was commented out. See below:
+You can comment out any line by starting it with "\\\\#" (no quotes). You can also create block comments that are basically just ignored by the program. To start a block comment use "<\\\\#" and to end a block comment use "\\\\#>" (no quotes). Both the block comment tags should be on their own line. You CAN use them on the same line but everything on the block close line will be ignored as though the whole line was commented out. See below:
 
 ```
 {MOUSE 1,1}
