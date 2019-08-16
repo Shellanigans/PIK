@@ -356,6 +356,7 @@ Where OPT is one of the possible operations to perform (See below) and the ARG1 
 |JOI       |2                    |{MANIP JOI ARG1,ARG2}       | Joins the **ARRAY NAMED** ARG1 with the string ARG2     |
 |TCA       |1                    |{MANIP TCA ARG1,(NULL)}*    | Converts the **VARIABLE NAMED** ARG1 to a char array    |
 |REV       |1                    |{MANIP REV ARG1,(NULL)}*    | Reverses the order of the **ARRAY NAMED** ARG1          |
+|ABS       |1                    |{MANIP ABS ARG1,(NULL)}     | Returns the absolute value of ARG1                      |
 |SIN       |1                    |{MANIP SIN ARG1,(NULL)}     | Returns the SIN of ARG1                                 |
 |COS       |1                    |{MANIP COS ARG1,(NULL)}     | Returns the COS of ARG1                                 |
 |TAN       |1                    |{MANIP TAN ARG1,(NULL)}     | Returns the TAN of ARG1                                 |
