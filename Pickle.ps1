@@ -2,16 +2,6 @@ Param([String]$Macro = $Null)
 
 Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
-$ReparseRequired = $False
-Try
-{
-    [Void][System.Windows.Forms.Form]::New()
-}
-Catch
-{
-    $ReparseRequired = $True
-}
-
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
 using System;
@@ -39,6 +29,13 @@ namespace Cons{
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(IntPtr hWnd, out DR.Rectangle lpRect);
+
+        [DllImport("User32.dll")]
+        public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
 
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
@@ -197,6 +194,14 @@ namespace GUI{
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
             this.Text = tx;
+        }
+    }
+
+    public class Rect{
+        public static DR.Rectangle E = DR.Rectangle.Empty;
+
+        public DR.Rectangle R (int lx, int ly, int sx, int sy){
+            return (new DR.Rectangle(lx, ly, sx, sy));
         }
     }
 
@@ -370,6 +375,44 @@ Function Interpret
         $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
     }
     
+    While($X -match '{GETPROC ')
+    {
+        $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
+            $PH = ($X -replace '{GETPROC ' -replace '}$')
+
+            If($_ -match ' -ID ')
+            {
+                $PH = ($PH -replace '-ID ')
+                $PH = ((PS -Id $PH) | %{$_.ProcessName+','+$_.Id})
+            }
+            Else
+            {
+                $PH = ((PS $PH) | %{$_.ProcessName+','+$_.Id}) -join ';'
+            }
+
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+        }
+    }
+
+    While($X -match '{GETWIND ')
+    {
+        $X.Split('{}') | ?{$_ -match 'GETWIND '} | %{    
+            If($_ -match ' -ID ')
+            {
+                $PHHandle = (PS -Id ($X -replace '{GETWIND -ID ' -replace '}$')).MainWindowHandle
+            }
+            Else
+            {
+                $PHHandle = (PS ($X -replace '{GETWIND ' -replace '}$')).MainWindowHandle
+            }
+
+            $PHRect = [GUI.Rect]::E
+            [Void]([Cons.WindowDisp]::GetWindowRect($PHHandle,[Ref]$PHRect))
+            $X = ($X.Replace(('{'+$_+'}'),([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)))
+            [System.Console]::WriteLine($X)
+        }
+    }
+
     While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
@@ -615,7 +658,13 @@ Function Actions
         }
         ElseIf($X -match '{FOCUS')
         {
-            Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
+            If($X -match ' -ID ')
+            {
+                Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{}
+            }Else
+            {
+                Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
+            }
         }
         ElseIf($X -match '{SETCLIP ')
         {
@@ -772,6 +821,21 @@ Function Actions
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
+        }
+        ElseIf($X -match '{SETWIND ')
+        {
+            If($X -match ' -ID ')
+            {
+                $PHHandle = (PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle
+                $PHCoords = (($X -replace '{SETWIND -ID ' -replace '}$').Split(',') | Select -Skip 1)
+            }
+            Else
+            {
+                $PHHandle = (PS ($X -replace '{SETWIND ' -replace '}$').Split(',')[0]).MainWindowHandle
+                $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+            }
+            
+            [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
         }
         ElseIf($X -notmatch '{GOTO ')
         {
@@ -2087,26 +2151,9 @@ If(!$CommandLine)
 If($Host.Name -match 'Console'){Exit}
 }
 
-If($PSVersionTable.CLRVersion.Major -le 2 -OR $ReparseRequired)
+If($PSVersionTable.CLRVersion.Major -le 2)
 {
-    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | %{
-        $FlipFlop = $True
-    }{
-        If($FlipFLop){$_}
-        
-        $FlipFlop = !$FlipFlop
-    } | %{
-        If($_ -match '::New\(')
-        {
-            (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
-        }
-        Else
-        {
-            $_
-        }
-    }) -join [System.Environment]::NewLine
-    
-    $MainBlock = [ScriptBlock]::Create($MainBlock)
+    $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{$FlipFlop = $True}{If($FlipFLop){$_}; $FlipFlop = !$FlipFlop} | %{If($_ -match '::New\('){($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '}Else{$_}}) -join [System.Environment]::NewLine)
 }
 
 $MainBlock.Invoke($Macro)
