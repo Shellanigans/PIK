@@ -2,8 +2,27 @@ Convert everything to C#
 
 Add better array support
 
+Better profile management
+
 {PAUSE} Function
 
 Better crash handling
 
 Prompts for user input
+
+Procname changer/randomizer
+
+Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
+
+imagik and tesseract APIs
+
+GUI builder?
+
+Listeners for custom hotkeys
+
+Recorder for fast building macros
+
+Switch for mouse coords with adjustable weight (more human)
+
+CAPTCHA defeat?
+
