@@ -31,3 +31,7 @@ Mouse Clicker helpers
 Logging
 
 Standardize and clean up functions
+
+Easier and better statements
+
+Better visual parsing
