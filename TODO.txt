@@ -1,0 +1,9 @@
+Convert everything to C#
+
+Add better array support
+
+{PAUSE} Function
+
+Better crash handling
+
+Prompts for user input
