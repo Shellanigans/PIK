@@ -29,3 +29,5 @@ CAPTCHA defeat?
 Mouse Clicker helpers
 
 Logging
+
+Standardize and clean up functions
