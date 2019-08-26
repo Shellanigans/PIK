@@ -22,7 +22,7 @@ Listeners for custom hotkeys
 
 Recorder for fast building macros
 
-Switch for mouse coords with adjustable weight (more human)
+Switch for mouse coords with adjustable weight for random coords (more human)
 
 CAPTCHA defeat?
 
