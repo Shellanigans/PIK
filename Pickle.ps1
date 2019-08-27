@@ -1,10 +1,20 @@
+############################################################################################################################################################################################################################################################################################################
+             ###                                                                    #       #####     # #   
+              #   #    #  #  #####  #    ##    #       #  ######  ######           #       #     #    # #   
+              #   ##   #  #    #    #   #  #   #       #      #   #               #        #        ####### 
+              #   # #  #  #    #    #  #    #  #       #     #    #####          #         #          # #   
+              #   #  # #  #    #    #  ######  #       #    #     #             #          #        ####### 
+              #   #   ##  #    #    #  #    #  #       #   #      #            #           #     #    # #   
+             ###  #    #  #    #    #  #    #  ######  #  ######  ######      #             #####     # #   
+############################################################################################################################################################################################################################################################################################################                                                                                                
+
 Param([String]$Macro = $Null)
 
 Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -TypeDefinition @'
-using System;
+using System; 
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -200,7 +210,7 @@ namespace GUI{
     public class Rect{
         public static DR.Rectangle E = DR.Rectangle.Empty;
 
-        public DR.Rectangle R (int lx, int ly, int sx, int sy){
+        public static DR.Rectangle R (int lx, int ly, int sx, int sy){
             return (new DR.Rectangle(lx, ly, sx, sy));
         }
     }
@@ -363,6 +373,16 @@ public class Parser{
     }
 }
 '@
+
+############################################################################################################################################################################################################################################################################################################
+             #######                                                           
+             #        #    #  #    #   ####   #####  #   ####   #    #   ####  
+             #        #    #  ##   #  #    #    #    #  #    #  ##   #  #      
+             #####    #    #  # #  #  #         #    #  #    #  # #  #   ####  
+             #        #    #  #  # #  #         #    #  #    #  #  # #       # 
+             #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
+             #         ####   #    #   ####     #    #   ####   #    #   ####  
+############################################################################################################################################################################################################################################################################################################
 
 Function Interpret
 {
@@ -770,7 +790,7 @@ Function Actions
             $PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
 
-            $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],$PH[2],$PH[3])
+            $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
 
             $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
@@ -1035,6 +1055,16 @@ Function GO
     }
 }
 
+############################################################################################################################################################################################################################################################################################################
+              #####   #     #  ### 
+             #     #  #     #   #  
+             #        #     #   #  
+             #  ####  #     #   #  
+             #     #  #     #   #  
+             #     #  #     #   #  
+              #####    #####   ### 
+############################################################################################################################################################################################################################################################################################################
+
 If($Host.Name -match 'Console')
 {
     [Console]::Title = 'Pickle'
@@ -1279,7 +1309,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     
                     $MouseCoordsBox.Text = $Position
 
-                    $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+                    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
 
                     $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
@@ -1287,6 +1317,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
                     $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+                    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
 
                     $Graphics.Dispose()
                     $BMP.Dispose()
@@ -1320,7 +1351,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     
                         $MouseCoordsBox.Text = $Position
 
-                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+                        $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
 
                         $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
@@ -1328,6 +1359,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
                         $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+                        $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
 
                         $Graphics.Dispose()
                         $BMP.Dispose()
@@ -1350,7 +1382,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
     
                         $MouseCoordsBox.Text = $Position
 
-                        $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+                        $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
 
                         $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
@@ -1358,6 +1390,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
                         $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+                        $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
 
                         $Graphics.Dispose()
                         $BMP.Dispose()
@@ -1378,7 +1411,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 #$Reparse.Add_Click({$SyncHash.Stop = $True; GO})
                 #$Reparse.Parent = $TabPageHelper
 
-                <#$SpawnClicker = [GUI.B]::New(260, 25, 10, 285, 'Spawn Click Helper')
+                $SpawnClicker = [GUI.B]::New(260, 25, 10, 285, 'Spawn Click Helper')
                 $SpawnClicker.Add_Click({
                     $Pow = [Powershell]::Create()
                     $Run = [RunspaceFactory]::CreateRunspace()
@@ -1397,10 +1430,16 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $TempForm.Add_DoubleClick({$This.Close();$ClickHelperParent.Remove($Temp)})
 
                         $TempName = [System.Windows.Forms.TextBox]::New()
-                        $TempName.ReadOnly = $True
+                        #$TempName.ReadOnly = $True
                         $TempName.Location = [System.Drawing.Point]::New(0,9)
                         $TempName.Size = [System.Drawing.Size]::New(130,20)
                         $TempName.Text = $Temp
+                        $TempName.Add_TextChanged({
+                            If(!$ClickHelperParent.Keys.Contains($This.Text))
+                            {
+                                $ClickHelperParent.Add($Temp,[String]$This.Parent.Location.X+','+[String]$This.Parent.Location.Y)
+                            }
+                        })
                         $TempName.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
                         $TempName.Parent = $TempForm
                         
@@ -1411,7 +1450,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $TempTarget.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
                         $TempTarget.Parent = $TempForm
 
-                        $ClickHelperParent.Add($Temp,$Temp)
+                        $ClickHelperParent.Add($Temp,[String]$TempForm.Parent.Location.X+','+[String]$TempForm.Parent.Location.Y)
                         
                         If($TempForm.ShowDialog() -eq 'Cancel'){$ClickHelperParent.Remove($Temp)}
 
@@ -1420,7 +1459,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $Pow.BeginInvoke() | Out-Null
 
                 })
-                $SpawnClicker.Parent = $TabPageHelper#>
+                $SpawnClicker.Parent = $TabPageHelper
 
                 $Help = [GUI.B]::New(260, 25, 10, 315, 'About/Help')
                 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
@@ -2153,7 +2192,21 @@ If($Host.Name -match 'Console'){Exit}
 
 If($PSVersionTable.CLRVersion.Major -le 2)
 {
-    $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{$FlipFlop = $True}{If($FlipFLop){$_}; $FlipFlop = !$FlipFlop} | %{If($_ -match '::New\('){($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '}Else{$_}}) -join [System.Environment]::NewLine)
+    $MainBlock = [ScriptBlock]::Create(($MainBlock.toString().Split([System.Environment]::NewLine) | %{
+        $FlipFlop = $True
+    }{
+        If($FlipFLop){$_}
+        $FlipFlop = !$FlipFlop
+    } | %{
+        If($_ -match '::New\(')
+        {
+            ($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList '
+        }
+        Else
+        {
+            $_
+        }
+    }) -join [System.Environment]::NewLine)
 }
 
 $MainBlock.Invoke($Macro)
