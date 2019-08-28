@@ -2037,7 +2037,7 @@ $Config = ($Config | Select `
 
 Try
 {
-    $LoadedConfig = (Get-Content ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
+    $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
 
     $DelayTimer.Value        = $LoadedConfig.DelayTimeVal
     $DelayCheck.Checked      = $LoadedConfig.DelayChecked
