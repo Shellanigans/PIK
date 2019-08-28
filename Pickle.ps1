@@ -256,76 +256,41 @@ public class Parser{
         }
         else{
             switch(X){
-                case "CLEAR":
-	                return "&HC";
-                case "ENTER":
-	                return "&HD";
-                case "CANCEL":
-	                return "&H03";
-                case "BACKSPACE":
-	                return "&H08";
-                case "TAB":
-	                return "&H09";
-                case "SHIFT":
-	                return "&H10";
-                case "CTRL":
-	                return "&H11";
-                case "ALT":
-	                return "&H12";
-                case "PAUSE":
-	                return "&H13";
-                case "CAPSLOCK":
-	                return "&H14";
-                case "ESC":
-	                return "&H1B";
-                case "SPACEBAR":
-	                return "&H20";
-                case "PAGEUP":
-	                return "&H21";
-                case "PAGEDOWN":
-	                return "&H22";
-                case "END":
-	                return "&H23";
-                case "HOME":
-	                return "&H24";
-                case "LEFTARROW":
-	                return "&H25";
-                case "UPARROW":
-	                return "&H26";
-                case "RIGHTARROW":
-	                return "&H27";
-                case "DOWNARROW":
-	                return "&H28";
-                case "SELECT":
-	                return "&H29";
-                case "EXECUTE":
-	                return "&H2B";
-                case "PRINTSCREEN":
-	                return "&H2C";
-                case "INS":
-	                return "&H2D";
-                case "DEL":
-	                return "&H2E";
-                case "HELP":
-	                return "&H2F";
-                case "NUMLOCK":
-	                return "&H90";
-                case "NUMMULT":
-	                return "&H6A";
-                case "NUMPLUS":
-	                return "&H6B";
-                case "NUMENTER":
-	                return "&H6C";
-                case "NUMMINUS":
-	                return "&H6D";
-                case "NUMPOINT":
-	                return "&H6E";
-                case "NUMDIV":
-	                return "&H6F";
-                case "WINDOWS":
-	                return "&H5B";
-                default:
-                    return "&H60";
+                case "CLEAR":       return "&H0C";
+                case "ENTER":       return "&H0D";
+                case "CANCEL":      return "&H03";
+                case "BACKSPACE":   return "&H08";
+                case "TAB":         return "&H09";
+                case "SHIFT":       return "&H10";
+                case "CTRL":        return "&H11";
+                case "ALT":         return "&H12";
+                case "PAUSE":       return "&H13";
+                case "CAPSLOCK":    return "&H14";
+                case "ESC":         return "&H1B";
+                case "SPACEBAR":    return "&H20";
+                case "PAGEUP":      return "&H21";
+                case "PAGEDOWN":    return "&H22";
+                case "END":         return "&H23";
+                case "HOME":        return "&H24";
+                case "LEFTARROW":   return "&H25";
+                case "UPARROW":     return "&H26";
+                case "RIGHTARROW":  return "&H27";
+                case "DOWNARROW":   return "&H28";
+                case "SELECT":      return "&H29";
+                case "EXECUTE":     return "&H2B";
+                case "PRINTSCREEN": return "&H2C";
+                case "INS":         return "&H2D";
+                case "DEL":         return "&H2E";
+                case "HELP":        return "&H2F";
+                case "NUMLOCK":     return "&H90";
+                case "NUMMULT":     return "&H6A";
+                case "NUMPLUS":     return "&H6B";
+                case "NUMENTER":    return "&H6C";
+                case "NUMMINUS":    return "&H6D";
+                case "NUMPOINT":    return "&H6E";
+                case "NUMDIV":      return "&H6F";
+                case "WINDOWS":     return "&H5B";
+                default:            return "&H60";
             }
         }
     }
