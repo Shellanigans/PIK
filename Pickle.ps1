@@ -322,8 +322,9 @@ public class Parser{
                 }
             }
             else if(Regex.IsMatch(X, "{GET[CMP]")){
+                DR.Point Coords = Cons.Curs.GPos();
                 X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
-                X = X.Replace("{GETMOUSE}",(Cons.Curs.GPos().X.ToString()+","+Cons.Curs.GPos().Y.ToString()));
+                X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));
 
                 if(Regex.IsMatch(X, "^{GETPIX [0-9]*,[0-9]*}$"))
                 {
@@ -711,7 +712,15 @@ Function Actions
         {
             If($X -match ',')
             {
-                $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
+                If($X -match '\+' -OR $X -match '-')
+                {
+                    $Coords = [Cons.Curs]::GPos()
+                    $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos(([Int]$_.Split(',')[0] + [Int]$Coords.X), ([Int]$_.Split(',')[-1] + [Int]$Coords.Y))}
+                }
+                Else
+                {
+                    $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
+                }
             }
             ElseIf($X -match ' ')
             {
