@@ -3,6 +3,7 @@ Convert everything to C#
 Add better array support
 
 Better profile management
+    smarter checking for profile to load on start or easier way to save over stuff
 
 {PAUSE} Function
 
@@ -34,6 +35,10 @@ Standardize and clean up functions
 
 Easier and better statements
 
-Better visual parsing and highlighting in text boxes
+Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS BECAUSE THAT SHIT IS ANNOYING AF)
 
-Accept percentage as a function of screen size as well as pixels?
+Accept percentage as a function of screen size as well as pixels and relative pixel hunting 
+
+WHOAMI?
+
+What has my focus?
