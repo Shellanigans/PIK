@@ -1,5 +1,7 @@
 Convert everything to C#
 
+Allow key remapping
+
 Add better array support
 
 Better profile management
