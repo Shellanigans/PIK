@@ -11,8 +11,6 @@ Better profile management
 
 Better crash handling
 
-Prompts for user input
-
 Procname changer/randomizer
 
 Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
@@ -50,5 +48,6 @@ Run Selection Button
 Commandline switch for short commands? single text file instead of folder? parse those?
 
 Taskable server?
-
+--------------------------------------------------------------------------------------------------------------------
 DONE - {PAUSE} Function
+DONE - Prompts for user input
