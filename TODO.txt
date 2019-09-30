@@ -9,8 +9,6 @@ Add better array support
 Better profile management
     smarter checking for profile to load on start or easier way to save over stuff
 
-{PAUSE} Function
-
 Better crash handling
 
 Prompts for user input
@@ -50,3 +48,5 @@ What has my focus?
 Run Selection Button
 
 Commandline switch for short commands? single text file instead of folder? parse those?
+
+DONE - {PAUSE} Function
