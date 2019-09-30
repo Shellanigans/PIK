@@ -2,7 +2,7 @@ make window transluscent? uninteractable? invisible?
 
 Convert everything to C#
 
-Allow key remapping
+Allow key remapping / reset to default button
 
 Add better array support
 
