@@ -90,7 +90,7 @@ You may also HOLD certain keys or mouse clicks down using {HOLD KEY} remember to
 |:----------------- |:------------------ |:------------------ |:------------------ |
 |LMOUSE             | RMOUSE             | MMOUSE             | CANCEL             |
 |BACKSPACE          | TAB                | CLEAR              | ENTER              |
-|SHIFT              | CTRL               | ALT                | PAUSE              |
+|SHIFT              | CTRL               | ALT                | PAUSE*             |
 |CAPSLOCK           | ESC                | SPACEBAR           | PAGEUP             |
 |PAGEDOWN           | END                | HOME               | LEFTARROW          |
 |UPARROW            | RIGHTARROW         | DOWNARROW          | SELECT             |
@@ -98,6 +98,8 @@ You may also HOLD certain keys or mouse clicks down using {HOLD KEY} remember to
 |HELP               | NUMLOCK            | NUM# (0-9)         | NUMMULT            |
 |NUMPLUS            | NUMENTER           | NUMMINUS           | NUMPOINT           |
 |NUMDIV             | All letters        | All numbers        | F(1-16)            |
+
+*PAUSE is also a special function as well as a button, so please don't get them confused.
 
 ### Functions
 
@@ -328,6 +330,7 @@ There are too many commands to mention in paragraph form and some commands are s
 |{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
 |{REFOCUS}*                      |Tells the program to focus on itself after. This is a flag and can be set anywhere.         |
 |{GOTO label_name}*              |Go to the first label defined in the commands tab by ":::label_name" and continue           |
+|{PAUSE (-C)}                    |Wait until the opened pause dialog box is closed. The -C is for commandline/debug usage. This is the same as the old CMD PAUSE and waits for any keypressin the console.     |
 
 \*This command needs to be on its own line.
 
