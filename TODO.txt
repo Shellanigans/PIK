@@ -39,7 +39,7 @@ Standardize and clean up functions
 
 Easier and better statements
 
-Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS BECAUSE THAT SHIT IS ANNOYING AF)
+Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS NOT AUTOMATIC BECAUSE THAT SHIT IS ANNOYING AF)
 
 Accept percentage as a function of screen size as well as pixels and relative pixel hunting 
 
