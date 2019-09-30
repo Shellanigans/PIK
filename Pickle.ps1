@@ -410,6 +410,15 @@ Function Interpret
         }
     }
 
+    While($X -match '{READIN ')
+    {
+        $X.Split('{}') | ?{$_ -match 'READIN '} | %{
+            $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
+            $X = ($X.Replace(('{'+$_+'}'),($PH)))
+            Write-Host $X
+        }
+    }
+
     While($X -match '{VAR ' -OR $X -match '{MANIP ')
     {
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
@@ -671,10 +680,11 @@ Function Actions
         {
             If($X -match ' -ID ')
             {
-                Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{}
-            }Else
+                Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine('Process not found!')}
+            }
+            Else
             {
-                Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{}
+                Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine('Process not found!')}
             }
         }
         ElseIf($X -match '{SETCLIP ')
