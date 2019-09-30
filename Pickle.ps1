@@ -628,6 +628,20 @@ Function Actions
                 }
             }
         }
+        ElseIf($X -match '{PAUSE')
+        {
+            If($CommandLine -OR ($X -match '{PAUSE -C}'))
+            {
+                [System.Console]::WriteLine('Press any key to continue...')
+                [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+            }
+            Else
+            {
+                [System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
+            }
+            
+            $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -C}','')
+        }
         ElseIf($X -match '^{FOREACH ')
         {
             $PH = ($X.Substring(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
