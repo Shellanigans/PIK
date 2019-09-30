@@ -49,4 +49,6 @@ Run Selection Button
 
 Commandline switch for short commands? single text file instead of folder? parse those?
 
+Taskable server?
+
 DONE - {PAUSE} Function
