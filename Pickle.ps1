@@ -375,16 +375,16 @@ Function Interpret
     While($X -match '{GETPROC ')
     {
         $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
-            $PH = ($X -replace '{GETPROC ' -replace '}$')
+            $PH = ($_ -replace '{GETPROC ')
 
             If($_ -match ' -ID ')
             {
                 $PH = ($PH -replace '-ID ')
-                $PH = ((PS -Id $PH) | %{$_.ProcessName+','+$_.Id})
+                $PH = ((PS -Id $PH) | %{$_.ProcessName})
             }
             Else
             {
-                $PH = ((PS $PH) | %{$_.ProcessName+','+$_.Id}) -join ';'
+                $PH = ((PS $PH) | %{$_.Id}) -join ';'
             }
 
             $X = ($X.Replace(('{'+$_+'}'),$PH))
