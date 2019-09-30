@@ -1,3 +1,5 @@
+make window transluscent? uninteractable? invisible?
+
 Convert everything to C#
 
 Allow key remapping
