@@ -330,7 +330,8 @@ There are too many commands to mention in paragraph form and some commands are s
 |{KILL}*                         |Stop running. Essentially the same as pressing SCROLL LOCK.                                 |
 |{REFOCUS}*                      |Tells the program to focus on itself after. This is a flag and can be set anywhere.         |
 |{GOTO label_name}*              |Go to the first label defined in the commands tab by ":::label_name" and continue           |
-|{PAUSE (-C)}                    |Wait until the opened pause dialog box is closed. The -C is for commandline/debug usage. This is the same as the old CMD PAUSE and waits for any keypressin the console.     |
+|{READIN prompt_message}         |Prompt the user for input with the string prompt. Best practice is to capture the input in a var. (e.g. {VAR TEMP={READIN prompt_message}})|
+|{PAUSE (-C)}                    |Wait until the opened pause dialog box is closed. The -C is for commandline/debug usage. This is the same as the old CMD PAUSE and waits for any keypress in the console.|
 
 \*This command needs to be on its own line.
 
