@@ -5,6 +5,7 @@ Convert everything to C#
 Allow key remapping / reset to default button
 
 Add better array support
+    smarter indexing like negative indexing and selecting a range and creating empty arrays
 
 Better profile management
     smarter checking for profile to load on start or easier way to save over stuff
