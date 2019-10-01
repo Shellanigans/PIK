@@ -396,11 +396,11 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'GETWIND '} | %{    
             If($_ -match ' -ID ')
             {
-                $PHHandle = (PS -Id ($X -replace '{GETWIND -ID ' -replace '}$')).MainWindowHandle
+                $PHHandle = (PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle
             }
             Else
             {
-                $PHHandle = (PS ($X -replace '{GETWIND ' -replace '}$')).MainWindowHandle
+                $PHHandle = (PS ($_ -replace 'GETWIND ')).MainWindowHandle
             }
 
             $PHRect = [GUI.Rect]::E
