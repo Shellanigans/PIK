@@ -367,13 +367,18 @@ Function Interpret
 
     $X = [Parser]::Interpret($X)
 
-    While($X -match '{FINDVAR ')
+    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{READIN '))
     {
+        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
+            $PH = $_.Split(' ')[1]
+
+            $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
+
+            [System.Console]::WriteLine($X)
+        }
+
         $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
-    }
     
-    While($X -match '{GETPROC ')
-    {
         $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
             $PH = ($_ -replace '{GETPROC ')
 
@@ -389,10 +394,7 @@ Function Interpret
 
             $X = ($X.Replace(('{'+$_+'}'),$PH))
         }
-    }
 
-    While($X -match '{GETWIND ')
-    {
         $X.Split('{}') | ?{$_ -match 'GETWIND '} | %{    
             If($_ -match ' -ID ')
             {
@@ -408,24 +410,10 @@ Function Interpret
             $X = ($X.Replace(('{'+$_+'}'),([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)))
             [System.Console]::WriteLine($X)
         }
-    }
 
-    While($X -match '{READIN ')
-    {
         $X.Split('{}') | ?{$_ -match 'READIN '} | %{
             $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
             $X = ($X.Replace(('{'+$_+'}'),($PH)))
-            Write-Host $X
-        }
-    }
-
-    While($X -match '{VAR ' -OR $X -match '{MANIP ')
-    {
-        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
-            $PH = $_.Split(' ')[1]
-
-            $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
-
             [System.Console]::WriteLine($X)
         }
 
@@ -610,11 +598,6 @@ Function Actions
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
         }
 
-        If($X -match '^{TESSERACT .*}$')
-        {
-            $X = ([ScriptBlock]::Create(($X -replace '^{TESSERACT ' -replace '}$'))).Invoke()
-        }
-
         While($X -match '{GETCON ')
         {
             $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
@@ -646,7 +629,7 @@ Function Actions
             }
             Else
             {
-                [System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
+                [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
             }
             
             $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -C}','')
@@ -1146,51 +1129,6 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Form.Text+='*'
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
-
-                    $TempSelectionIndex = $This.SelectionStart
-                    $TempSelectionLength = $This.SelectionLength
-
-                    $This.SelectionStart = 0
-                    $This.SelectionLength = $This.Text.Length
-                    $This.SelectionColor = [System.Drawing.Color]::Black
-                    
-                    ($This.Lines | %{$Count = 0; $Commented = $False}{
-                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
-
-                        If($PH -match '^<\\\\#')
-                        {
-                            $Commented = $True
-                        }
-
-                        If($PH -match '^\\\\#' -OR $Commented)
-                        {
-                            'G,'+$Count
-                        }
-
-                        If($PH -match '^\\\\#>')
-                        {
-                            $Commented = $False
-                        }
-
-                        If($PH -match '^:::')
-                        {
-                            'B,'+$Count
-                        }
-                        
-                        $Count++
-                    }) | %{
-                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
-                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
-                        
-                        Switch($_.Split(',')[0])
-                        {
-                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                            'B' {$This.SelectionColor = [System.Drawing.Color]::DarkBlue}
-                        }
-                    }
-                    
-                    $This.SelectionStart = $TempSelectionIndex
-                    $This.SelectionLength = $TempSelectionLength
                 })
                 $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $Commands.Parent = $TabPageCommMain
@@ -1229,6 +1167,53 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     {
                         $This.SelectionLength = 0
                         $This.SelectedText = '{WAIT M 100}'
+                    }
+                    ElseIf($_.KeyCode.ToString() -eq 'F10')
+                    {
+                        $TempSelectionIndex = $This.SelectionStart
+                        $TempSelectionLength = $This.SelectionLength
+
+                        $This.SelectionStart = 0
+                        $This.SelectionLength = $This.Text.Length
+                        $This.SelectionColor = [System.Drawing.Color]::Black
+                    
+                        ($This.Lines | %{$Count = 0; $Commented = $False}{
+                            $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
+
+                            If($PH -match '^<\\\\#')
+                            {
+                                $Commented = $True
+                            }
+
+                            If($PH -match '^\\\\#' -OR $Commented)
+                            {
+                                'G,'+$Count
+                            }
+
+                            If($PH -match '^\\\\#>')
+                            {
+                                $Commented = $False
+                            }
+
+                            If($PH -match '^:::')
+                            {
+                                'B,'+$Count
+                            }
+                        
+                            $Count++
+                        }) | %{
+                            $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                            $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                            Switch($_.Split(',')[0])
+                            {
+                                'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                                'B' {$This.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                            }
+                        }
+                    
+                        $This.SelectionStart = $TempSelectionIndex
+                        $This.SelectionLength = $TempSelectionLength
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F11')
                     {
@@ -1493,42 +1478,6 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Form.Text+='*'
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
-
-                    $TempSelectionIndex = $This.SelectionStart
-                    $This.SelectionStart = 0
-                    $This.SelectionLength = $This.Text.Length
-                    $This.SelectionColor = [System.Drawing.Color]::Black
-                    
-                    ($This.Lines | %{$Count = 0; $Commented = $False}{
-                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
-                        
-                        If($PH -match '^<\\\\#')
-                        {
-                            $Commented = $True
-                        }
-
-                        If($PH -match '^\\\\#' -OR $Commented)
-                        {
-                            'G,'+$Count
-                        }
-
-                        If($PH -match '^\\\\#>')
-                        {
-                            $Commented = $False
-                        }
-                        
-                        $Count++
-                    }) | %{
-                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
-                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
-                        
-                        Switch($_.Split(',')[0])
-                        {
-                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                        }
-                    }
-                    $This.SelectionStart = $TempSelectionIndex
-                    $This.SelectionLength = 0
                 })
                 $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $FunctionsBox.Dock = 'Fill'
@@ -1567,6 +1516,44 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     {
                         $This.SelectionLength = 0
                         $This.SelectedText = '{WAIT M 100}'
+                    }
+                    ElseIf($_.KeyCode.toString() -eq 'F10')
+                    {
+                        $TempSelectionIndex = $This.SelectionStart
+                        $This.SelectionStart = 0
+                        $This.SelectionLength = $This.Text.Length
+                        $This.SelectionColor = [System.Drawing.Color]::Black
+                    
+                        ($This.Lines | %{$Count = 0; $Commented = $False}{
+                            $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
+                        
+                            If($PH -match '^<\\\\#')
+                            {
+                                $Commented = $True
+                            }
+
+                            If($PH -match '^\\\\#' -OR $Commented)
+                            {
+                                'G,'+$Count
+                            }
+
+                            If($PH -match '^\\\\#>')
+                            {
+                                $Commented = $False
+                            }
+                        
+                            $Count++
+                        }) | %{
+                            $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                            $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                            Switch($_.Split(',')[0])
+                            {
+                                'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                            }
+                        }
+                        $This.SelectionStart = $TempSelectionIndex
+                        $This.SelectionLength = 0
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F11')
                     {
@@ -1650,42 +1637,6 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $Form.Text+='*'
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force
-
-                $TempSelectionIndex = $This.SelectionStart
-                    $This.SelectionStart = 0
-                    $This.SelectionLength = $This.Text.Length
-                    $This.SelectionColor = [System.Drawing.Color]::Black
-                    
-                    ($This.Lines | %{$Count = 0; $Commented = $False}{
-                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
-
-                        If($PH -match '^<\\\\#')
-                        {
-                            $Commented = $True
-                        }
-
-                        If($PH -match '^\\\\#' -OR $Commented)
-                        {
-                            'G,'+$Count
-                        }
-
-                        If($PH -match '^\\\\#>')
-                        {
-                            $Commented = $False
-                        }
-                        
-                        $Count++
-                    }) | %{
-                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
-                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
-                        
-                        Switch($_.Split(',')[0])
-                        {
-                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                        }
-                    }
-                    $This.SelectionStart = $TempSelectionIndex
-                    $This.SelectionLength = 0
             })
             $StatementsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
             $StatementsBox.Dock = 'Fill'
@@ -1724,6 +1675,44 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                 {
                     $This.SelectionLength = 0
                     $This.SelectedText = '{WAIT M 100}'
+                }
+                ElseIf($_.KeyCode.ToString() -eq 'F10')
+                {
+                    $TempSelectionIndex = $This.SelectionStart
+                    $This.SelectionStart = 0
+                    $This.SelectionLength = $This.Text.Length
+                    $This.SelectionColor = [System.Drawing.Color]::Black
+                    
+                    ($This.Lines | %{$Count = 0; $Commented = $False}{
+                        $PH = $_.TrimStart(' ').TrimStart([Char][Int]9)
+
+                        If($PH -match '^<\\\\#')
+                        {
+                            $Commented = $True
+                        }
+
+                        If($PH -match '^\\\\#' -OR $Commented)
+                        {
+                            'G,'+$Count
+                        }
+
+                        If($PH -match '^\\\\#>')
+                        {
+                            $Commented = $False
+                        }
+                        
+                        $Count++
+                    }) | %{
+                        $This.SelectionStart = $This.GetFirstCharIndexFromLine($_.Split(',')[-1])
+                        $This.SelectionLength = $This.Lines[$_.Split(',')[-1]].Length
+                        
+                        Switch($_.Split(',')[0])
+                        {
+                            'G' {$This.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                        }
+                    }
+                    $This.SelectionStart = $TempSelectionIndex
+                    $This.SelectionLength = 0
                 }
                 ElseIf($_.KeyCode.ToString() -eq 'F11')
                 {
