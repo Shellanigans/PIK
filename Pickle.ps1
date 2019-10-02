@@ -1216,6 +1216,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     
                         $This.SelectionStart = $TempSelectionIndex
                         $This.SelectionLength = $TempSelectionLength
+                        $_.SuppressKeyPress = $True
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F11')
                     {
@@ -1556,6 +1557,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                         }
                         $This.SelectionStart = $TempSelectionIndex
                         $This.SelectionLength = 0
+                        $_.SuppressKeyPress = $True
                     }
                     ElseIf($_.KeyCode.ToString() -eq 'F11')
                     {
@@ -1715,6 +1717,7 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     }
                     $This.SelectionStart = $TempSelectionIndex
                     $This.SelectionLength = 0
+                    $_.SuppressKeyPress = $True
                 }
                 ElseIf($_.KeyCode.ToString() -eq 'F11')
                 {
