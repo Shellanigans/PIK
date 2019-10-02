@@ -382,7 +382,7 @@ Function Interpret
         }
     
         $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
-            $PH = ($_ -replace '{GETPROC ')
+            $PH = ($_ -replace 'GETPROC ')
 
             If($_ -match ' -ID ')
             {
