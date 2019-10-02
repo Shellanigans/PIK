@@ -377,7 +377,9 @@ Function Interpret
             [System.Console]::WriteLine($X)
         }
 
-        $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
+        $X.Split('{}') | ?{$_ -match 'FINDVAR '} | %{
+            $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
+        }
     
         $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
             $PH = ($_ -replace '{GETPROC ')
