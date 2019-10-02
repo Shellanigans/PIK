@@ -1,6 +1,12 @@
 make window transluscent? uninteractable? invisible?
 
+Run Selection Button
+
 Convert everything to C#
+
+Logging
+
+Better crash handling
 
 Allow key remapping / reset to default button
 
@@ -10,13 +16,11 @@ Add better array support
 Better profile management
     smarter checking for profile to load on start or easier way to save over stuff
 
-Better crash handling
-
 Procname changer/randomizer
 
-Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
-
-imagik and tesseract APIs
+Mouse improvements
+    Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
+    Switch for mouse coords with adjustable weight for random coords (more human)
 
 GUI builder?
 
@@ -24,19 +28,17 @@ Listeners for custom hotkeys
 
 Recorder for fast building macros
 
-Switch for mouse coords with adjustable weight for random coords (more human)
+Commandline switch for short commands? single text file instead of folder? parse those?
 
-CAPTCHA defeat?
+Taskable server?
+
+Allow minimize, maximize, and hide other windows as well as hide all except
 
 Mouse Clicker helpers
 
-Logging
-
-Standardize and clean up functions
+Standardize and clean up internal functions
 
 Easier and better statements
-
-Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS NOT AUTOMATIC BECAUSE THAT SHIT IS ANNOYING AF)
 
 Accept percentage as a function of screen size as well as pixels and relative pixel hunting 
 
@@ -44,11 +46,12 @@ WHOAMI?
 
 What has my focus?
 
-Run Selection Button
+imagik and tesseract APIs
 
-Commandline switch for short commands? single text file instead of folder? parse those?
-
-Taskable server?
+CAPTCHA defeat?
+--------------------------------------------------------------------------------------------------------------------
+PARTIAL - Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS NOT AUTOMATIC BECAUSE THAT SHIT IS ANNOYING AF)
+    This is a keypress of F10 and no longer automatic, but still needs better highlighting
 --------------------------------------------------------------------------------------------------------------------
 DONE - {PAUSE} Function
 DONE - Prompts for user input
