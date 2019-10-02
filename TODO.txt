@@ -49,6 +49,8 @@ What has my focus?
 imagik and tesseract APIs
 
 CAPTCHA defeat?
+
+Multiple instances? How would they share input?
 --------------------------------------------------------------------------------------------------------------------
 PARTIAL - Better visual parsing and highlighting in text boxes (MAKE THIS INTO A KEYPRESS NOT AUTOMATIC BECAUSE THAT SHIT IS ANNOYING AF)
     This is a keypress of F10 and no longer automatic, but still needs better highlighting
