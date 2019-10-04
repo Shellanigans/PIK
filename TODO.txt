@@ -1,5 +1,9 @@
 make window transluscent? uninteractable? invisible?
 
+fix up helper window
+    put hot key stuff in there?
+    make it resizeable
+
 Ruggedize settings saving (make it save when you make a change not just on close)
 
 revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over selection instead of insert 
