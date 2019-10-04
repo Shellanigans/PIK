@@ -1,5 +1,11 @@
 make window transluscent? uninteractable? invisible?
 
+Ruggedize settings saving (make it save when you make a change not just on close)
+
+revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over selection instead of insert 
+
+add right click menu
+
 Run Selection Button
     single command box?
     Commandline switch for short commands? single text file instead of folder? parse those?
