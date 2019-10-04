@@ -1,12 +1,14 @@
 make window transluscent? uninteractable? invisible?
 
 Run Selection Button
-
+    single command box?
+    Commandline switch for short commands? single text file instead of folder? parse those?
+    
 Convert everything to C#
+    Standardize and clean up internal functions
 
-Logging
-
-Better crash handling
+Logging / Better crash handling
+    timing as well like some kind of run complete/crashed/cancelled output at the end
 
 Allow key remapping / reset to default button
 
@@ -21,26 +23,21 @@ Procname changer/randomizer
 Mouse improvements
     Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
     Switch for mouse coords with adjustable weight for random coords (more human)
-
-GUI builder?
+    Accept percentage as a function of screen size as well as pixels and relative pixel hunting 
 
 Listeners for custom hotkeys
 
 Recorder for fast building macros
 
-Commandline switch for short commands? single text file instead of folder? parse those?
-
 Taskable server?
+
+GUI builder?
 
 Allow minimize, maximize, and hide other windows as well as hide all except
 
 Mouse Clicker helpers
 
-Standardize and clean up internal functions
-
 Easier and better statements
-
-Accept percentage as a function of screen size as well as pixels and relative pixel hunting 
 
 WHOAMI?
 
