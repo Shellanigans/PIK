@@ -10,6 +10,10 @@ revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over se
 
 add right click menu
 
+In the reparse functionality, have a precheck? Make this a separate function?
+
+Move cursor when using F4 to the location of the new item
+
 Run Selection Button
     single command box?
     Commandline switch for short commands? single text file instead of folder? parse those?
