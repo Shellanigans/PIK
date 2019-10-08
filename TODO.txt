@@ -11,6 +11,13 @@ Ruggedize settings saving (make it save when you make a change not just on close
 revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over selection instead of insert 
 
 add right click menu
+    copy
+    paste
+    select all
+    re-highlight/parse
+    select line
+    un/comment selection
+    
 
 yes/no/cancel/ok buttons in "output"? How would command line handle this?
 
