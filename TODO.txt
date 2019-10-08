@@ -3,6 +3,8 @@ make window transluscent? uninteractable? invisible?
 fix up helper window
     put hot key stuff in there?
     make it resizeable
+    
+Add stop window that can be set in settings and can be clicked if need be that still ties into scroll lock
 
 Ruggedize settings saving (make it save when you make a change not just on close)
 
