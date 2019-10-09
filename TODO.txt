@@ -17,7 +17,9 @@ add right click menu
     re-highlight/parse
     select line
     un/comment selection
-    
+    find/replace
+    run selection
+    run
 
 yes/no/cancel/ok buttons in "output"? How would command line handle this?
 
