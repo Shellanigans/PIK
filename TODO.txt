@@ -23,6 +23,11 @@ add right click menu
 
 yes/no/cancel/ok buttons in "output"? How would command line handle this?
 
+ability to make windows invisible?
+
+get proc of focussed window
+    via cmd AND selection tool in helper
+
 In the reparse functionality, have a precheck? Make this a separate function?
 
 Move cursor when using F4 to the location of the new item
@@ -44,8 +49,10 @@ Add better array support
 
 Better profile management
     smarter checking for profile to load on start or easier way to save over stuff
+    ctrl+s shortcut too 
 
 Procname changer/randomizer
+    put this in settings tab
 
 Mouse improvements
     Vectorization for mouse movements to make them smooth (switch based) with sinusoidal speed
