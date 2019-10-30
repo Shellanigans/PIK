@@ -25,6 +25,8 @@ add right click menu
     run selection
     run
 
+Change setting for hung process and detect when process is no longer thinking? (Will require admin?)
+
 yes/no/cancel/ok buttons in "output"? How would command line handle this?
 
 ability to make windows invisible?
