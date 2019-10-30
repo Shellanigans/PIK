@@ -10,6 +10,8 @@ Ruggedize settings saving (make it save when you make a change not just on close
 
 revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over selection instead of insert 
 
+Allow functions to take args?
+
 add right click menu
     copy
     paste
