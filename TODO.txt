@@ -1,7 +1,7 @@
 make window transluscent? uninteractable? invisible?
 
 fix up helper window
-    put hot key stuff in there?
+    put hot key stuff in there? maybe settings instead?
     make it resizeable
     
 Add stop window that can be set in settings and can be clicked if need be that still ties into scroll lock
