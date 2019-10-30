@@ -251,7 +251,7 @@ public class Parser{
         else if(X.Length == 1){
             return ("&H"+Convert.ToString(Convert.ToInt32(Convert.ToChar(X)), 16)).ToUpper();
         }
-        else if(Regex.IsMatch(X, "^F[0-9][0-6]?")){
+        else if(Regex.IsMatch(X, "^F[1-9]+[0-6]?")){
             return ("&H7"+Convert.ToString((Convert.ToInt32(X.Replace("F","")) - 1), 16)).ToUpper();
         }
         else{
