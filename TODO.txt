@@ -18,6 +18,8 @@ Code Stylize
 
 Comments
 
+what's MY PID
+
 Encryption option for stored textfiles
 
 add right click menu
