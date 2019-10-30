@@ -14,6 +14,12 @@ Allow functions to take args?
 
 Debug breakpoints?
 
+Code Stylize
+
+Comments
+
+Encryption option for stored textfiles
+
 add right click menu
     copy
     paste
@@ -70,6 +76,7 @@ Listeners for custom hotkeys
 Recorder for fast building macros
 
 Taskable server?
+    encrypted comms?
 
 GUI builder?
 
