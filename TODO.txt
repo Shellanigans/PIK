@@ -12,6 +12,8 @@ revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over se
 
 Allow functions to take args?
 
+Debug breakpoints?
+
 add right click menu
     copy
     paste
