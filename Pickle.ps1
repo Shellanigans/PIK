@@ -367,7 +367,7 @@ Function Interpret
 
     $X = [Parser]::Interpret($X)
 
-    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{READIN '))
+    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{READIN '))
     {
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
@@ -375,6 +375,11 @@ Function Interpret
             $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
 
             [System.Console]::WriteLine($X)
+        }
+        
+        $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
+            Write-Host $X
         }
 
         $X.Split('{}') | ?{$_ -match 'FINDVAR '} | %{
@@ -598,14 +603,6 @@ Function Actions
         If($X -match '^{POWER .*}$')
         {
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
-        }
-
-        While($X -match '{GETCON ')
-        {
-            $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
-                $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
-                Write-Host $X
-            }
         }
 
         If($X -match '^{GOTO')
