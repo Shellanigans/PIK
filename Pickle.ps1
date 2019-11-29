@@ -676,7 +676,7 @@ Function Actions
                 $X = ($X -replace ('{'+$_+'}'))
             }
         }
-        ElseIf($X -match '{WAIT')
+        ElseIf($X -match '{WAIT ?(M )?\d*}')
         {
             $X -replace '{WAIT' -replace '}' | %{
                 If($_ -match 'M')
