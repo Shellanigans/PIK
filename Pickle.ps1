@@ -737,7 +737,7 @@ Function Interpret
             If($Output){[System.Console]::WriteLine($X)}
         }
 
-        If($X -match '{VAR .*?=')
+        <#If($X -match '{VAR .*?=')
         {
             $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
             $PHName = $PH.Split('=')[0]
@@ -746,9 +746,9 @@ Function Interpret
             $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,$PHValue)
             $X = ''
-        }
+        }#>
 
-        <#$X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
+        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             $PHValue = $PH.Replace(($PHName+'='),'')
@@ -756,7 +756,7 @@ Function Interpret
             $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,$PHValue)
             
-            $X = $X.Replace(('{'+$_+'}'),'')
+            <#$X = $X.Replace(('{'+$_+'}'),'')
             If($X)
             {
                 $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
@@ -772,8 +772,8 @@ Function Interpret
             {
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
-            }
-        }#>
+            }#>
+        }
     }
 
     Return $X
