@@ -378,7 +378,7 @@ Function Interpret
         }
         
         $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(GC $_.Substring(7))))
+            $X = ($X.Replace(('{'+$_+'}'),(GC -RAW $_.Substring(7))))
             Write-Host $X
         }
 
@@ -424,7 +424,7 @@ Function Interpret
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'MANIP '} | %{
+        $X.Split('{}') | ?{$_ -match '^MANIP '} | %{
             $PH = ($_.Substring(6))
 
             $Operator = $PH.Split(' ')[0]
@@ -486,7 +486,7 @@ Function Interpret
                 }
                 'CNT'
                 {
-                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^[0-9]*_'+$Operands[0]+'$')}).Count
+                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count
                 }
                 'APP'
                 {
@@ -534,7 +534,7 @@ Function Interpret
                 }
                 'JOI'
                 {
-                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('[0-9]*_'+$Operands[0]+'$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{$Script:VarsHash.$_}) -join $Operands[1]
+                    $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{$Script:VarsHash.$_}) -join $Operands[1]
                 }
                 'SPL'
                 {
@@ -575,7 +575,18 @@ Function Interpret
             If($Output){[System.Console]::WriteLine($X)}
         }
 
-        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
+        If($X -match '{VAR .*?=')
+        {
+            $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
+            $PHName = $PH.Split('=')[0]
+            $PHValue = $PH.Replace(($PHName+'='),'')
+
+            $Script:VarsHash.Remove($PHName)
+            $Script:VarsHash.Add($PHName,$PHValue)
+            $X = ''
+        }
+
+        <#$X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             $PHValue = $PH.Replace(($PHName+'='),'')
@@ -584,7 +595,23 @@ Function Interpret
             $Script:VarsHash.Add($PHName,$PHValue)
             
             $X = $X.Replace(('{'+$_+'}'),'')
-        }
+            If($X)
+            {
+                $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
+                $PHName = $PH.Split('=')[0]
+                $PHValue = $PH.Replace(($PHName+'='),'')
+
+                $Script:VarsHash.Remove($PHName)
+                $Script:VarsHash.Add($PHName,$PHValue)
+                #$X = $X.Replace(('{VAR '+$PHName+'='+$PHValue+'}'),'')
+                $X = ''
+            }
+            Else
+            {
+                $Script:VarsHash.Remove($PHName)
+                $Script:VarsHash.Add($PHName,$PHValue)
+            }
+        }#>
     }
 
     Return $X
@@ -662,11 +689,11 @@ Function Actions
         {
             If($X -match ' -ID ')
             {
-                Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine('Process not found!')}
+                Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine(([String][Char][Int]9)+'Process not found!')}
             }
             Else
             {
-                Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine('Process not found!')}
+                Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine(([String][Char][Int]9)+'Process not found!')}
             }
         }
         ElseIf($X -match '{SETCLIP ')
@@ -692,9 +719,17 @@ Function Actions
                     $PH = 1000
                 }
 
-                If(!$SyncHash.Stop){[System.Threading.Thread]::Sleep($PH % 3000)}
-                For($i = 0; $i -lt [Int]([Math]::Floor($PH / 3000)) -AND !$SyncHash.Stop; $i++)
+                If(!$SyncHash.Stop -AND ($PH % 3000))
                 {
+                    [System.Console]::WriteLine(([String][Char][Int]9)+'Waiting: '+[Double]($PH / 1000)+' seconds remain...')
+                    [System.Threading.Thread]::Sleep($PH % 3000)
+                }
+                
+                $MaxWait = [Int]([Math]::Floor($PH / 3000))
+                $PH = ($PH - ($PH % 3000))
+                For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++)
+                {
+                    [System.Console]::WriteLine(([String][Char][Int]9)+'Waiting: '+[Double](($PH - (3000 * $i)) / 1000)+' seconds remain...')
                     [System.Threading.Thread]::Sleep(3000)
                 }
             }
@@ -899,6 +934,9 @@ Function Actions
 
 Function GO
 {
+    [System.Console]::WriteLine('Initializing:')
+    [System.Console]::WriteLine('------------------------------'+[System.Environment]::NewLine)
+
     $Script:Refocus = $False
 
     $Script:Vars = [String[]]@()
@@ -915,99 +953,128 @@ Function GO
 
     $Form.Refresh()
 
-    $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
-        $StatementStart = $False
-    }{
-        If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
-        {
-            $StatementStart = $True
-            $Numeric = $False
+    If($StatementsBox.Text -replace '\s*')
+    {
+        [System.Console]::WriteLine(([String][Char][Int]9)+'Parsing Statements:')
+        [System.Console]::WriteLine(([String][Char][Int]9)+'-------------------'+[System.Environment]::NewLine)
 
-            $TF = $True
+        $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
+            $StatementStart = $False
+        }{
+            If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
+            {
+                $StatementStart = $True
+                $Numeric = $False
 
-            $StatementTText = [String[]]@()
-            $StatementFText = [String[]]@()
-        }
+                $TF = $True
 
-        If($StatementStart)
-        {
-            If($_ -match '^{STATEMENT NAME ')
-            {
-                $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
-                $Script:IfElHash.Add($NameState,($NameState+'_NAME'))
+                $StatementTText = [String[]]@()
+                $StatementFText = [String[]]@()
             }
-            ElseIf($_ -match '^{NUMERIC}')
+
+            If($StatementStart)
             {
-                $Script:IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
-            }
-            ElseIf($_ -match '^{OP1 ')
-            {
-                $PH = $_.Substring(5)
-                $PH = $PH.Substring(0, ($PH.Length - 1))
-                    
-                $Script:IfElHash.Add($NameState+'OP1',$PH)
-            }
-            ElseIf($_ -match '^{CMP ')
-            {
-                $PH = $_.Substring(5)
-                $PH = $PH.Substring(0, ($PH.Length - 1))
-                $Script:IfElHash.Add($NameState+'CMP',$PH)
-            }
-            ElseIf($_ -match '^{OP2 ')
-            {
-                $PH = $_.Substring(5)
-                $PH = $PH.Substring(0, ($PH.Length - 1))
-                    
-                $Script:IfElHash.Add($NameState+'OP2',$PH)
-            }
-            ElseIf($_ -match '^{ELSE}')
-            {
-                $TF = $False
-            }
-            ElseIf($_ -match '^{STATEMENT END}')
-            {
-                $StatementStart = $False
-                $Script:IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
-                $Script:IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
-            }
-            Else
-            {
-                If($TF)
+                If($_ -match '^{STATEMENT NAME ')
                 {
-                    $StatementTText+=$_
+                    $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
+                    $Script:IfElHash.Add($NameState,($NameState+'_NAME'))
+                }
+                ElseIf($_ -match '^{NUMERIC}')
+                {
+                    $Script:IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
+                }
+                ElseIf($_ -match '^{OP1 ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                    $Script:IfElHash.Add($NameState+'OP1',$PH)
+                }
+                ElseIf($_ -match '^{CMP ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    $Script:IfElHash.Add($NameState+'CMP',$PH)
+                }
+                ElseIf($_ -match '^{OP2 ')
+                {
+                    $PH = $_.Substring(5)
+                    $PH = $PH.Substring(0, ($PH.Length - 1))
+                    
+                    $Script:IfElHash.Add($NameState+'OP2',$PH)
+                }
+                ElseIf($_ -match '^{ELSE}')
+                {
+                    $TF = $False
+                }
+                ElseIf($_ -match '^{STATEMENT END}')
+                {
+                    $StatementStart = $False
+                    $Script:IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
+                    $Script:IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
                 }
                 Else
                 {
-                    $StatementFText+=$_
+                    If($TF)
+                    {
+                        $StatementTText+=$_
+                    }
+                    Else
+                    {
+                        $StatementFText+=$_
+                    }
                 }
             }
         }
-    }
 
-    $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
-        $FunctionStart = $False
-
-        $FunctionText = @()
-    }{
-        If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
-        If($FunctionStart)
-        {
-            If($_ -match '^{FUNCTION NAME ')
-            {
-                $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
-            }
-            ElseIf($_ -match '^{FUNCTION END}')
-            {
-                $FunctionStart = $False
-                $Script:FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
-                $FunctionText = @()
-            }
-            Else
-            {
-                $FunctionText+=$_
-            }
+        $Script:IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
+            $PH = $_
+            $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
+            $PH = $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
+                        
+            [System.Console]::WriteLine(((([String][Char][Int]9)*2)+$_+[N]::L+(([String][Char][Int]9)*2)+'-------------------------'))
+            [System.Console]::WriteLine(((([String][Char][Int]9)*2)+'If('+$Script:IfElHash.($PH[1])+' -'+$Script:IfElHash.($PH[2])+' '+$Script:IfElHash.($PH[3])+')'))
+            [System.Console]::WriteLine(((([String][Char][Int]9)*2)+'{'+[N]::L+(($Script:IfElHash.($PH[4]).Split([N]::L) | ?{$_ -ne ''} | %{(([String][Char][Int]9)*3)+$_}) -join [N]::L)+[N]::L+(([String][Char][Int]9)*2)+'}'+[N]::L+(([String][Char][Int]9)*2)+'Else'))
+            [System.Console]::WriteLine(((([String][Char][Int]9)*2)+'{'+[N]::L+(($Script:IfElHash.($PH[5]).Split([N]::L) | ?{$_ -ne ''} | %{(([String][Char][Int]9)*3)+$_}) -join [N]::L)+[N]::L+(([String][Char][Int]9)*2)+'}'+[N]::L))
         }
     }
+
+    If($FunctionsBox.Text -replace '\s*')
+    {
+        [System.Console]::WriteLine(([String][Char][Int]9)+'Parsing Functions:')
+        [System.Console]::WriteLine(([String][Char][Int]9)+'-------------------'+[System.Environment]::NewLine)
+
+        $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart(([Char][Int]9)) -replace '{SPACE}',' '} | %{
+            $FunctionStart = $False
+
+            $FunctionText = @()
+        }{
+            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
+            If($FunctionStart)
+            {
+                If($_ -match '^{FUNCTION NAME ')
+                {
+                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
+                }
+                ElseIf($_ -match '^{FUNCTION END}')
+                {
+                    $FunctionStart = $False
+                    $Script:FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
+                    $FunctionText = @()
+                }
+                Else
+                {
+                    $FunctionText+=$_
+                }
+            }
+        }
+
+        $Script:FuncHash.Keys | Sort | %{
+            [System.Console]::WriteLine((([String][Char][Int]9)*2) + $_ + [N]::L + (([String][Char][Int]9)*2) + '-------------------------' + [N]::L + (($Script:FuncHash.$_.Split([N]::L) | ?{$_ -ne ''} | %{(([String][Char][Int]9)*2)+($_ -replace '^\s*')}) -join [N]::L) + [N]::L)
+        }
+    }
+
+    [System.Console]::WriteLine('Starting Macro!'+[N]::L+'-------------------')
 
     Do
     {
@@ -1035,6 +1102,8 @@ Function GO
     $StatementsBox.ReadOnly = $False
 
     $Form.Refresh()
+
+    [System.Console]::WriteLine('Complete!'+[System.Environment]::NewLine)
 
     If($Script:Refocus)
     {
@@ -1979,11 +2048,18 @@ $TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $Script:IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
                         $PH = $_
                         $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
-                        $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,3,4,1,5,6,2]}Else{$PH[0,3,1,4,5,2]}) | %{
-                            [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $Script:IfElHash.$_ + [N]::L + [N]::L)
-                        }
+                        $PH = $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
+                        
+                        [System.Console]::WriteLine(($_+[N]::L+'-------------------------'))
+                        [System.Console]::WriteLine(('If('+$Script:IfElHash.($PH[1])+' -'+$Script:IfElHash.($PH[2])+' '+$Script:IfElHash.($PH[3])+')'))
+                        [System.Console]::WriteLine(('{'+[N]::L+(($Script:IfElHash.($PH[4]).Split([N]::L) | ?{$_ -ne ''} | %{([String][Char][Int]9)+$_}) -join [N]::L)+[N]::L+'}'+[N]::L+'Else'))
+                        [System.Console]::WriteLine(('{'+[N]::L+(($Script:IfElHash.($PH[5]).Split([N]::L) | ?{$_ -ne ''} | %{([String][Char][Int]9)+$_}) -join [N]::L)+[N]::L+'}'+[N]::L))
 
-                        [System.Console]::WriteLine([N]::L * 3)
+                        <#$(If($PH.Contains(($_+'NUMERIC'))){$PH[0,3,4,1,5,6,2]}Else{$PH[0,3,1,4,5,2]}) | %{
+                            [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $Script:IfElHash.$_ + [N]::L + [N]::L)
+                        }#>
+
+                        #[System.Console]::WriteLine([N]::L * 2)
                     }
                 })
                 $GetStates.Parent = $TabPageDebug
