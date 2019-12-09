@@ -491,7 +491,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
             $TempSelectionIndex = $MainObj.GetFirstCharIndexFromLine($Start)
             $TempSelectionLength = $MainObj.SelectionLength
 
-            If($_.Shift -AND $MainObj.SelectedText.Contains($Script:Tab))
+            If($_.Shift -AND ($MainObj.SelectedText -contains ($Script:Tab)))
             {
                 $TempLines = $MainObj.Lines
                 $Start..($End - 1) | %{
@@ -540,7 +540,7 @@ Function Interpret
         }
         
         $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(GC -RAW $_.Substring(7))))
+            $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
             [System.Console]::WriteLine($X)
         }
 
@@ -756,8 +756,9 @@ Function Interpret
             $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,$PHValue)
             
-            <#$X = $X.Replace(('{'+$_+'}'),'')
-            If($X)
+            $X = $X.Replace(('{'+$_+'}'),'')
+            
+            <#If($X)
             {
                 $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
                 $PHName = $PH.Split('=')[0]
@@ -1192,7 +1193,7 @@ Function GO
         $Script:IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
             $PH = $_
             $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
-            $PH = $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
+            $PH = $(If($PH -contains ($_+'NUMERIC')){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
                         
             [System.Console]::WriteLine((($Script:Tab*2)+$_+[N]::L+($Script:Tab*2)+'-------------------------'))
             [System.Console]::WriteLine((($Script:Tab*2)+'If('+$Script:IfElHash.($PH[1])+' -'+$Script:IfElHash.($PH[2])+' '+$Script:IfElHash.($PH[3])+')'))
@@ -1360,7 +1361,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
                 })
-                $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
+                $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $Commands.Parent = $Script:TabPageCommMain
                 $Commands.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Commands'})
             $Script:TabPageCommMain.Parent = $Script:TabControllerComm
@@ -1515,7 +1516,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $TempName.Size = [System.Drawing.Size]::New(130,20)
                         $TempName.Text = $Temp
                         $TempName.Add_TextChanged({
-                            If(!$ClickHelperParent.Keys.Contains($This.Text))
+                            If(!($ClickHelperParent.Keys -contains ($This.Text)))
                             {
                                 $ClickHelperParent.Add($Temp,[String]$This.Parent.Location.X+','+[String]$This.Parent.Location.Y)
                             }
@@ -1565,7 +1566,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
                 })
-                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
+                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $FunctionsBox.Dock = 'Fill'
                 $FunctionsBox.Parent = $Script:TabPageFunctMain
                 $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions'})
@@ -1590,7 +1591,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force
             })
-            $StatementsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue).TrimEnd([N]::L) -join [N]::L}Catch{''}
+            $StatementsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
             $StatementsBox.Dock = 'Fill'
             $StatementsBox.Parent = $Script:TabPageStateMain
             $StatementsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Statements'})
@@ -1795,7 +1796,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $Script:IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
                         $PH = $_
                         $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
-                        $PH = $(If($PH.Contains(($_+'NUMERIC'))){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
+                        $PH = $(If($PH -contains ($_+'NUMERIC')){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
                         
                         [System.Console]::WriteLine(($_+[N]::L+'-------------------------'))
                         [System.Console]::WriteLine(('If('+$Script:IfElHash.($PH[1])+' -'+$Script:IfElHash.($PH[2])+' '+$Script:IfElHash.($PH[3])+')'))
@@ -1857,8 +1858,8 @@ $GO.Parent = $Form
 $Form.Add_SizeChanged({
     $Script:TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
     $Script:TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$Script:TabController.Width)-30),(([Int]$Script:TabController.Height)-50))
-    $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
-    $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width)-65),25)
+    $GO.Location                       = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
+    $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width)-65),25)
 })
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
@@ -1884,18 +1885,32 @@ $Config = ($Config | Select `
 
 Try
 {
-    $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
+    Try
+    {
+        $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
+    }
+    Catch
+    {
+        Try
+        {
+            $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
+        }
+        Catch
+        {
+            $LoadedConfig = (Get-Content ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
+        }
+    }
 
     $DelayTimer.Value        = $LoadedConfig.DelayTimeVal
-    $DelayCheck.Checked      = $LoadedConfig.DelayChecked
+    $DelayCheck.Checked      = $(If($LoadedConfig.DelayChecked -eq 'False')  {$False}Else{[Boolean]$LoadedConfig.DelayChecked})
     $DelayRandTimer.Value    = $LoadedConfig.DelayRandVal
 
     $CommandDelayTimer.Value = $LoadedConfig.CommTimeVal
-    $CommDelayCheck.Checked  = $LoadedConfig.CommChecked
+    $CommDelayCheck.Checked  = $(If($LoadedConfig.CommChecked -eq 'False')   {$False}Else{[Boolean]$LoadedConfig.CommChecked})
     $CommRandTimer.Value     = $LoadedConfig.CommRandVal
 
-    $ShowCons.Checked        = $LoadedConfig.ShowConsCheck
-    $OnTop.Checked           = $LoadedConfig.OnTopCheck
+    $ShowCons.Checked        = $(If($LoadedConfig.ShowConsCheck -eq 'False') {$False}Else{[Boolean]$LoadedConfig.ShowConsCheck})
+    $OnTop.Checked           = $(If($LoadedConfig.OnTopCheck -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.OnTopCheck})
 
     $ShowCons.Checked = !$ShowCons.Checked
     Sleep -Milliseconds 40
@@ -2007,7 +2022,14 @@ If(!$CommandLine)
     $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
     $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
 
-    $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
+    Try
+    {
+        $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
+    }
+    Catch
+    {
+        $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
+    }
 }
 
 If($Host.Name -match 'Console'){Exit}
