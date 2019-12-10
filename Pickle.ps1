@@ -1095,7 +1095,7 @@ Function Actions
     }
 }
 
-Function GO
+Function GO ([Switch]$SelectionRun)
 {
     [System.Console]::WriteLine('Initializing:')
     [System.Console]::WriteLine('------------------------------'+[N]::L)
@@ -1243,7 +1243,7 @@ Function GO
     {
         $SyncHash.Restart = $False
         
-        ($Commands.Text -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab) -replace '{SPACE}',' '} | %{$Commented = $False}{
+        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab) -replace '{SPACE}',' '} | %{$Commented = $False}{
             If(!$SyncHash.Stop)
             {
                 If($_ -match '^<\\\\#'){$Commented = $True}
@@ -1360,6 +1360,14 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Form.Text+='*'
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
+                })
+                $Commands.Add_MouseDown({
+                    If([String]$_.Button -eq 'Right')
+                    {
+                        $RightClickMenu.Visible = $True
+                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $RightClickMenu.BringToFront()
+                    }
                 })
                 $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $Commands.Parent = $Script:TabPageCommMain
@@ -1861,6 +1869,34 @@ $Form.Add_SizeChanged({
     $GO.Location                       = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
     $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width)-65),25)
 })
+
+$RightClickMenu = [GUI.P]::New(150,100,100,100)
+    $RunSelection = [GUI.B]::New(100,25,25,25,'Run Selection')
+    $RunSelection.Add_Click({GO -SelectionRun})
+    $RunSelection.Parent = $RightClickMenu
+    $Run = [GUI.B]::New(100,25,25,50,'Run')
+    $Run.Add_Click({GO})
+    $Run.Parent = $RightClickMenu
+$RightClickMenu.Visible = $False
+$RightClickMenu.Add_MouseLeave({
+    $L = $This.Location
+    $S = $This.Size
+
+    $M = [Cons.Curs]::GPos()
+    $M.X = ($M.X - $Form.Location.X)
+    $M.Y = ($M.Y - $Form.Location.Y)
+
+    Write-Host $M
+    Write-Host $S
+    Write-Host $L
+
+    If(($M.X -lt ($L.X + 5)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+    {
+        $RightClickMenu.Visible = $False
+    }
+})
+$RightClickMenu.Parent = $Form
+$RightClickMenu.BringToFront()
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
