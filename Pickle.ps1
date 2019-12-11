@@ -1870,7 +1870,7 @@ $Form.Add_SizeChanged({
     $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width)-65),25)
 })
 
-$RightClickMenu = [GUI.P]::New(135,300,100,100)
+$RightClickMenu = [GUI.P]::New(135,160,100,100)
     $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
     $RClickCopy.Add_Click({$RightClickMenu.Visible = $False;[Cons.Clip]::SetT($Commands.SelectedText)})
     $RClickCopy.Add_MouseLeave({
@@ -1881,7 +1881,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1897,7 +1897,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1913,7 +1913,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1945,7 +1945,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1961,7 +1961,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1977,7 +1977,7 @@ $RightClickMenu = [GUI.P]::New(135,300,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
         {
             $RightClickMenu.Visible = $False
         }
@@ -1992,7 +1992,7 @@ $RightClickMenu.Add_MouseLeave({
     $M.X = ($M.X - $Form.Location.X)
     $M.Y = ($M.Y - $Form.Location.Y)
 
-    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X)) -OR ($M.Y -gt ($S.Height + $L.Y)))
+    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
     {
         $RightClickMenu.Visible = $False
     }
