@@ -1089,6 +1089,10 @@ Function Actions
                     {
                         Actions $_
                     }
+                    Else
+                    {
+                        [System.Console]::WriteLine($_)
+                    }
                 }
             }
         }
@@ -1354,6 +1358,10 @@ Function GO ([Switch]$SelectionRun)
                 If($_ -notmatch '^\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
                 {
                     Actions $_
+                }
+                Else
+                {
+                    [System.Console]::WriteLine($_)
                 }
             }
         }
