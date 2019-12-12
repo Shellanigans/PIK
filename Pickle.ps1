@@ -297,17 +297,17 @@ public class Parser{
 
     public static string Interpret(string X){
         if(Regex.IsMatch(X.ToUpper(), "{[CPSDGR]")){
-            if(Regex.IsMatch(X, "{[CPS]")){
+            if(Regex.IsMatch(X, "{[CPS][OAE]")){
                 X = (X.Replace("{COPY}","(^c)"));
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
             }
-            else if(Regex.IsMatch(X, "{[DSR]A")){
+            else if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
                 while(Regex.IsMatch(X, "{SPACE")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
                         if(Regex.IsMatch(SubString, "SPACE")){
-                            X = X.Replace(("{"+SubString+"}"),(new string (' ', Convert.ToInt32(Regex.Replace(SubString, "^SPACE$", " 1").Split(' ')[1]))));
+                            X = X.Replace(("{"+SubString+"}"),(new string (' ', Convert.ToInt32(Regex.Replace(SubString, "^SPACE$", "SPACE 1").Split(' ')[1]))));
                             System.Console.WriteLine(X);
                         }
                     }
@@ -1079,13 +1079,15 @@ Function Actions
 
             If($TCheck){$ActionToPerform = $TComm}
 
-            $ActionToPerform.Split([N]::L) | ?{$_ -ne ''} | %{$Commented = $False}{
+            $ActionToPerform.Split([N]::L) | ?{$_ -ne ''} | %{
+                ($_ -replace ('`'+[N]::L),'').TrimStart(' ').TrimStart($Script:Tab)# -replace '^\s*' -replace '{SPACE}',' '
+            } | %{$Commented = $False}{
                 If(!$SyncHash.Stop)
                 {
-                    If($_ -match '^<\\\\#'){$Commented = $True}
-                    If($_ -match '^\\\\#>'){$Commented = $False}
+                    If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                    If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\\\\#' -AND !$Commented)
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented)
                     {
                         Actions $_
                     }
@@ -1098,7 +1100,26 @@ Function Actions
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
-            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{$FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}
+            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
+                $FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{
+                    ($_ -replace ('`'+[N]::L),'').TrimStart(' ').TrimStart($Script:Tab)# -replace '^\s*' -replace '{SPACE}',' '
+                } | %{$Commented = $False}{
+                    If(!$SyncHash.Stop)
+                    {
+                        If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                        If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+                
+                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented)
+                        {
+                            Actions $_
+                        }
+                        Else
+                        {
+                            [System.Console]::WriteLine($_)
+                        }
+                    }
+                }
+            }
         }
         ElseIf($X -match '{SETWIND ')
         {
@@ -1227,7 +1248,7 @@ Function GO ([Switch]$SelectionRun)
         [System.Console]::WriteLine($Script:Tab+'Parsing Statements:')
         [System.Console]::WriteLine($Script:Tab+'-------------------'+[N]::L)
 
-        $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab) -replace '{SPACE}',' '} | %{
+        $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab)} | %{
             $StatementStart = $False
         }{
             If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
@@ -1313,7 +1334,7 @@ Function GO ([Switch]$SelectionRun)
         [System.Console]::WriteLine($Script:Tab+'Parsing Functions:')
         [System.Console]::WriteLine($Script:Tab+'-------------------'+[N]::L)
 
-        $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab) -replace '{SPACE}',' '} | %{
+        $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab)} | %{
             $FunctionStart = $False
 
             $FunctionText = @()
@@ -1349,13 +1370,13 @@ Function GO ([Switch]$SelectionRun)
     {
         $SyncHash.Restart = $False
         
-        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab) -replace '{SPACE}',' '} | %{$Commented = $False}{
+        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab)} | %{$Commented = $False}{
             If(!$SyncHash.Stop)
             {
-                If($_ -match '^<\\\\#'){$Commented = $True}
-                If($_ -match '^\\\\#>'){$Commented = $False}
+                If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                If($_ -notmatch '^\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
+                If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
                 {
                     Actions $_
                 }
