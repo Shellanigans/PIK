@@ -1044,8 +1044,8 @@ Function Actions
             $Op1 = $IfElHash.($IfElName+'OP1')
             $Op2 = $IfElHash.($IfElName+'OP2')
 
-            $Op1 = (Interpret $Op1)
-            $Op2 = (Interpret $Op2)
+            $Op1 = ((Interpret $Op1) | Out-String)
+            $Op2 = ((Interpret $Op2) | Out-String)
 
             If($Op1 -eq '(NULL)'){$Op1 = ''}
             If($Op2 -eq '(NULL)'){$Op2 = ''}
@@ -1059,18 +1059,37 @@ Function Actions
             $TComm = $IfElHash.($IfElName+'TComm').Replace('(NULL)','')
             $FComm = $IfElHash.($IfElName+'FComm').Replace('(NULL)','')
 
+            $ActionToPerform = ''
+            $TCheck = $False
+            $ActionToPerform = $FComm
+
             Switch($IfElHash.($IfElName+'CMP'))
             {
-                'MATCH'    {If($Op1 -match $Op2)       {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'EQ'       {If($Op1 -eq $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'LIKE'     {If($Op1 -like $Op2)        {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'LT'       {If($Op1 -lt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'LE'       {If($Op1 -le $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'GT'       {If($Op1 -gt $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'GE'       {If($Op1 -ge $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'NE'       {If($Op1 -ne $Op2)          {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
-                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}Else{$FComm.Split([N]::L) | ?{$_ -ne ''} | %{Actions $_}}}
+                'MATCH'    {If($Op1 -match $Op2)       {$TCheck = $True}}
+                'EQ'       {If($Op1 -eq $Op2)          {$TCheck = $True}}
+                'LIKE'     {If($Op1 -like $Op2)        {$TCheck = $True}}
+                'LT'       {If($Op1 -lt $Op2)          {$TCheck = $True}}
+                'LE'       {If($Op1 -le $Op2)          {$TCheck = $True}}
+                'GT'       {If($Op1 -gt $Op2)          {$TCheck = $True}}
+                'GE'       {If($Op1 -ge $Op2)          {$TCheck = $True}}
+                'NOTMATCH' {If($Op1 -notmatch $Op2)    {$TCheck = $True}}
+                'NE'       {If($Op1 -ne $Op2)          {$TCheck = $True}}
+                'NOTLIKE'  {If($Op1 -notlike $Op2)     {$TCheck = $True}}
+            }
+
+            If($TCheck){$ActionToPerform = $TComm}
+
+            $ActionToPerform.Split([N]::L) | ?{$_ -ne ''} | %{$Commented = $False}{
+                If(!$SyncHash.Stop)
+                {
+                    If($_ -match '^<\\\\#'){$Commented = $True}
+                    If($_ -match '^\\\\#>'){$Commented = $False}
+                
+                    If($_ -notmatch '^\\\\#' -AND !$Commented)
+                    {
+                        Actions $_
+                    }
+                }
             }
         }
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
