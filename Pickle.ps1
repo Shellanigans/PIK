@@ -525,7 +525,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
 
 Function Interpret
 {
-    Param([String]$X)
+    Param([String]$X,$Esc)
 
     $X = [Parser]::Interpret($X)
 
@@ -533,8 +533,20 @@ Function Interpret
     {
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
-
-            $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
+            If($Script:VarsHash.ContainsKey($PH))
+            {
+                $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
+            }
+            ElseIf($Script:VarsHash.ContainsKey(($PH+'_ESCAPED')))
+            {
+                $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.($PH+'_ESCAPED')))
+                $Esc = $True
+            }
+            Else
+            {
+                $X = ''
+                [System.Console]::WriteLine($Script:Tab+$PH+' was not found!')
+            }
 
             [System.Console]::WriteLine($X)
         }
@@ -751,12 +763,37 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
-            $PHValue = $PH.Replace(($PHName+'='),'')
+            If($PHName -match '_ESCAPED$')
+            {
+               [System.Console]::WriteLine($Script:Tab+'The name '+$PHName+' is invalid, _ESCAPED is a reserved suffix. This line will be ignored...')
+                $X = ''
+            }
+            Else
+            {
+                $PHValue = $PH.Replace(($PHName+'='),'')
+                If(!([String]$PHValue))
+                {
+                    $PHValue = ($X -replace '.*?{VAR .*?=')
+                    $PHCount = ($X.Split('{') | %{$VarCheck = $False}{If($VarCheck){$_};If($_ -match 'VAR .*?='){$VarCheck = $True}}).Count
+                    $PHValue = $PHValue.Split('}')[0..$PHCount] -join '}'
+                    $X = $X.Replace(('{VAR '+$PHName+'='+$PHValue+'}'),'')
 
-            $Script:VarsHash.Remove($PHName)
-            $Script:VarsHash.Add($PHName,$PHValue)
-            
-            $X = $X.Replace(('{'+$_+'}'),'')
+                    [System.Console]::WriteLine($Script:Tab+'Above var contains braces "{}" and no valid vars to substitute.')
+                    [System.Console]::WriteLine($Script:Tab+'Please consider changing logic to use different delimiters.')
+                    [System.Console]::WriteLine($Script:Tab+'This will be parsed as raw text and not commands.')
+                    [System.Console]::WriteLine($Script:Tab+'If you need to alias commands, use a function instead.')
+
+                    $PHName+='_ESCAPED'
+                }
+                Else
+                {
+                    $X = $X.Replace(('{'+$_+'}'),'')
+                }
+
+
+                $Script:VarsHash.Remove($PHName)
+                $Script:VarsHash.Add($PHName,$PHValue)
+            }
             
             <#If($X)
             {
@@ -777,7 +814,7 @@ Function Interpret
         }
     }
 
-    Return $X
+    Return $X,$Esc
 }
 
 Function Actions
@@ -788,7 +825,16 @@ Function Actions
     {
         [System.Console]::WriteLine($X)
 
-        $X = (Interpret $X)
+        $Escaped = $False
+
+        $X,$Escaped = (Interpret $X $Escaped)
+
+        $TempX = $Null
+        If($Escaped)
+        {
+            $TempX = $X
+            $X = ''
+        }
 
         If($X -match '^{POWER .*}$')
         {
@@ -1048,6 +1094,13 @@ Function Actions
         }
         ElseIf($X -notmatch '{GOTO ')
         {
+            If($TempX)
+            {
+                [System.Console]::WriteLine($Script:Tab+'This line was escaped. Above may appear as commands,')
+                [System.Console]::WriteLine($Script:Tab+'but has been converted to keystrokes...')
+                $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
+            }
+
             If($X -match '{.*}' -OR $X -match '\(.*\)' -OR $X -match '\[.*\]' -OR $X -match '{.*}')
             {
                 [Cons.Send]::Keys($X)
