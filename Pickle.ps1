@@ -1079,8 +1079,8 @@ Function Actions
 
             If($TCheck){$ActionToPerform = $TComm}
 
-            $ActionToPerform.Split([N]::L) | ?{$_ -ne ''} | %{
-                ($_ -replace ('`'+[N]::L),'').TrimStart(' ').TrimStart($Script:Tab)# -replace '^\s*' -replace '{SPACE}',' '
+            $ActionToPerform.Split([N]::L) | %{
+                ($_ -replace ('`'+[N]::L),'' -replace '^\s*' | ?{$_ -ne ''})
             } | %{$Commented = $False}{
                 If(!$SyncHash.Stop)
                 {
@@ -1093,7 +1093,7 @@ Function Actions
                     }
                     Else
                     {
-                        [System.Console]::WriteLine($_)
+                        [System.Console]::WriteLine($Script:Tab+$_)
                     }
                 }
             }
@@ -1101,8 +1101,8 @@ Function Actions
         ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
         {
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
-                $FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | ?{$_ -ne ''} | %{
-                    ($_ -replace ('`'+[N]::L),'').TrimStart(' ').TrimStart($Script:Tab)# -replace '^\s*' -replace '{SPACE}',' '
+                $FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | %{
+                    ($_ -replace ('`'+[N]::L),'' -replace '^\s*' | ?{$_ -ne ''})
                 } | %{$Commented = $False}{
                     If(!$SyncHash.Stop)
                     {
@@ -1115,7 +1115,7 @@ Function Actions
                         }
                         Else
                         {
-                            [System.Console]::WriteLine($_)
+                            [System.Console]::WriteLine($Script:Tab+$_)
                         }
                     }
                 }
@@ -1370,7 +1370,7 @@ Function GO ([Switch]$SelectionRun)
     {
         $SyncHash.Restart = $False
         
-        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab)} | %{$Commented = $False}{
+        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
             If(!$SyncHash.Stop)
             {
                 If($_ -match '^\s*?<\\\\#'){$Commented = $True}
@@ -1382,7 +1382,7 @@ Function GO ([Switch]$SelectionRun)
                 }
                 Else
                 {
-                    [System.Console]::WriteLine($_)
+                    [System.Console]::WriteLine($Script:Tab+$_)
                 }
             }
         }
