@@ -1094,40 +1094,70 @@ Function Actions
         }
         ElseIf($X -notmatch '{GOTO ')
         {
-            If($TempX)
+            If($Escaped)
             {
                 [System.Console]::WriteLine($Script:Tab+'This line was escaped. Above may appear as commands,')
                 [System.Console]::WriteLine($Script:Tab+'but has been converted to keystrokes...')
                 $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
+                $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
+                $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
             }
 
-            If($X -match '{.*}' -OR $X -match '\(.*\)' -OR $X -match '\[.*\]' -OR $X -match '{.*}')
+            If(($X -notmatch '^\(.*\)$' -AND $X -notmatch '^{.*}$' -AND $X -notmatch '^\[.*\]$') -AND ($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0))))
             {
-                [Cons.Send]::Keys($X)
+                $X.ToCharArray() | %{
+                    $PHX = $(
+                        Switch([String]$_)
+                        {
+                            '{'{'{{}'}
+                            '}'{'{}}'}
+                            '('{'{(}'}
+                            ')'{'{)}'}
+                            '['{'{[}'}
+                            ']'{'{]}'}
+                            default{$_}
+                        }
+                    )
+                    
+                    [Cons.Send]::Keys($PHX)
+                    
+                    If($DelayCheck.Checked)
+                    {
+                        $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
+                    }
+                    Else
+                    {
+                        $PH = 0
+                    }
+                        
+                    [System.Threading.Thread]::Sleep([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
+                }
             }
             Else
             {
-                If($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0)))
-                {
-                    $X.ToCharArray() | %{
-                        [Cons.Send]::Keys($_)
-                        
-                        
-                        If($DelayCheck.Checked)
-                        {
-                            $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
-                        }
-                        Else
-                        {
-                            $PH = 0
-                        }
-                        
-                        [System.Threading.Thread]::Sleep([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
-                    }
-                }
-                Else
+                Try
                 {
                     [Cons.Send]::Keys($X)
+                }
+                Catch
+                {
+                    If(!$Escaped)
+                    {
+                        [System.Console]::WriteLine($Script:Tab+'Potential unclosed or bad braces. Re-attempting...')
+                        $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
+                        $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
+                        $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
+                        [System.Console]::WriteLine($X)
+                    }
+                    
+                    Try
+                    {
+                        [Cons.Send]::Keys($X)
+                    }
+                    Catch
+                    {
+                        [System.Console]::WriteLine($Script:Tab+'Failed!')    
+                    }
                 }
             }
         }
