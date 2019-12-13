@@ -813,18 +813,18 @@ Function Interpret
             }#>
         }
 
-        If($X -match '{VAR \S+=}')
+        While($X -match '{VAR \S+=}')
         {
             [System.Console]::WriteLine($Script:Tab+'Potential bad logic, null value found after parsing.')
             [System.Console]::WriteLine($Script:Tab+'This is not inherently bad and may be intended.')
             
-            $PH = $X
-
             $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
                 $PHName = ($_.Split('=')[0] -replace '^VAR ')
 
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,'')
+
+                $X = $X.Replace('{'+$_,'')
             }
         }
     }
