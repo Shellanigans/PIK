@@ -531,7 +531,7 @@ Function Interpret
 
     While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{READIN '))
     {
-        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -notmatch '='} | %{
+        $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
             If($Script:VarsHash.ContainsKey($PH))
             {
@@ -760,7 +760,7 @@ Function Interpret
             $X = ''
         }#>
 
-        $X.Split('{}') | ?{$_ -match 'VAR ' -AND $_ -match '='} | %{
+        $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$')
@@ -787,7 +787,7 @@ Function Interpret
                 }
                 Else
                 {
-                    $X = $X.Replace(('{'+$_+'}'),'')
+                    $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
                 }
 
 
@@ -811,6 +811,21 @@ Function Interpret
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
             }#>
+        }
+
+        If($X -match '{VAR \S+=}')
+        {
+            [System.Console]::WriteLine($Script:Tab+'Potential bad logic, null value found after parsing.')
+            [System.Console]::WriteLine($Script:Tab+'This is not inherently bad and may be intended.')
+            
+            $PH = $X
+
+            $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
+                $PHName = ($_.Split('=')[0] -replace '^VAR ')
+
+                $Script:VarsHash.Remove($PHName)
+                $Script:VarsHash.Add($PHName,'')
+            }
         }
     }
 
@@ -882,8 +897,8 @@ Function Actions
         ElseIf($X -match '^{SETCON')
         {
             $PH = ($X.Substring(8)).Split(',')
-            $PH[0] = ($PH[0].Replace('(COMMA)',','))
-            $PH[1] = ($PH[1].Replace('(COMMA)',','))
+            $PH[0] = ($PH[0].Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))
+            $PH[1] = ($PH[1].Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))
 
             If($X -notmatch '^{SETCONA ')
             {
@@ -1044,11 +1059,11 @@ Function Actions
             $Op1 = $IfElHash.($IfElName+'OP1')
             $Op2 = $IfElHash.($IfElName+'OP2')
 
-            $Op1 = ((Interpret $Op1) | Out-String)
-            $Op2 = ((Interpret $Op2) | Out-String)
-
             If($Op1 -eq '(NULL)'){$Op1 = ''}
             If($Op2 -eq '(NULL)'){$Op2 = ''}
+
+            $Op1 = ((Interpret $Op1) | Out-String)
+            $Op2 = ((Interpret $Op2) | Out-String)
 
             If($IfElHash.ContainsKey($IfElName+'NUMERIC'))
             {
