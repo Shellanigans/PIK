@@ -721,8 +721,8 @@ Function Interpret
                 'TCA'
                 {
                     ($Script:VarsHash.($Operands[0])).ToString().ToCharArray() | %{$Count = 0}{
-                        $Script:VarsHash.Remove(([String]$Count+'C_'+$Operands[0]))
-                        $Script:VarsHash.Add(([String]$Count+'C_'+$Operands[0]),$_)
+                        $Script:VarsHash.Remove(([String]$Count+'_'+$Operands[1]))
+                        $Script:VarsHash.Add(([String]$Count+'_'+$Operands[1]),$_)
                         $Count++
                     }
                 }
