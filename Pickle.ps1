@@ -58,6 +58,9 @@ namespace Cons{
         [DllImport("User32.dll")]
         public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
 
+        [DllImport("User32.dll")]
+        public extern static bool SetWindowText(IntPtr handle, string text);
+
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
         }
@@ -1150,6 +1153,23 @@ Function Actions
             
             [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
         }
+        ElseIf($X -match '{SETWINDTEXT ')
+        {
+            If($X -match ' -ID ')
+            {
+                $PHIdentifier = ($X -replace '{SETWINDTEXT -ID ' -replace '}$').Split(',')[0]
+                $PHHandle = (PS -Id $PHIdentifier).MainWindowHandle
+                $PHWindText = ($X -replace ('{SETWINDTEXT -ID '+$PHIdentifier+',') -replace '}$')
+            }
+            Else
+            {
+                $PHIdentifier = ($X -replace '{SETWINDTEXT ' -replace '}$').Split(',')[0]
+                $PHHandle = (PS $PHIdentifier).MainWindowHandle
+                $PHWindText = ($X -replace ('{SETWINDTEXT '+$PHIdentifier+',') -replace '}$')
+            }
+            
+            [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
+        }
         ElseIf($X -notmatch '{GOTO ')
         {
             If($Escaped)
@@ -2004,7 +2024,7 @@ $Script:TabController.Add_SelectedIndexChanged({
 })
 $Script:TabController.Parent = $Form
 
-$GO = [GUI.B]::New(300, 25, 25, 415, 'Start!')
+$GO = [GUI.B]::New(300, 25, 25, 415, 'Run')
 $GO.Add_Click({GO})
 $GO.Parent = $Form
 
