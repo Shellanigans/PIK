@@ -601,7 +601,7 @@ Function Interpret
             $X = ($X.Replace(('{'+$_+'}'),([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)))
             [System.Console]::WriteLine($X)
         }
-        Write-Host 'TESTER'
+
         $X.Split('{}') | ?{$_ -match 'GETWINDTEXT '} | %{    
             If($_ -match ' -ID ')
             {
