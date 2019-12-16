@@ -814,6 +814,8 @@ Function Interpret
         }
 
         $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
+            [System.Console]::WriteLine('{'+$_)
+        
             [System.Console]::WriteLine($Script:Tab+'Potential bad logic, null value found after parsing.')
             [System.Console]::WriteLine($Script:Tab+'This is not inherently bad and may be intended.')
 
