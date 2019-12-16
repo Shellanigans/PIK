@@ -28,6 +28,7 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
 using System; 
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 
 using DR = System.Drawing;
@@ -60,6 +61,12 @@ namespace Cons{
 
         [DllImport("User32.dll")]
         public extern static bool SetWindowText(IntPtr handle, string text);
+        
+        [DllImport("User32.dll")]
+        public extern static int GetWindowText(IntPtr handle, StringBuilder text, int length);
+
+        [DllImport("User32.dll")]
+        public extern static int GetWindowTextLength(IntPtr handle);
 
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
@@ -532,7 +539,7 @@ Function Interpret
 
     $X = [Parser]::Interpret($X)
 
-    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{READIN '))
+    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{READIN '))
     {
         $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
@@ -592,6 +599,23 @@ Function Interpret
             $PHRect = [GUI.Rect]::E
             [Void]([Cons.WindowDisp]::GetWindowRect($PHHandle,[Ref]$PHRect))
             $X = ($X.Replace(('{'+$_+'}'),([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)))
+            [System.Console]::WriteLine($X)
+        }
+        Write-Host 'TESTER'
+        $X.Split('{}') | ?{$_ -match 'GETWINDTEXT '} | %{    
+            If($_ -match ' -ID ')
+            {
+                $PHHandle = (PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle
+            }
+            Else
+            {
+                $PHHandle = (PS ($_ -replace 'GETWINDTEXT ')).MainWindowHandle
+            }
+
+            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHHandle)
+            $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
+            [Void]([Cons.WindowDisp]::GetWindowText($PHHandle, $PHString, $PHString.Capacity))
+            $X = ($X.Replace(('{'+$_+'}'),$PHString.ToString()))
             [System.Console]::WriteLine($X)
         }
 
