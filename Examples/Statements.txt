@@ -10,7 +10,7 @@
 {STATEMENT END}
 
 {STATEMENT NAME STRINGCHECK}
-	\\#If the current word is tring
+	\\#If the current word is string
 	{OP1 {VAR {VAR INDEX}_splitter}}
 	{CMP eq}
 	{OP2 string}
