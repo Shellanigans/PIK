@@ -1,5 +1,3 @@
-make window transluscent? uninteractable? invisible?
-
 fix up helper window
     put hot key stuff in there? maybe settings instead?
     make it resizeable
@@ -22,8 +20,6 @@ Code Stylize
 
 Comments
 
-what's MY PID
-
 Encryption option for stored textfiles
 
 add right click menu (still need to not be able to open too far down or right)
@@ -45,11 +41,9 @@ yes/no/cancel/ok buttons in "output"? How would command line handle this?
 ability to make windows invisible?
 
 get proc of focussed window
-    via cmd AND selection tool in helper
+    selection tool in helper
 
 In the reparse functionality, have a precheck? Make this a separate function?
-
-Move cursor when using F4 to the location of the new item
 
 Run Selection Button
     single command box?
@@ -93,10 +87,6 @@ Mouse Clicker helpers
 
 Easier and better statements
 
-WHOAMI?
-
-What has my focus?
-
 imagik and tesseract APIs
 
 CAPTCHA defeat?
@@ -108,3 +98,8 @@ PARTIAL - Better visual parsing and highlighting in text boxes (MAKE THIS INTO A
 --------------------------------------------------------------------------------------------------------------------
 DONE - {PAUSE} Function
 DONE - Prompts for user input
+DONE - WHOAMI?
+DONE - What has my focus?
+DONE - Move cursor when using F4 to the location of the new item
+DONE - what's MY PID
+DONE - make window transluscent? uninteractable? invisible?
