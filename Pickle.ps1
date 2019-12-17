@@ -1635,9 +1635,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                     $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
 
                     $PHLum = [Math]::Sqrt(
-                        $PHPix.R * $PHPix.R * 0.299 +
-                        $PHPix.G * $PHPix.G * 0.587 +
-                        $PHPix.B * $PHPix.B * 0.114
+                        [Math]::Pow($PHPix.R,2) * 0.299 +
+                        [Math]::Pow($PHPix.G,2) * 0.587 +
+                        [Math]::Pow($PHPix.B,2) * 0.114
                     )
 
                     If($PHLum -gt 130)
@@ -1688,8 +1688,24 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
                         $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
-                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+                        $PHPix = $BMP.GetPixel(0,0)
+                        $PixColorBox.Text = $PHPix.Name.ToUpper()
                         $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
+
+                        $PHLum = [Math]::Sqrt(
+                            [Math]::Pow($PHPix.R,2) * 0.299 +
+                            [Math]::Pow($PHPix.G,2) * 0.587 +
+                            [Math]::Pow($PHPix.B,2) * 0.114
+                        )
+
+                        If($PHLum -gt 130)
+                        {
+                            $PixColorBox.ForeColor = [System.Drawing.Color]::Black
+                        }
+                        Else
+                        {
+                            $PixColorBox.ForeColor = [System.Drawing.Color]::White
+                        }
 
                         $Graphics.Dispose()
                         $BMP.Dispose()
@@ -1719,8 +1735,24 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
                         $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
-                        $PixColorBox.Text = $BMP.GetPixel(0,0).Name.ToUpper()
+                        $PHPix = $BMP.GetPixel(0,0)
+                        $PixColorBox.Text = $PHPix.Name.ToUpper()
                         $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
+
+                        $PHLum = [Math]::Sqrt(
+                            [Math]::Pow($PHPix.R,2) * 0.299 +
+                            [Math]::Pow($PHPix.G,2) * 0.587 +
+                            [Math]::Pow($PHPix.B,2) * 0.114
+                        )
+
+                        If($PHLum -gt 130)
+                        {
+                            $PixColorBox.ForeColor = [System.Drawing.Color]::Black
+                        }
+                        Else
+                        {
+                            $PixColorBox.ForeColor = [System.Drawing.Color]::White
+                        }
 
                         $Graphics.Dispose()
                         $BMP.Dispose()
@@ -1782,7 +1814,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                         $ClickHelperParent.Add($Temp,[String]$TempForm.Parent.Location.X+','+[String]$TempForm.Parent.Location.Y)
                         
-                        If($TempForm.ShowDialog() -eq 'Cancel'){$ClickHelperParent.Remove($Temp)}
+                        If($TempForm.ShowDialog() -eq 'Cancel'){$ClickHelperParent.Remove($Temp);$TempForm.Dispose()}
 
                     }) | Out-Null
                     $Pow.AddParameter('ClickHelperParent', $ClickHelperParent) | Out-Null
