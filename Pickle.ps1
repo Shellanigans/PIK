@@ -28,9 +28,9 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
 using System; 
 using System.IO;
 using System.Text;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
 
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
@@ -1451,52 +1451,57 @@ Function GO ([Switch]$SelectionRun)
     }
 
     [System.Console]::WriteLine('Starting Macro!'+[N]::L+'-------------------')
+    
+    $Results = (Measure-Command {
+        Do
+        {
+            $Form.Visible = $False
 
-    Do
-    {
-        $Form.Visible = $False
-
-        $SyncHash.Restart = $False
+            $SyncHash.Restart = $False
         
-        ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
-            If(!$SyncHash.Stop)
-            {
-                If($_ -match '^\s*?<\\\\#'){$Commented = $True}
-                If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+            ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
+                If(!$SyncHash.Stop)
+                {
+                    If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                    If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
-                {
-                    Actions $_
-                }
-                Else
-                {
-                    [System.Console]::WriteLine($Script:Tab+$_)
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
+                    {
+                        Actions $_
+                    }
+                    Else
+                    {
+                        [System.Console]::WriteLine($Script:Tab+$_)
+                    }
                 }
             }
-        }
-    }While($SyncHash.Restart)
+        }While($SyncHash.Restart)
 
-    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-    $SyncHash.Stop = $False
+        $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+        $SyncHash.Stop = $False
     
-    $Commands.ReadOnly     = $False
-    $FunctionsBox.ReadOnly = $False
-    $StatementsBox.ReadOnly = $False
+        $Commands.ReadOnly     = $False
+        $FunctionsBox.ReadOnly = $False
+        $StatementsBox.ReadOnly = $False
 
-    $Form.Visible = $True
+        $Form.Visible = $True
 
-    $Form.Refresh()
+        $Form.Refresh()
 
-    [System.Console]::WriteLine('Complete!'+[N]::L)
+        [System.Console]::WriteLine('Complete!'+[N]::L)
 
-    If($Script:Refocus)
-    {
-        [Cons.App]::Act($Form.Text)
-        $Form.Focus()
-        $Commands.Focus()
-        $Commands.SelectionLength = 0
-        $Commands.SelectionStart = $Commands.Text.Length
-    }
+        If($Script:Refocus)
+        {
+            [Cons.App]::Act($Form.Text)
+            $Form.Focus()
+            $Commands.Focus()
+            $Commands.SelectionLength = 0
+            $Commands.SelectionStart = $Commands.Text.Length
+        }
+    })
+
+    [System.Console]::WriteLine('Stats'+[N]::L+'-------------------')
+    [System.Console]::WriteLine(($Results | Out-String))
 }
 
 ############################################################################################################################################################################################################################################################################################################
