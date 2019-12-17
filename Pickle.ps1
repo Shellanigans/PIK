@@ -950,17 +950,16 @@ Function Actions
         }
         ElseIf($X -match '^{SETCON')
         {
-            $PH = ($X.Substring(8)).Split(',')
-            $PH[0] = ($PH[0].Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))
-            $PH[1] = ($PH[1].Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))
+            $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
+            $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
 
             If($X -notmatch '^{SETCONA ')
             {
-                ($PH[0].TrimStart(' ')) | Out-File ($PH[1].Substring(0,($PH[1].Length - 1))) -Force
+                $PHFileContent | Out-File $PHFileName -Force
             }
             Else
             {
-                ($PH[0].TrimStart(' ')) | Out-File ($PH[1].Substring(0,($PH[1].Length - 1))) -Append -Force
+                $PHFileContent | Out-File $PHFileName -Append -Force
             }
         }
         ElseIf($X -match '{FOCUS')
