@@ -27,9 +27,10 @@ $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition @'
 using System; 
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
@@ -48,6 +49,9 @@ namespace Cons{
     public class WindowDisp{
         [DllImport("Kernel32.dll")]
         public static extern IntPtr GetConsoleWindow();
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
@@ -306,11 +310,17 @@ public class Parser{
     }
 
     public static string Interpret(string X){
-        if(Regex.IsMatch(X.ToUpper(), "{[CPSDGR]")){
+        if(Regex.IsMatch(X.ToUpper(), "{[CPSDGRMW]")){
             if(Regex.IsMatch(X, "{[CPS][OAE]")){
                 X = (X.Replace("{COPY}","(^c)"));
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
+            }
+            else if(Regex.IsMatch(X, "{MYPID}")){
+                X = (X.Replace("{MYPID}",(Process.GetCurrentProcess().Id.ToString())));
+            }
+            else if(Regex.IsMatch(X, "{WHOAMI}")){
+                X = (X.Replace("{WHOAMI}",(Environment.UserDomainName.ToString()+"\\"+Environment.UserName.ToString())));
             }
             else if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
@@ -400,10 +410,12 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
             'Functions'
             {
                 $MainObj.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+$Script:Tab+[N]::L+'{FUNCTION END}'+[N]::L)
+                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
             }
             'Statements'
             {
                 $MainObj.Text+=([N]::L+'{STATEMENT NAME rename_me}'+[N]::L+$Script:Tab+'{OP1 ___}'+[N]::L+$Script:Tab+'{CMP ___}'+[N]::L+$Script:Tab+'{OP2 ___}'+[N]::L+$Script:Tab+$Script:Tab+[N]::L+$Script:Tab+$Script:Tab+'{ELSE}'+[N]::L+$Script:Tab+$Script:Tab+[N]::L+'{STATEMENT END}'+[N]::L)
+                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
             }
         }
     }
@@ -539,7 +551,7 @@ Function Interpret
 
     $X = [Parser]::Interpret($X)
 
-    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{READIN '))
+    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{MYPID}') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{GETFOCUS') -OR ($X -match '{READIN '))
     {
         $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
@@ -589,11 +601,11 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'GETWIND '} | %{    
             If($_ -match ' -ID ')
             {
-                $PHHandle = (PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle
+                $PHHandle = ((PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle | ?{[Int]$_})
             }
             Else
             {
-                $PHHandle = (PS ($_ -replace 'GETWIND ')).MainWindowHandle
+                $PHHandle = ((PS ($_ -replace 'GETWIND ')).MainWindowHandle | ?{[Int]$_})
             }
 
             $PHRect = [GUI.Rect]::E
@@ -605,17 +617,33 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'GETWINDTEXT '} | %{    
             If($_ -match ' -ID ')
             {
-                $PHHandle = (PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle
+                $PHHandle = ((PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle | ?{[Int]$_})
             }
             Else
             {
-                $PHHandle = (PS ($_ -replace 'GETWINDTEXT ')).MainWindowHandle
+                $PHHandle = ((PS ($_ -replace 'GETWINDTEXT ')).MainWindowHandle | ?{[Int]$_})
             }
 
             $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHHandle)
             $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
             [Void]([Cons.WindowDisp]::GetWindowText($PHHandle, $PHString, $PHString.Capacity))
             $X = ($X.Replace(('{'+$_+'}'),$PHString.ToString()))
+            [System.Console]::WriteLine($X)
+        }
+
+        $X.Split('{}') | ?{$_ -match 'GETFOCUS'} | %{
+            $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
+            
+            If($_ -match ' -ID')
+            {
+                $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Id})
+            }
+            Else
+            {
+                $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Name})
+            }
+            
+            $X = ($X.Replace(('{'+$_+'}'),($PHProcInfo)))
             [System.Console]::WriteLine($X)
         }
 
@@ -1166,12 +1194,12 @@ Function Actions
         {
             If($X -match ' -ID ')
             {
-                $PHHandle = (PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle
+                $PHHandle = ((PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
                 $PHCoords = (($X -replace '{SETWIND -ID ' -replace '}$').Split(',') | Select -Skip 1)
             }
             Else
             {
-                $PHHandle = (PS ($X -replace '{SETWIND ' -replace '}$').Split(',')[0]).MainWindowHandle
+                $PHHandle = ((PS ($X -replace '{SETWIND ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
                 $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
             }
             
@@ -1182,13 +1210,13 @@ Function Actions
             If($X -match ' -ID ')
             {
                 $PHIdentifier = ($X -replace '{SETWINDTEXT -ID ' -replace '}$').Split(',')[0]
-                $PHHandle = (PS -Id $PHIdentifier).MainWindowHandle
+                $PHHandle = (((PS -Id $PHIdentifier).MainWindowHandle) | ?{[Int]$_})
                 $PHWindText = ($X -replace ('{SETWINDTEXT -ID '+$PHIdentifier+',') -replace '}$')
             }
             Else
             {
                 $PHIdentifier = ($X -replace '{SETWINDTEXT ' -replace '}$').Split(',')[0]
-                $PHHandle = (PS $PHIdentifier).MainWindowHandle
+                $PHHandle = ((PS $PHIdentifier).MainWindowHandle | ?{[Int]$_})
                 $PHWindText = ($X -replace ('{SETWINDTEXT '+$PHIdentifier+',') -replace '}$')
             }
             
