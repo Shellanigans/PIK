@@ -1,4 +1,4 @@
-﻿\\#Focus on the notepad application
+\\#Focus on the notepad application
 {FOCUS Notepad}
 
 \\#Select everything
@@ -6,6 +6,8 @@
 
 \\#Delete
 {DELETE}
+
+Input: This is a string to split~
 
 \\#Create a variable 'splitter' with the string value "this is a string to split"
 {VAR splitter=this is a string to split}
@@ -21,10 +23,48 @@
 
 \\#instantiate variables
 {VAR INDEX=0}
-{VAR OUTPUT=(NULL)}
+{VAR OUTPUT=}
 
 \\#Go to the function forloop
 {FORLOOP}
 
 \\#Trim the prepended comma at the beginning of the new string formed and output as keystrokes
-{MANIP TRS {VAR OUTPUT},(COMMA)}
+Ouptut: {MANIP TRS {VAR OUTPUT},(COMMA)}~~
+
+Watch the title of this window~~
+{VAR WINDTEXT={GETWINDTEXT Notepad}}
+{MANIP TCA WINDTEXT,WINDTEXTCHAR}
+{MANIP REV WINDTEXTCHAR}
+{VAR WINDTEXT={MANIP JOI WINDTEXTCHAR}}
+{SETWINDTEXT Notepad,{VAR WINDTEXT}}
+{WAIT}
+{VAR WINDTEXT={GETWINDTEXT Notepad}}
+{MANIP TCA WINDTEXT,WINDTEXTCHAR}
+{MANIP REV WINDTEXTCHAR}
+{VAR WINDTEXT={MANIP JOI WINDTEXTCHAR}}
+{SETWINDTEXT Notepad,{VAR WINDTEXT}}
+{WAIT}
+{VAR WINDTEXT={GETWINDTEXT Notepad}}
+{MANIP TCA WINDTEXT,WINDTEXTCHAR}
+{MANIP REV WINDTEXTCHAR}
+{VAR WINDTEXT={MANIP JOI WINDTEXTCHAR}}
+{SETWINDTEXT Notepad,{VAR WINDTEXT}}
+{WAIT}
+{VAR WINDTEXT={GETWINDTEXT Notepad}}
+{MANIP TCA WINDTEXT,WINDTEXTCHAR}
+{MANIP REV WINDTEXTCHAR}
+{VAR WINDTEXT={MANIP JOI WINDTEXTCHAR}}
+{SETWINDTEXT Notepad,{VAR WINDTEXT}}
+{WAIT}
+
+{SETWIND {GETPROC -ID {GETFOCUS -ID}},100,100,1000,500}
+{WAIT}
+{SETWIND {GETPROC -ID {GETFOCUS -ID}},100,100,1000,750}
+{WAIT}
+{SETWIND {GETPROC -ID {GETFOCUS -ID}},100,100,1000,500}
+
+My PID is: {MYPID}~
+I am running as: {WHOAMI}~
+The currently focussed window is: {GETFOCUS}~
+Which has a PID of: {GETFOCUS -ID}
+{WAIT M 3500}
