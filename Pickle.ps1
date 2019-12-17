@@ -573,16 +573,16 @@ Function Interpret
             [System.Console]::WriteLine($X)
         }
         
-        $X.Split('{}') | ?{$_ -match 'GETCON '} | %{
+        $X.Split('{}') | ?{$_ -match 'GETCON \S+'} | %{
             $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'FINDVAR '} | %{
+        $X.Split('{}') | ?{$_ -match 'FINDVAR \S+'} | %{
             $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
     
-        $X.Split('{}') | ?{$_ -match 'GETPROC '} | %{
+        $X.Split('{}') | ?{$_ -match 'GETPROC \S+'} | %{
             $PH = ($_ -replace 'GETPROC ')
 
             If($_ -match ' -ID ')
@@ -598,7 +598,7 @@ Function Interpret
             $X = ($X.Replace(('{'+$_+'}'),$PH))
         }
 
-        $X.Split('{}') | ?{$_ -match 'GETWIND '} | %{    
+        $X.Split('{}') | ?{$_ -match 'GETWIND \S+'} | %{    
             If($_ -match ' -ID ')
             {
                 $PHHandle = ((PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle | ?{[Int]$_})
@@ -614,7 +614,7 @@ Function Interpret
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'GETWINDTEXT '} | %{    
+        $X.Split('{}') | ?{$_ -match 'GETWINDTEXT \S+'} | %{    
             If($_ -match ' -ID ')
             {
                 $PHHandle = ((PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle | ?{[Int]$_})
@@ -647,13 +647,13 @@ Function Interpret
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'READIN '} | %{
+        $X.Split('{}') | ?{$_ -match 'READIN \S+'} | %{
             $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
             $X = ($X.Replace(('{'+$_+'}'),($PH)))
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match '^MANIP '} | %{
+        $X.Split('{}') | ?{$_ -match '^MANIP \S+'} | %{
             $PH = ($_.Substring(6))
 
             $Operator = $PH.Split(' ')[0]
