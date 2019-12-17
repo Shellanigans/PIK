@@ -11,8 +11,10 @@ Ruggedize settings saving (make it save when you make a change not just on close
 revisit F hotkeys (make the F3 toggle instead of add) make F5 just write over selection instead of insert 
 
 Allow functions to take args?
+    This can be achieved with variables, but still would be nice
 
 Debug breakpoints?
+    This is essentially pause with a quit statement, or pause, then press scroll lock, then continue to quit
 
 Simple View vs. Advanced View
 
@@ -24,18 +26,19 @@ what's MY PID
 
 Encryption option for stored textfiles
 
-add right click menu
-    copy
-    paste
-    select all
+add right click menu (still need to not be able to open too far down or right)
+    *copy
+    *paste
+    *select all
     re-highlight/parse
     select line
     un/comment selection
-    find/replace
-    run selection
-    run
+    *find/replace
+    *run selection
+    *run
+        * = done
 
-Change setting for hung process and detect when process is no longer thinking? (Will require admin?)
+Change setting for hung process and detect when process is no longer thinking? (Will require admin? Probably doesn't require admin)
 
 yes/no/cancel/ok buttons in "output"? How would command line handle this?
 
