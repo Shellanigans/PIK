@@ -1454,6 +1454,8 @@ Function GO ([Switch]$SelectionRun)
 
     Do
     {
+        $Form.Visible = $False
+
         $SyncHash.Restart = $False
         
         ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
@@ -1480,6 +1482,8 @@ Function GO ([Switch]$SelectionRun)
     $Commands.ReadOnly     = $False
     $FunctionsBox.ReadOnly = $False
     $StatementsBox.ReadOnly = $False
+
+    $Form.Visible = $True
 
     $Form.Refresh()
 
