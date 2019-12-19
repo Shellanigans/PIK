@@ -13,13 +13,10 @@ Param([String]$Macro = $Null)
 Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
 $ReparseRequired = $False
-Try
-{
+Try{
     Add-Type -AssemblyName System.Windows.Forms
     [Void][System.Windows.Forms.Form]::New()
-}
-Catch
-{
+}Catch{
     $ReparseRequired = $True
 }
 
@@ -261,14 +258,11 @@ public class Parser{
 
         if(Regex.IsMatch(X, "NUM") && X.Length == 4){
             return ("&H6"+X.Replace("NUM",""));
-        }
-        else if(X.Length == 1){
+        }else if(X.Length == 1){
             return ("&H"+Convert.ToString(Convert.ToInt32(Convert.ToChar(X)), 16)).ToUpper();
-        }
-        else if(Regex.IsMatch(X, "^F[1-9]+[0-6]?")){
+        }else if(Regex.IsMatch(X, "^F[1-9]+[0-6]?")){
             return ("&H7"+Convert.ToString((Convert.ToInt32(X.Replace("F","")) - 1), 16)).ToUpper();
-        }
-        else{
+        }else{
             switch(X){
                 case "CLEAR":       return "&H0C";
                 case "ENTER":       return "&H0D";
@@ -315,14 +309,11 @@ public class Parser{
                 X = (X.Replace("{COPY}","(^c)"));
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
-            }
-            else if(Regex.IsMatch(X, "{MYPID}")){
+            }else if(Regex.IsMatch(X, "{MYPID}")){
                 X = (X.Replace("{MYPID}",(Process.GetCurrentProcess().Id.ToString())));
-            }
-            else if(Regex.IsMatch(X, "{WHOAMI}")){
+            }else if(Regex.IsMatch(X, "{WHOAMI}")){
                 X = (X.Replace("{WHOAMI}",(Environment.UserDomainName.ToString()+"\\"+Environment.UserName.ToString())));
-            }
-            else if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
+            }else if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
                 while(Regex.IsMatch(X, "{SPACE")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
@@ -340,8 +331,7 @@ public class Parser{
                         }
                     }
                 }
-            }
-            else if(Regex.IsMatch(X, "{GET[CMP]")){
+            }else if(Regex.IsMatch(X, "{GET[CMP]")){
                 DR.Point Coords = Cons.Curs.GPos();
                 X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
                 X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));
@@ -381,46 +371,32 @@ public class Parser{
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
 
-Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
-{
-    If($KeyCode -eq 'F1')
-    {
+Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
+    If($KeyCode -eq 'F1'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '<\\# '
-    }
-    ElseIf($KeyCode -eq 'F2')
-    {
+    }ElseIf($KeyCode -eq 'F2'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '\\#> '
-    }
-    ElseIf($KeyCode -eq 'F3')
-    {
+    }ElseIf($KeyCode -eq 'F3'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '\\# '
-    }
-    ElseIf($KeyCode -eq 'F4')
-    {
-        Switch($BoxType)
-        {
-            'Commands'
-            {
+    }ElseIf($KeyCode -eq 'F4'){
+        Switch($BoxType){
+            'Commands'{
                 $MainObj.SelectionLength = 0
                 $MainObj.SelectedText = (':::label_me'+[N]::L)
             }
-            'Functions'
-            {
+            'Functions'{
                 $MainObj.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+$Script:Tab+[N]::L+'{FUNCTION END}'+[N]::L)
                 $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
             }
-            'Statements'
-            {
+            'Statements'{
                 $MainObj.Text+=([N]::L+'{STATEMENT NAME rename_me}'+[N]::L+$Script:Tab+'{OP1 ___}'+[N]::L+$Script:Tab+'{CMP ___}'+[N]::L+$Script:Tab+'{OP2 ___}'+[N]::L+$Script:Tab+$Script:Tab+[N]::L+$Script:Tab+$Script:Tab+'{ELSE}'+[N]::L+$Script:Tab+$Script:Tab+[N]::L+'{STATEMENT END}'+[N]::L)
                 $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
             }
         }
-    }
-    ElseIf($KeyCode -eq 'F5')
-    {
+    }ElseIf($KeyCode -eq 'F5'){
         $PH = [Cons.Curs]::GPos()
 
         $XCoord.Value = $PH.X
@@ -428,14 +404,10 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
 
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
-    }
-    ElseIf($KeyCode -eq 'F6')
-    {
+    }ElseIf($KeyCode -eq 'F6'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '{WAIT M 100}'
-    }
-    ElseIf($KeyCode -eq 'F10')
-    {
+    }ElseIf($KeyCode -eq 'F10'){
         $TempSelectionIndex = $MainObj.SelectionStart
         $TempSelectionLength = $MainObj.SelectionLength
 
@@ -446,23 +418,19 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
         ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
             $PH = $_.TrimStart(' ').TrimStart($Script:Tab)
 
-            If($PH -match '^<\\\\#')
-            {
+            If($PH -match '^<\\\\#'){
                 $Commented = $True
             }
 
-            If($PH -match '^\\\\#' -OR $Commented)
-            {
+            If($PH -match '^\\\\#' -OR $Commented){
                 'G,'+$Count
             }
 
-            If($PH -match '^\\\\#>')
-            {
+            If($PH -match '^\\\\#>'){
                 $Commented = $False
             }
 
-            If($PH -match '^:::')
-            {
+            If($PH -match '^:::'){
                 'B,'+$Count
             }
                         
@@ -471,8 +439,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
             $MainObj.SelectionStart = $MainObj.GetFirstCharIndexFromLine($_.Split(',')[-1])
             $MainObj.SelectionLength = $MainObj.Lines[$_.Split(',')[-1]].Length
                         
-            Switch($_.Split(',')[0])
-            {
+            Switch($_.Split(',')[0]){
                 'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
                 'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
             }
@@ -481,11 +448,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
         $MainObj.SelectionStart = $TempSelectionIndex
         $MainObj.SelectionLength = $TempSelectionLength
         $_.SuppressKeyPress = $True
-    }
-    ElseIf($KeyCode -eq 'F11')
-    {
-        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals')
-        {
+    }ElseIf($KeyCode -eq 'F11'){
+        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
             $Form.Text = ($Form.Text -replace '\*$')
 
             $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
@@ -498,40 +462,29 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
 
             $SaveAsProfText.Text = ''
         }
-    }
-    ElseIf($KeyCode -eq 'F12')
-    {
+    }ElseIf($KeyCode -eq 'F12'){
         $GO.PerformClick()
-    }
-    ElseIf($KeyCode -eq 'TAB')
-    {
-        If($MainObj.SelectionLength -gt 0)
-        {
+    }ElseIf($KeyCode -eq 'TAB'){
+        If($MainObj.SelectionLength -gt 0){
             $Start = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart)
             $End = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart + $MainObj.SelectionLength)
 
             $TempSelectionIndex = $MainObj.GetFirstCharIndexFromLine($Start)
             $TempSelectionLength = $MainObj.SelectionLength
 
-            If($_.Shift -AND ($MainObj.SelectedText -contains ($Script:Tab)))
-            {
+            If($_.Shift -AND ($MainObj.SelectedText -contains ($Script:Tab))){
                 $TempLines = $MainObj.Lines
                 $Start..($End - 1) | %{
-                    If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1)
-                    {
+                    If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1){
                         $TempLines[$_] = $TempLines[$_].Substring(1, ($TempLines[$_].Length - 1))
                         $TempSelectionLength--
-                    }
-                    ElseIf([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -eq 1)
-                    {
+                    }ElseIf([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -eq 1){
                         $TempLines[$_] = ''
                         $TempSelectionLength--
                     }
                 }
                 $MainObj.Lines = $TempLines
-            }
-            ElseIf(!$_.Shift)
-            {
+            }ElseIf(!$_.Shift){
                 $TempLines = $MainObj.Lines
                 $Start..($End - 1) | %{$TempLines[$_] = ($Script:Tab + $TempLines[$_]); $TempSelectionLength++}
                 $MainObj.Lines = $TempLines
@@ -545,27 +498,20 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType)
     }
 }
 
-Function Interpret
-{
+Function Interpret{
     Param([String]$X,$Esc)
 
     $X = [Parser]::Interpret($X)
 
-    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{MYPID}') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{GETFOCUS') -OR ($X -match '{READIN '))
-    {
+    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{MYPID}') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{GETFOCUS') -OR ($X -match '{READIN ')){
         $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
-            If($Script:VarsHash.ContainsKey($PH))
-            {
+            If($Script:VarsHash.ContainsKey($PH)){
                 $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
-            }
-            ElseIf($Script:VarsHash.ContainsKey(($PH+'_ESCAPED')))
-            {
+            }ElseIf($Script:VarsHash.ContainsKey(($PH+'_ESCAPED'))){
                 $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.($PH+'_ESCAPED')))
                 $Esc = $True
-            }
-            Else
-            {
+            }Else{
                 $X = ''
                 [System.Console]::WriteLine($Script:Tab+$PH+' was not found!')
             }
@@ -585,13 +531,10 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'GETPROC \S+'} | %{
             $PH = ($_ -replace 'GETPROC ')
 
-            If($_ -match ' -ID ')
-            {
+            If($_ -match ' -ID '){
                 $PH = ($PH -replace '-ID ')
                 $PH = ((PS -Id $PH) | %{$_.ProcessName})
-            }
-            Else
-            {
+            }Else{
                 $PH = ((PS $PH) | %{$_.Id}) -join ';'
             }
 
@@ -599,12 +542,9 @@ Function Interpret
         }
 
         $X.Split('{}') | ?{$_ -match 'GETWIND \S+'} | %{    
-            If($_ -match ' -ID ')
-            {
+            If($_ -match ' -ID '){
                 $PHHandle = ((PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle | ?{[Int]$_})
-            }
-            Else
-            {
+            }Else{
                 $PHHandle = ((PS ($_ -replace 'GETWIND ')).MainWindowHandle | ?{[Int]$_})
             }
 
@@ -615,12 +555,9 @@ Function Interpret
         }
 
         $X.Split('{}') | ?{$_ -match 'GETWINDTEXT \S+'} | %{    
-            If($_ -match ' -ID ')
-            {
+            If($_ -match ' -ID '){
                 $PHHandle = ((PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle | ?{[Int]$_})
-            }
-            Else
-            {
+            }Else{
                 $PHHandle = ((PS ($_ -replace 'GETWINDTEXT ')).MainWindowHandle | ?{[Int]$_})
             }
 
@@ -634,12 +571,9 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'GETFOCUS'} | %{
             $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
             
-            If($_ -match ' -ID')
-            {
+            If($_ -match ' -ID'){
                 $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Id})
-            }
-            Else
-            {
+            }Else{
                 $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Name})
             }
             
@@ -663,131 +597,96 @@ Function Interpret
             
             $Output = ''
 
-            Switch($Operator)
-            {
-                'ADD'
-                {
+            Switch($Operator){
+                'ADD'{
                     $Output = ([Double]$Operands[0] + [Double]$Operands[1])
                 }
-                'SUB'
-                {
+                'SUB'{
                     $Output = ([Double]$Operands[0] - [Double]$Operands[1])
                 }
-                'MUL'
-                {
+                'MUL'{
                     $Output = ([Double]$Operands[0] * [Double]$Operands[1])
                 }
-                'DIV'
-                {
+                'DIV'{
                     $Output = ([Double]$Operands[0] / [Double]$Operands[1])
                 }
-                'POW'
-                {
+                'POW'{
                     $Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])
                 }
-                'MOD'
-                {
+                'MOD'{
                     $Output = ([Double]$Operands[0] % [Double]$Operands[1])
                 }
-                'SIN'
-                {
+                'SIN'{
                     $Output = [Math]::Sin([Double]$Operands[0])
                 }
-                'COS'
-                {
+                'COS'{
                     $Output = [Math]::Cos([Double]$Operands[0])
                 }
-                'TAN'
-                {
+                'TAN'{
                     $Output = [Math]::Tan([Double]$Operands[0])
                 }
-                'FLR'
-                {
+                'FLR'{
                     $Output = [Math]::Floor([Double]$Operands[0])
                 }
-                'CEI'
-                {
+                'CEI'{
                     $Output = [Math]::Ceiling([Double]$Operands[0])
                 }
-                'LEN'
-                {
+                'LEN'{
                     $Output = $Operands[0].Length
                 }
-                'CNT'
-                {
+                'CNT'{
                     $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count
                 }
-                'APP'
-                {
-                    If($Operands.Count -gt 2)
-                    {
+                'APP'{
+                    If($Operands.Count -gt 2){
                         $Output = [String]($Operands[0..($Operands.Count - 2)] -join ',')+[String]$Operands[-1]
-                    }
-                    Else
-                    {
+                    }Else{
                         $Output = $Operands -join ''
                     }
                 }
-                'RPL'
-                {
-                    If($Operands.Count -gt 3)
-                    {
+                'RPL'{
+                    If($Operands.Count -gt 3){
                         $Output = ($Operands[0..($Operands.Count - 3)] -join ',') -replace $Operands[-2],$Operands[-1]
-                    }
-                    Else
-                    {
+                    }Else{
                         $Output = $Operands[0] -replace $Operands[1],$Operands[2]
                     }
                 }
-                'TRS'
-                {
-                    If($Operands.Count -gt 2)
-                    {
+                'TRS'{
+                    If($Operands.Count -gt 2){
                         $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimStart($Operands[-1])
-                    }
-                    Else
-                    {
+                    }Else{
                         $Output = $Operands[0].TrimStart($Operands[1])
                     }
                 }
-                'TRE'
-                {
-                    If($Operands.Count -gt 2)
-                    {
+                'TRE'{
+                    If($Operands.Count -gt 2){
                         $Output = ($Operands[0..($Operands.Count - 2)] -join ',').TrimEnd($Operands[-1])
-                    }
-                    Else
-                    {
+                    }Else{
                         $Output = $Operands[0].TrimEnd($Operands[1])
                     }
                 }
-                'JOI'
-                {
+                'JOI'{
                     $Output = ($Script:VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{$Script:VarsHash.$_}) -join $Operands[1]
                 }
-                'SPL'
-                {
+                'SPL'{
                     ($Script:VarsHash.($Operands[0])).ToString().Split($Operands[1]) | %{$Count = 0}{
                         $Script:VarsHash.Remove(([String]$Count+'_'+$Operands[0]))
                         $Script:VarsHash.Add(([String]$Count+'_'+$Operands[0]),$(If($_ -eq $Null){''}Else{$_}))
                         $Count++
                     }
                 }
-                'TCA'
-                {
+                'TCA'{
                     ($Script:VarsHash.($Operands[0])).ToString().ToCharArray() | %{$Count = 0}{
                         $Script:VarsHash.Remove(([String]$Count+'_'+$Operands[1]))
                         $Script:VarsHash.Add(([String]$Count+'_'+$Operands[1]),$_)
                         $Count++
                     }
                 }
-                'REV'
-                {
+                'REV'{
                     $CountF = 0
                     $CountR = (($Script:VarsHash.Keys | ?{$_ -match ('[0-9]*_'+$Operands[0]+'$')}).Count - 1)
                     0..[Math]::Ceiling($CountR / 2) | %{
-                        If($CountR -ge $CountF)
-                        {
+                        If($CountR -ge $CountF){
                             $PH = $Script:VarsHash.([String]$CountR+'_'+$Operands[0])
                             $Script:VarsHash.([String]$CountR+'_'+$Operands[0]) = $Script:VarsHash.([String]$CountF+'_'+$Operands[0])
                             $Script:VarsHash.([String]$CountF+'_'+$Operands[0]) = $PH
@@ -818,16 +717,12 @@ Function Interpret
         $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
-            If($PHName -match '_ESCAPED$')
-            {
+            If($PHName -match '_ESCAPED$'){
                [System.Console]::WriteLine($Script:Tab+'The name '+$PHName+' is invalid, _ESCAPED is a reserved suffix. This line will be ignored...')
                 $X = ''
-            }
-            Else
-            {
+            }Else{
                 $PHValue = $PH.Replace(($PHName+'='),'')
-                If(!([String]$PHValue))
-                {
+                If(!([String]$PHValue)){
                     $PHValue = ($X -replace '.*?{VAR .*?=')
                     $PHCount = ($X.Split('{') | %{$VarCheck = $False}{If($VarCheck){$_};If($_ -match 'VAR .*?='){$VarCheck = $True}}).Count
                     $PHValue = $PHValue.Split('}')[0..$PHCount] -join '}'
@@ -839,9 +734,7 @@ Function Interpret
                     [System.Console]::WriteLine($Script:Tab+'If you need to alias commands, use a function instead.')
 
                     $PHName+='_ESCAPED'
-                }
-                Else
-                {
+                }Else{
                     $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
                 }
 
@@ -886,12 +779,10 @@ Function Interpret
     Return $X,$Esc
 }
 
-Function Actions
-{
+Function Actions{
     Param([String]$X)
 
-    If(!$SyncHash.Stop)
-    {
+    If(!$SyncHash.Stop){
         [System.Console]::WriteLine($X)
 
         $Escaped = $False
@@ -899,47 +790,34 @@ Function Actions
         $X,$Escaped = (Interpret $X $Escaped)
 
         $TempX = $Null
-        If($Escaped)
-        {
+        If($Escaped){
             $TempX = $X
             $X = ''
         }
 
-        If($X -match '^{POWER .*}$')
-        {
+        If($X -match '^{POWER .*}$'){
             $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
         }
 
-        If($X -match '^{GOTO')
-        {
+        If($X -match '^{GOTO'){
             $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
             $Commands.Lines | %{$FoundLabel = $False}{
-                If($FoundLabel)
-                {
+                If($FoundLabel){
                     Actions $_
-                }
-                ElseIf($_.Trim(' ') -eq (':::'+$X))
-                {
+                }ElseIf($_.Trim(' ') -eq (':::'+$X)){
                     $FoundLabel = $True
                 }
             }
-        }
-        ElseIf($X -match '{PAUSE')
-        {
-            If($CommandLine -OR ($X -match '{PAUSE -C}'))
-            {
+        }ElseIf($X -match '{PAUSE'){
+            If($CommandLine -OR ($X -match '{PAUSE -C}')){
                 [System.Console]::WriteLine('Press any key to continue...')
                 [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-            }
-            Else
-            {
+            }Else{
                 [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
             }
             
             $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -C}','')
-        }
-        ElseIf($X -match '^{FOREACH ')
-        {
+        }ElseIf($X -match '^{FOREACH '){
             $PH = ($X.Substring(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
             $Script:VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                 $Script:VarsHash.Remove($PH[0])
@@ -947,148 +825,96 @@ Function Actions
                 Actions $PH[2]
             }
             $Script:VarsHash.Remove($PH[0])
-        }
-        ElseIf($X -match '^{SETCON')
-        {
+        }ElseIf($X -match '^{SETCON'){
             $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
             $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
 
-            If($X -notmatch '^{SETCONA ')
-            {
+            If($X -notmatch '^{SETCONA '){
                 $PHFileContent | Out-File $PHFileName -Force
-            }
-            Else
-            {
+            }Else{
                 $PHFileContent | Out-File $PHFileName -Append -Force
             }
-        }
-        ElseIf($X -match '{FOCUS')
-        {
-            If($X -match ' -ID ')
-            {
+        }ElseIf($X -match '{FOCUS'){
+            If($X -match ' -ID '){
                 Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Script:Tab+'Process not found!')}
-            }
-            Else
-            {
+            }Else{
                 Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Script:Tab+'Process not found!')}
             }
-        }
-        ElseIf($X -match '{SETCLIP ')
-        {
+        }ElseIf($X -match '{SETCLIP '){
             $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
                 [Cons.Clip]::SetT($_.Substring(8))
                 $X = ($X -replace ('{'+$_+'}'))
             }
-        }
-        ElseIf($X -match '{WAIT ?(M )?\d*}')
-        {
+        }ElseIf($X -match '{WAIT ?(M )?\d*}'){
             $X -replace '{WAIT' -replace '}' | %{
-                If($_ -match 'M')
-                {
+                If($_ -match 'M'){
                     $PH = [Int]($_ -replace ' M ')
-                }
-                ElseIf($_ -match ' ')
-                {
+                }ElseIf($_ -match ' '){
                     $PH = [Int]($_ -replace ' ')*1000
-                }
-                Else
-                {
+                }Else{
                     $PH = 1000
                 }
 
-                If(!$SyncHash.Stop -AND ($PH % 3000))
-                {
+                If(!$SyncHash.Stop -AND ($PH % 3000)){
                     [System.Console]::WriteLine($Script:Tab+'Waiting: '+[Double]($PH / 1000)+' seconds remain...')
                     [System.Threading.Thread]::Sleep($PH % 3000)
                 }
                 
                 $MaxWait = [Int]([Math]::Floor($PH / 3000))
                 $PH = ($PH - ($PH % 3000))
-                For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++)
-                {
+                For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
                     [System.Console]::WriteLine($Script:Tab+'Waiting: '+[Double](($PH - (3000 * $i)) / 1000)+' seconds remain...')
                     [System.Threading.Thread]::Sleep(3000)
                 }
             }
-        }
-        ElseIf($X -match '{[/\\]?HOLD')
-        {
+        }ElseIf($X -match '{[/\\]?HOLD'){
             $Rel = ($X -match '[/\\]')
 
-            If($X -match 'MOUSE')
-            {
+            If($X -match 'MOUSE'){
                 [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
-            }
-            Else
-            {
+            }Else{
                 $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
                 $UndoHash.KeyList+=([String]$Temp)
                 [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
             }
-        }
-        ElseIf($X -match '^{[LRM]?MOUSE')
-        {
-            If($X -match ',')
-            {
-                If($X -match '\+' -OR $X -match '-')
-                {
+        }ElseIf($X -match '^{[LRM]?MOUSE'){
+            If($X -match ','){
+                If($X -match '\+' -OR $X -match '-'){
                     $Coords = [Cons.Curs]::GPos()
                     $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos(([Int]$_.Split(',')[0] + [Int]$Coords.X), ([Int]$_.Split(',')[-1] + [Int]$Coords.Y))}
-                }
-                Else
-                {
+                }Else{
                     $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
                 }
-            }
-            ElseIf($X -match ' ')
-            {
+            }ElseIf($X -match ' '){
                 0..([Int](($X -replace '}').Split(' ')[-1])) | %{
                     [Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
                         [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
                     }
                 }
-            }
-            Else
-            {
+            }Else{
                 [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
                     [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
                 }
             }
-        }
-        ElseIf($X -match 'WINDOWS}')
-        {
-            Switch($X)
-            {
+        }ElseIf($X -match 'WINDOWS}'){
+            Switch($X){
                 '{WINDOWS}'  {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
                 '{LWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
                 '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
             }
-        }
-        ElseIf($X -match '^{RESTART}$')
-        {
+        }ElseIf($X -match '^{RESTART}$'){
             $SyncHash.Restart = $True
-        }
-        ElseIf($X -match '^{REFOCUS}$')
-        {
+        }ElseIf($X -match '^{REFOCUS}$'){
             $Script:Refocus = $True
-        }
-        ElseIf($X -match '^{CLEARVAR')
-        {
-            If($X -match '^{CLEARVARS}$')
-            {
+        }ElseIf($X -match '^{CLEARVAR'){
+            If($X -match '^{CLEARVARS}$'){
                 $Script:VarsHash = @{}
-            }
-            Else
-            {
+            }Else{
                 $Script:VarsHash.Remove(($X.Substring(0, $X.Length - 1) -replace '^{CLEARVAR '))
             }
-        }
-        ElseIf($X -match '^{KILL}$')
-        {
+        }ElseIf($X -match '^{KILL}$'){
             $SyncHash.Stop = $True
-        }
-        ElseIf($X -match '^{SCRNSHT ')
-        {
+        }ElseIf($X -match '^{SCRNSHT '){
             $PH = ($X -replace '{SCRNSHT ')
             $PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
@@ -1104,9 +930,7 @@ Function Actions
             
             $Graphics.Dispose()
             $BMP.Dispose()
-        }
-        ElseIf($IfElHash.ContainsKey($X.Trim('{}')) -AND ($X -match '^{.*}'))
-        {
+        }ElseIf($IfElHash.ContainsKey($X.Trim('{}')) -AND ($X -match '^{.*}')){
             $IfElName = $X.Trim('{}')
 
             $Op1 = $IfElHash.($IfElName+'OP1')
@@ -1118,8 +942,7 @@ Function Actions
             $Op1 = ((Interpret $Op1) | Out-String)
             $Op2 = ((Interpret $Op2) | Out-String)
 
-            If($IfElHash.ContainsKey($IfElName+'NUMERIC'))
-            {
+            If($IfElHash.ContainsKey($IfElName+'NUMERIC')){
                 $Op1 = [Double]$Op1
                 $Op2 = [Double]$Op2
             }
@@ -1131,8 +954,7 @@ Function Actions
             $TCheck = $False
             $ActionToPerform = $FComm
 
-            Switch($IfElHash.($IfElName+'CMP'))
-            {
+            Switch($IfElHash.($IfElName+'CMP')){
                 'MATCH'    {If($Op1 -match $Op2)       {$TCheck = $True}}
                 'EQ'       {If($Op1 -eq $Op2)          {$TCheck = $True}}
                 'LIKE'     {If($Op1 -like $Op2)        {$TCheck = $True}}
@@ -1150,70 +972,51 @@ Function Actions
             $ActionToPerform.Split([N]::L) | %{
                 ($_ -replace ('`'+[N]::L),'' -replace '^\s*' | ?{$_ -ne ''})
             } | %{$Commented = $False}{
-                If(!$SyncHash.Stop)
-                {
+                If(!$SyncHash.Stop){
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented)
-                    {
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
                         Actions $_
-                    }
-                    Else
-                    {
+                    }Else{
                         [System.Console]::WriteLine($Script:Tab+$_)
                     }
                 }
             }
-        }
-        ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}'))
-        {
+        }ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
             $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
                 $FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | %{
                     ($_ -replace ('`'+[N]::L),'' -replace '^\s*' | ?{$_ -ne ''})
                 } | %{$Commented = $False}{
-                    If(!$SyncHash.Stop)
-                    {
+                    If(!$SyncHash.Stop){
                         If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                         If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented)
-                        {
+                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
                             Actions $_
-                        }
-                        Else
-                        {
+                        }Else{
                             [System.Console]::WriteLine($Script:Tab+$_)
                         }
                     }
                 }
             }
-        }
-        ElseIf($X -match '{SETWIND ')
-        {
-            If($X -match ' -ID ')
-            {
+        }ElseIf($X -match '{SETWIND '){
+            If($X -match ' -ID '){
                 $PHHandle = ((PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
                 $PHCoords = (($X -replace '{SETWIND -ID ' -replace '}$').Split(',') | Select -Skip 1)
-            }
-            Else
-            {
+            }Else{
                 $PHHandle = ((PS ($X -replace '{SETWIND ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
                 $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
             }
             
             [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
         }
-        ElseIf($X -match '{SETWINDTEXT ')
-        {
-            If($X -match ' -ID ')
-            {
+        ElseIf($X -match '{SETWINDTEXT '){
+            If($X -match ' -ID '){
                 $PHIdentifier = ($X -replace '{SETWINDTEXT -ID ' -replace '}$').Split(',')[0]
                 $PHHandle = (((PS -Id $PHIdentifier).MainWindowHandle) | ?{[Int]$_})
                 $PHWindText = ($X -replace ('{SETWINDTEXT -ID '+$PHIdentifier+',') -replace '}$')
-            }
-            Else
-            {
+            }Else{
                 $PHIdentifier = ($X -replace '{SETWINDTEXT ' -replace '}$').Split(',')[0]
                 $PHHandle = ((PS $PHIdentifier).MainWindowHandle | ?{[Int]$_})
                 $PHWindText = ($X -replace ('{SETWINDTEXT '+$PHIdentifier+',') -replace '}$')
@@ -1221,10 +1024,8 @@ Function Actions
             
             [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
         }
-        ElseIf($X -notmatch '{GOTO ')
-        {
-            If($Escaped)
-            {
+        ElseIf($X -notmatch '{GOTO '){
+            If($Escaped){
                 [System.Console]::WriteLine($Script:Tab+'This line was escaped. Above may appear as commands,')
                 [System.Console]::WriteLine($Script:Tab+'but has been converted to keystrokes...')
                 $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
@@ -1232,12 +1033,10 @@ Function Actions
                 $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
             }
 
-            If(($X -notmatch '^\(.*\)$' -AND $X -notmatch '^{.*}$' -AND $X -notmatch '^\[.*\]$') -AND ($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0))))
-            {
+            If(($X -notmatch '^\(.*\)$' -AND $X -notmatch '^{.*}$' -AND $X -notmatch '^\[.*\]$') -AND ($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0)))){
                 $X.ToCharArray() | %{
                     $PHX = $(
-                        Switch([String]$_)
-                        {
+                        Switch([String]$_){
                             '{'{'{{}'}
                             '}'{'{}}'}
                             '('{'{(}'}
@@ -1250,28 +1049,20 @@ Function Actions
                     
                     [Cons.Send]::Keys($PHX)
                     
-                    If($DelayCheck.Checked)
-                    {
+                    If($DelayCheck.Checked){
                         $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
-                    }
-                    Else
-                    {
+                    }Else{
                         $PH = 0
                     }
                         
                     [System.Threading.Thread]::Sleep([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
                 }
-            }
-            Else
-            {
-                Try
-                {
+            }Else{
+                Try{
                     [Cons.Send]::Keys($X)
                 }
-                Catch
-                {
-                    If(!$Escaped)
-                    {
+                Catch{
+                    If(!$Escaped){
                         [System.Console]::WriteLine($Script:Tab+'Potential unclosed or bad braces. Re-attempting...')
                         $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
                         $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
@@ -1279,26 +1070,19 @@ Function Actions
                         [System.Console]::WriteLine($X)
                     }
                     
-                    Try
-                    {
+                    Try{
                         [Cons.Send]::Keys($X)
-                    }
-                    Catch
-                    {
+                    }Catch{
                         [System.Console]::WriteLine($Script:Tab+'Failed!')    
                     }
                 }
             }
         }
 
-        If($CommandDelayTimer.Value -ne 0 -OR ($CommDelayCheck.Checked -AND ($CommRandTimer.Value -gt 0)))
-        {
-            If($CommDelayCheck.Checked)
-            {
+        If($CommandDelayTimer.Value -ne 0 -OR ($CommDelayCheck.Checked -AND ($CommRandTimer.Value -gt 0))){
+            If($CommDelayCheck.Checked){
                 $PH = (([Random]::New()).Next((-1*$CommRandTimer.Value),($CommRandTimer.Value)))
-            }
-            Else
-            {
+            }Else{
                 $PH = 0
             }
 
@@ -1307,8 +1091,7 @@ Function Actions
     }
 }
 
-Function GO ([Switch]$SelectionRun)
-{
+Function GO ([Switch]$SelectionRun){
     [System.Console]::WriteLine('Initializing:')
     [System.Console]::WriteLine('------------------------------'+[N]::L)
 
@@ -1328,16 +1111,14 @@ Function GO ([Switch]$SelectionRun)
 
     $Form.Refresh()
 
-    If($StatementsBox.Text -replace '\s*')
-    {
+    If($StatementsBox.Text -replace '\s*'){
         [System.Console]::WriteLine($Script:Tab+'Parsing Statements:')
         [System.Console]::WriteLine($Script:Tab+'-------------------'+[N]::L)
 
         $StatementsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Script:Tab)} | %{
             $StatementStart = $False
         }{
-            If(!$StatementStart -AND $_ -match '^{STATEMENT NAME ')
-            {
+            If(!$StatementStart -AND $_ -match '^{STATEMENT NAME '){
                 $StatementStart = $True
                 $Numeric = $False
 
@@ -1347,55 +1128,36 @@ Function GO ([Switch]$SelectionRun)
                 $StatementFText = [String[]]@()
             }
 
-            If($StatementStart)
-            {
-                If($_ -match '^{STATEMENT NAME ')
-                {
+            If($StatementStart){
+                If($_ -match '^{STATEMENT NAME '){
                     $NameState = [String]($_ -replace '^{STATEMENT NAME ' -replace '}')
                     $Script:IfElHash.Add($NameState,($NameState+'_NAME'))
-                }
-                ElseIf($_ -match '^{NUMERIC}')
-                {
+                }ElseIf($_ -match '^{NUMERIC}'){
                     $Script:IfElHash.Add($NameState+'NUMERIC','NUMERIC_COMPARISON')
-                }
-                ElseIf($_ -match '^{OP1 ')
-                {
+                }ElseIf($_ -match '^{OP1 '){
                     $PH = $_.Substring(5)
                     $PH = $PH.Substring(0, ($PH.Length - 1))
                     
                     $Script:IfElHash.Add($NameState+'OP1',$PH)
-                }
-                ElseIf($_ -match '^{CMP ')
-                {
+                }ElseIf($_ -match '^{CMP '){
                     $PH = $_.Substring(5)
                     $PH = $PH.Substring(0, ($PH.Length - 1))
                     $Script:IfElHash.Add($NameState+'CMP',$PH)
-                }
-                ElseIf($_ -match '^{OP2 ')
-                {
+                }ElseIf($_ -match '^{OP2 '){
                     $PH = $_.Substring(5)
                     $PH = $PH.Substring(0, ($PH.Length - 1))
                     
                     $Script:IfElHash.Add($NameState+'OP2',$PH)
-                }
-                ElseIf($_ -match '^{ELSE}')
-                {
+                }ElseIf($_ -match '^{ELSE}'){
                     $TF = $False
-                }
-                ElseIf($_ -match '^{STATEMENT END}')
-                {
+                }ElseIf($_ -match '^{STATEMENT END}'){
                     $StatementStart = $False
                     $Script:IfElHash.Add($NameState+'TComm',($StatementTText -join [N]::L))
                     $Script:IfElHash.Add($NameState+'FComm',($StatementFText -join [N]::L))
-                }
-                Else
-                {
-                    If($TF)
-                    {
+                }Else{
+                    If($TF){
                         $StatementTText+=$_
-                    }
-                    Else
-                    {
+                    }Else{
                         $StatementFText+=$_
                     }
                 }
@@ -1414,8 +1176,7 @@ Function GO ([Switch]$SelectionRun)
         }
     }
 
-    If($FunctionsBox.Text -replace '\s*')
-    {
+    If($FunctionsBox.Text -replace '\s*'){
         [System.Console]::WriteLine($Script:Tab+'Parsing Functions:')
         [System.Console]::WriteLine($Script:Tab+'-------------------'+[N]::L)
 
@@ -1425,20 +1186,14 @@ Function GO ([Switch]$SelectionRun)
             $FunctionText = @()
         }{
             If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
-            If($FunctionStart)
-            {
-                If($_ -match '^{FUNCTION NAME ')
-                {
+            If($FunctionStart){
+                If($_ -match '^{FUNCTION NAME '){
                     $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
-                }
-                ElseIf($_ -match '^{FUNCTION END}')
-                {
+                }ElseIf($_ -match '^{FUNCTION END}'){
                     $FunctionStart = $False
                     $Script:FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
                     $FunctionText = @()
-                }
-                Else
-                {
+                }Else{
                     $FunctionText+=$_
                 }
             }
@@ -1452,24 +1207,19 @@ Function GO ([Switch]$SelectionRun)
     [System.Console]::WriteLine('Starting Macro!'+[N]::L+'-------------------')
     
     $Results = (Measure-Command {
-        Do
-        {
+        Do{
             $Form.Visible = $False
 
             $SyncHash.Restart = $False
         
             ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
-                If(!$SyncHash.Stop)
-                {
+                If(!$SyncHash.Stop){
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::')
-                    {
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){
                         Actions $_
-                    }
-                    Else
-                    {
+                    }Else{
                         [System.Console]::WriteLine($Script:Tab+$_)
                     }
                 }
@@ -1489,8 +1239,7 @@ Function GO ([Switch]$SelectionRun)
 
         [System.Console]::WriteLine('Complete!'+[N]::L)
 
-        If($Script:Refocus)
-        {
+        If($Script:Refocus){
             [Cons.App]::Act($Form.Text)
             $Form.Focus()
             $Commands.Focus()
@@ -1513,8 +1262,7 @@ Function GO ([Switch]$SelectionRun)
               #####    #####   ### 
 ############################################################################################################################################################################################################################################################################################################
 
-If($Host.Name -match 'Console')
-{
+If($Host.Name -match 'Console'){
     [Console]::Title = 'Pickle'
 
     [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
@@ -1552,11 +1300,9 @@ $Pow.AddScript({
     public static extern short GetAsyncKeyState(int virtualKeyCode);
     ' -ErrorAction SilentlyContinue
 
-    While(!$SyncHash.Kill)
-    {
+    While(!$SyncHash.Kill){
         [System.Threading.Thread]::Sleep(50)
-        If([API.Win32]::GetAsyncKeyState(145))
-        {
+        If([API.Win32]::GetAsyncKeyState(145)){
             $SyncHash.Stop = $True
         }
     }
@@ -1580,15 +1326,13 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $Commands.AcceptsTab = $True
                 $Commands.DetectUrls = $False
                 $Commands.Add_TextChanged({
-                    If($Form.Text -notmatch '\*$')
-                    {
+                    If($Form.Text -notmatch '\*$'){
                         $Form.Text+='*'
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
                 })
                 $Commands.Add_MouseDown({
-                    If([String]$_.Button -eq 'Right')
-                    {
+                    If([String]$_.Button -eq 'Right'){
                         $RightClickMenu.Visible = $True
                         $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
                         $RightClickMenu.BringToFront()
@@ -1640,12 +1384,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         [Math]::Pow($PHPix.B,2) * 0.114
                     )
 
-                    If($PHLum -gt 130)
-                    {
+                    If($PHLum -gt 130){
                         $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                    }
-                    Else
-                    {
+                    }Else{
                         $PixColorBox.ForeColor = [System.Drawing.Color]::White
                     }
 
@@ -1671,8 +1412,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $XCoord.Minimum = -99999
                 $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value)})
                 $XCoord.Add_KeyUp({
-                    If($_.KeyCode -eq 'Return')
-                    {
+                    If($_.KeyCode -eq 'Return'){
                         [Cons.Curs]::SPos($This.Value,$YCoord.Value)
 
                         $PH = [Cons.Curs]::GPos()
@@ -1698,12 +1438,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                             [Math]::Pow($PHPix.B,2) * 0.114
                         )
 
-                        If($PHLum -gt 130)
-                        {
+                        If($PHLum -gt 130){
                             $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                        }
-                        Else
-                        {
+                        }Else{
                             $PixColorBox.ForeColor = [System.Drawing.Color]::White
                         }
 
@@ -1718,8 +1455,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $YCoord.Minimum = -99999
                 $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value)})
                 $YCoord.Add_KeyUp({
-                    If($_.KeyCode -eq 'Return')
-                    {
+                    If($_.KeyCode -eq 'Return'){
                         [Cons.Curs]::SPos($XCoord.Value,$This.Value)
 
                         $PH = [Cons.Curs]::GPos()
@@ -1745,12 +1481,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                             [Math]::Pow($PHPix.B,2) * 0.114
                         )
 
-                        If($PHLum -gt 130)
-                        {
+                        If($PHLum -gt 130){
                             $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                        }
-                        Else
-                        {
+                        }Else{
                             $PixColorBox.ForeColor = [System.Drawing.Color]::White
                         }
 
@@ -1797,8 +1530,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $TempName.Size = [System.Drawing.Size]::New(130,20)
                         $TempName.Text = $Temp
                         $TempName.Add_TextChanged({
-                            If(!($ClickHelperParent.Keys -contains ($This.Text)))
-                            {
+                            If(!($ClickHelperParent.Keys -contains ($This.Text))){
                                 $ClickHelperParent.Add($Temp,[String]$This.Parent.Location.X+','+[String]$This.Parent.Location.Y)
                             }
                         })
@@ -1841,8 +1573,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $FunctionsBox.AcceptsTab = $True
                 $FunctionsBox.DetectUrls = $False
                 $FunctionsBox.Add_TextChanged({
-                    If($Form.Text -notmatch '\*$')
-                    {
+                    If($Form.Text -notmatch '\*$'){
                         $Form.Text+='*'
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
@@ -1866,8 +1597,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
             $StatementsBox.AcceptsTab = $True
             $StatementsBox.DetectUrls = $False
             $StatementsBox.Add_TextChanged({
-                If($Form.Text -notmatch '\*$')
-                {
+                If($Form.Text -notmatch '\*$'){
                     $Form.Text+='*'
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force
@@ -1897,8 +1627,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $QuickSave = [GUI.B]::New(75, 25, 10, 85, 'SAVE')
                 $QuickSave.Add_Click({
-                    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals')
-                    {
+                    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
                         $Form.Text = ($Form.Text -replace '\*$')
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
@@ -1916,8 +1645,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
                 $LoadProfile.Add_Click({
-                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2)
-                    {
+                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2){
                         $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
@@ -1950,8 +1678,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $SaveProfile = [GUI.B]::New(75, 20, 186, 189, 'SAVE AS')
                 $SaveProfile.Add_Click({
-                    If($SaveAsProfText.Text)
-                    {
+                    If($SaveAsProfText.Text){
                         $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
                         $Profile.Text = ('Working Profile: ' + $SaveAsProfText.Text)
 
@@ -1980,8 +1707,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                 $DelProfile = [GUI.B]::New(75, 20, 186, 259, 'DELETE')
                 $DelProfile.Add_Click({
-                    If($Profile.Text -eq ('Working Profile: ' + $DelProfText.Text))
-                    {
+                    If($Profile.Text -eq ('Working Profile: ' + $DelProfText.Text)){
                         $Profile.Text = ('Working Profile: None/Prev Text Vals')
                         $SavedProfiles.SelectedItem = $Null
 
@@ -2042,12 +1768,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
                 $ShowCons.Add_CheckedChanged({
                     If($Host.Name -match 'Console'){
-                        If($This.Checked)
-                        {
+                        If($This.Checked){
                             [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
-                        }
-                        Else
-                        {
+                        }Else{
                             [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
                         }
                     }
@@ -2118,8 +1841,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
         $Script:TabControllerAdvanced.Parent = $Script:TabPageAdvanced
     $Script:TabPageAdvanced.Parent = $Script:TabController
 $Script:TabController.Add_SelectedIndexChanged({
-    If($This.SelectedTab -ne $Script:TabPageAdvanced)
-    {
+    If($This.SelectedTab -ne $Script:TabPageAdvanced){
         $Script:TabPageHelper.Parent = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
         
         $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
@@ -2154,8 +1876,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2170,8 +1891,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2186,8 +1906,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2218,8 +1937,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2234,8 +1952,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2250,8 +1967,7 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $M.X = ($M.X - $Form.Location.X)
         $M.Y = ($M.Y - $Form.Location.Y)
 
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-        {
+        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
             $RightClickMenu.Visible = $False
         }
     })
@@ -2265,8 +1981,7 @@ $RightClickMenu.Add_MouseLeave({
     $M.X = ($M.X - $Form.Location.X)
     $M.Y = ($M.Y - $Form.Location.Y)
 
-    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30)))
-    {
+    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
         $RightClickMenu.Visible = $False
     }
 })
@@ -2294,20 +2009,13 @@ $Config = ($Config | Select `
     @{NAME='SavedSize';EXPRESSION={$Null}}
 )
 
-Try
-{
-    Try
-    {
+Try{
+    Try{
         $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
-    }
-    Catch
-    {
-        Try
-        {
+    }Catch{
+        Try{
             $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
-        }
-        Catch
-        {
+        }Catch{
             $LoadedConfig = (Get-Content ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
         }
     }
@@ -2331,53 +2039,39 @@ Try
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
 
-    If($LoadedConfig.PrevProfile -OR $Macro)
-    {
-        If($Macro)
-        {
-            If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$Macro))
-            {
+    If($LoadedConfig.PrevProfile -OR $Macro){
+        If($Macro){
+            If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$Macro)){
                 $Profile.Text = ('Working Profile: ' + $Macro)
                 $Form.Text = ('Pickle - ' + $Macro)
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($Macro)
-            }
-            Else
-            {
+            }Else{
                 [System.Console]::WriteLine('No macro by that name!')
             }
 
             $CommandLine = $True
-        }
-        Else
-        {
+        }Else{
             $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
             $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
             $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
         }
     }
 
-    If($LoadedConfig.LastLoc)
-    {
+    If($LoadedConfig.LastLoc){
         $Form.StartPosition = 'Manual'
         $Form.Location = [GUI.SP]::PO($LoadedConfig.LastLoc.Split(',')[0],$LoadedConfig.LastLoc.Split(',')[1])
     }
 
-    If($LoadedConfig.SavedSize)
-    {
+    If($LoadedConfig.SavedSize){
         $Form.Size = [GUI.SP]::SI($LoadedConfig.SavedSize.Split(',')[0],$LoadedConfig.SavedSize.Split(',')[1])
     }
-}
-Catch
-{
+}Catch{
     [System.Console]::WriteLine('No config file found or file could not be loaded!')
 }
 
-If($CommandLine)
-{
+If($CommandLine){
     GO
-}
-Else
-{
+}Else{
     $Form.Show()
 
     $Script:TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
@@ -2404,13 +2098,11 @@ $Config.CommTimeVal   = $CommandDelayTimer.Value
 $Config.CommChecked   = $CommDelayCheck.Checked
 $Config.CommRandVal   = $CommRandTimer.Value
 
-If(!$CommandLine)
-{
+If(!$CommandLine){
     $Config.ShowConsCheck = $ShowCons.Checked
     $Config.OnTopCheck    = $OnTop.Checked
 
-    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals')
-    {
+    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
         $Config.PrevProfile = ($Profile.Text -replace '^Working Profile: ')
     
         $Form.Text = ($Form.Text -replace '\*$')
@@ -2424,21 +2116,16 @@ If(!$CommandLine)
         $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
 
         $SaveAsProfText.Text = ''
-    }
-    Else
-    {
+    }Else{
         $Config.PrevProfile = $Null
     }
 
     $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
     $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
 
-    Try
-    {
+    Try{
         $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
-    }
-    Catch
-    {
+    }Catch{
         $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
     }
 }
@@ -2446,8 +2133,7 @@ If(!$CommandLine)
 If($Host.Name -match 'Console'){Exit}
 }
 
-If($ReparseRequired)
-{
+If($ReparseRequired){
     $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | %{
         $FlipFlop = $True
     }{
@@ -2455,12 +2141,9 @@ If($ReparseRequired)
 
         $FlipFlop = !$FlipFlop
     } | %{
-        If($_ -match '::New\(')
-        {
+        If($_ -match '::New\('){
             (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
-        }
-        Else
-        {
+        }Else{
             $_
         }
     }) -join [System.Environment]::NewLine
