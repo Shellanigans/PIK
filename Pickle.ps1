@@ -370,7 +370,18 @@ public class Parser{
              #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
+Function Handle-RMenu($MainObj){
+    $L = $MainObj.Parent.Location
+    $S = $MainObj.Parent.Size
 
+    $M = [Cons.Curs]::GPos()
+    $M.X = ($M.X - $Form.Location.X)
+    $M.Y = ($M.Y - $Form.Location.Y)
+
+    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
+        $MainObj.Parent.Visible = $False
+    }
+}
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
     If($KeyCode -eq 'F1'){
         $MainObj.SelectionLength = 0
@@ -703,17 +714,6 @@ Function Interpret{
             If($Output){[System.Console]::WriteLine($X)}
         }
 
-        <#If($X -match '{VAR .*?=')
-        {
-            $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
-            $PHName = $PH.Split('=')[0]
-            $PHValue = $PH.Replace(($PHName+'='),'')
-
-            $Script:VarsHash.Remove($PHName)
-            $Script:VarsHash.Add($PHName,$PHValue)
-            $X = ''
-        }#>
-
         $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
@@ -742,23 +742,6 @@ Function Interpret{
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
             }
-            
-            <#If($X)
-            {
-                $PH = ($X -replace '^\s*{VAR ' -replace '}\s*$')
-                $PHName = $PH.Split('=')[0]
-                $PHValue = $PH.Replace(($PHName+'='),'')
-
-                $Script:VarsHash.Remove($PHName)
-                $Script:VarsHash.Add($PHName,$PHValue)
-                #$X = $X.Replace(('{VAR '+$PHName+'='+$PHValue+'}'),'')
-                $X = ''
-            }
-            Else
-            {
-                $Script:VarsHash.Remove($PHName)
-                $Script:VarsHash.Add($PHName,$PHValue)
-            }#>
         }
 
         $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
@@ -1868,49 +1851,19 @@ $Form.Add_SizeChanged({
 $RightClickMenu = [GUI.P]::New(135,160,100,100)
     $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
     $RClickCopy.Add_Click({$RightClickMenu.Visible = $False;[Cons.Clip]::SetT($Commands.SelectedText)})
-    $RClickCopy.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $RClickCopy.Add_MouseLeave({Handle-RMenu $This})
     $RClickCopy.Parent = $RightClickMenu
+    
     $RClickPaste = [GUI.B]::New(125,25,5,30,'Paste')
     $RClickPaste.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.Paste()})
-    $RClickPaste.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $RClickPaste.Add_MouseLeave({Handle-RMenu $This})
     $RClickPaste.Parent = $RightClickMenu
+
     $RClickSelect = [GUI.B]::New(125,25,5,55,'Select All')
     $RClickSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectAll()})
-    $RClickSelect.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $RClickSelect.Add_MouseLeave({Handle-RMenu $This})
     $RClickSelect.Parent = $RightClickMenu
+
     $FindReplace = [GUI.B]::New(125,25,5,80,'Find/Replace')
     $FindReplace.Add_Click({
         $RightClickMenu.Visible = $False
@@ -1929,48 +1882,17 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
         $FindForm.BringToFront()
         $Form.Refresh()
     })
-    $FindReplace.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $FindReplace.Add_MouseLeave({Handle-RMenu $This})
     $FindReplace.Parent = $RightClickMenu
+
     $RunSelection = [GUI.B]::New(125,25,5,105,'Run Selection')
     $RunSelection.Add_Click({$RightClickMenu.Visible = $False;GO -SelectionRun})
-    $RunSelection.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $RunSelection.Add_MouseLeave({Handle-RMenu $This})
     $RunSelection.Parent = $RightClickMenu
+
     $Run = [GUI.B]::New(125,25,5,130,'Run')
     $Run.Add_Click({$RightClickMenu.Visible = $False;GO})
-    $Run.Add_MouseLeave({
-        $L = $This.Parent.Location
-        $S = $This.Parent.Size
-
-        $M = [Cons.Curs]::GPos()
-        $M.X = ($M.X - $Form.Location.X)
-        $M.Y = ($M.Y - $Form.Location.Y)
-
-        If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-            $RightClickMenu.Visible = $False
-        }
-    })
+    $Run.Add_MouseLeave({Handle-RMenu $This})
     $Run.Parent = $RightClickMenu
 $RightClickMenu.Visible = $False
 $RightClickMenu.Add_MouseLeave({
@@ -1986,7 +1908,6 @@ $RightClickMenu.Add_MouseLeave({
     }
 })
 $RightClickMenu.Parent = $Form
-$RightClickMenu.BringToFront()
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
