@@ -1,3 +1,5 @@
+WhatIf button?
+
 scratch pad?
 
 fix up helper window
