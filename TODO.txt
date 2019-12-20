@@ -1,3 +1,5 @@
+scratch pad?
+
 fix up helper window
     put hot key stuff in there? maybe settings instead?
     make it resizeable
