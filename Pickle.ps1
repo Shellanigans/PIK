@@ -515,7 +515,9 @@ Function Interpret{
     $X = [Parser]::Interpret($X)
 
     While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{MYPID}') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{GETFOCUS') -OR ($X -match '{READIN ')){
-        $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
+        $PHSplitX = $X.Split('{}')
+        
+        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
             If($Script:VarsHash.ContainsKey($PH)){
                 $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
@@ -530,16 +532,16 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
         
-        $X.Split('{}') | ?{$_ -match 'GETCON \S+'} | %{
+        $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
             $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'FINDVAR \S+'} | %{
+        $PHSplitX | ?{$_ -match 'FINDVAR \S+'} | %{
             $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
     
-        $X.Split('{}') | ?{$_ -match 'GETPROC \S+'} | %{
+        $PHSplitX | ?{$_ -match 'GETPROC \S+'} | %{
             $PH = ($_ -replace 'GETPROC ')
 
             If($_ -match ' -ID '){
@@ -552,7 +554,7 @@ Function Interpret{
             $X = ($X.Replace(('{'+$_+'}'),$PH))
         }
 
-        $X.Split('{}') | ?{$_ -match 'GETWIND \S+'} | %{    
+        $PHSplitX | ?{$_ -match 'GETWIND \S+'} | %{    
             If($_ -match ' -ID '){
                 $PHHandle = ((PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle | ?{[Int]$_})
             }Else{
@@ -565,7 +567,7 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'GETWINDTEXT \S+'} | %{    
+        $PHSplitX | ?{$_ -match 'GETWINDTEXT \S+'} | %{    
             If($_ -match ' -ID '){
                 $PHHandle = ((PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle | ?{[Int]$_})
             }Else{
@@ -579,7 +581,7 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'GETFOCUS'} | %{
+        $PHSplitX | ?{$_ -match 'GETFOCUS'} | %{
             $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
             
             If($_ -match ' -ID'){
@@ -592,13 +594,13 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match 'READIN \S+'} | %{
+        $PHSplitX | ?{$_ -match 'READIN \S+'} | %{
             $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
             $X = ($X.Replace(('{'+$_+'}'),($PH)))
             [System.Console]::WriteLine($X)
         }
 
-        $X.Split('{}') | ?{$_ -match '^MANIP \S+'} | %{
+        $PHSplitX | ?{$_ -match '^MANIP \S+'} | %{
             $PH = ($_.Substring(6))
 
             $Operator = $PH.Split(' ')[0]
@@ -714,7 +716,7 @@ Function Interpret{
             If($Output){[System.Console]::WriteLine($X)}
         }
 
-        $X.Split('{}') | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
+        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$'){
@@ -1485,10 +1487,6 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $PixColorBox.Parent = $Script:TabPageHelper
 
-                #$Reparse = [GUI.B]::New(260, 25, 10, 285, 'Reparse')
-                #$Reparse.Add_Click({$SyncHash.Stop = $True; GO})
-                #$Reparse.Parent = $Script:TabPageHelper
-
                 $SpawnClicker = [GUI.B]::New(260, 25, 10, 285, 'Spawn Click Helper')
                 $SpawnClicker.Add_Click({
                     $Pow = [Powershell]::Create()
@@ -1789,12 +1787,6 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         [System.Console]::WriteLine(('If('+$Script:IfElHash.($PH[1])+' -'+$Script:IfElHash.($PH[2])+' '+$Script:IfElHash.($PH[3])+')'))
                         [System.Console]::WriteLine(('{'+[N]::L+(($Script:IfElHash.($PH[4]).Split([N]::L) | ?{$_ -ne ''} | %{$Script:Tab+$_}) -join [N]::L)+[N]::L+'}'+[N]::L+'Else'))
                         [System.Console]::WriteLine(('{'+[N]::L+(($Script:IfElHash.($PH[5]).Split([N]::L) | ?{$_ -ne ''} | %{$Script:Tab+$_}) -join [N]::L)+[N]::L+'}'+[N]::L))
-
-                        <#$(If($PH.Contains(($_+'NUMERIC'))){$PH[0,3,4,1,5,6,2]}Else{$PH[0,3,1,4,5,2]}) | %{
-                            [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $Script:IfElHash.$_ + [N]::L + [N]::L)
-                        }#>
-
-                        #[System.Console]::WriteLine([N]::L * 2)
                     }
                 })
                 $GetStates.Parent = $Script:TabPageDebug
