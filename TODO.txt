@@ -2,6 +2,8 @@ WhatIf button?
 
 CONSOLE WRITE
 
+TOP and BOTTOM commands for cursor
+
 scratch pad?
 
 fix up helper window
