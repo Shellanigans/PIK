@@ -1,5 +1,7 @@
 WhatIf button?
 
+CONSOLE WRITE
+
 scratch pad?
 
 fix up helper window
