@@ -309,11 +309,14 @@ public class Parser{
                 X = (X.Replace("{COPY}","(^c)"));
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
-            }else if(Regex.IsMatch(X, "{MYPID}")){
+            }
+            if(Regex.IsMatch(X, "{MYPID}")){
                 X = (X.Replace("{MYPID}",(Process.GetCurrentProcess().Id.ToString())));
-            }else if(Regex.IsMatch(X, "{WHOAMI}")){
+            }
+            if(Regex.IsMatch(X, "{WHOAMI}")){
                 X = (X.Replace("{WHOAMI}",(Environment.UserDomainName.ToString()+"\\"+Environment.UserName.ToString())));
-            }else if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
+            }
+            if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
                 while(Regex.IsMatch(X, "{SPACE")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
@@ -331,7 +334,8 @@ public class Parser{
                         }
                     }
                 }
-            }else if(Regex.IsMatch(X, "{GET[CMP]")){
+            }
+            if(Regex.IsMatch(X, "{GET[CMP]")){
                 DR.Point Coords = Cons.Curs.GPos();
                 X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
                 X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));
