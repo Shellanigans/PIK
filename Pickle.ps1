@@ -1638,9 +1638,9 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
 
-                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt') -Raw).TrimEnd([N]::L)
-                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt') -Raw).TrimEnd([N]::L)
-                        $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt') -Raw).TrimEnd([N]::L)
+                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt')).TrimEnd([N]::L)
+                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt')).TrimEnd([N]::L)
+                        $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt')).TrimEnd([N]::L)
 
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
