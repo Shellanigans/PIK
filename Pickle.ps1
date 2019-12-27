@@ -1013,6 +1013,9 @@ Function Actions{
             
             [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
         }
+        ElseIf($X -match '{CONSOLE .*?}'){
+            [System.Console]::WriteLine((($X.Split('{') | ?{$_ -match '^CONSOLE '}) -replace '^CONSOLE ').Split('}')[0])
+        }
         ElseIf($X -notmatch '{GOTO '){
             If($Escaped){
                 [System.Console]::WriteLine($Script:Tab+'This line was escaped. Above may appear as commands,')
