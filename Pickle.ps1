@@ -514,7 +514,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
 }
 
 Function Interpret{
-    Param([String]$X,$Esc)
+    Param([String]$X)
 
     $X = [Parser]::Interpret($X)
 
@@ -776,7 +776,7 @@ Function Actions{
 
         $Escaped = $False
 
-        $X,$Escaped = (Interpret $X $Escaped)
+        $X,$Escaped = (Interpret $X)
 
         $TempX = $Null
         If($Escaped){
