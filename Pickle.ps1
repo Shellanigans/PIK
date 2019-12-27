@@ -1200,7 +1200,8 @@ Function GO ([Switch]$SelectionRun){
     
     $Results = (Measure-Command {
         Do{
-            $Form.Visible = $False
+            [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+            #$Form.Visible = $False
 
             $SyncHash.Restart = $False
         
@@ -1225,7 +1226,8 @@ Function GO ([Switch]$SelectionRun){
         $FunctionsBox.ReadOnly = $False
         $StatementsBox.ReadOnly = $False
 
-        $Form.Visible = $True
+        [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+        #$Form.Visible = $True
 
         $Form.Refresh()
 
