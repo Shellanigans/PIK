@@ -1,8 +1,8 @@
 WhatIf button?
 
-CONSOLE WRITE
+TOP and BOTTOM commands for cursor and maybe goto line? 
 
-TOP and BOTTOM commands for cursor
+Line numbers?
 
 scratch pad?
 
@@ -66,7 +66,7 @@ Logging / Better crash handling
 Allow key remapping / reset to default button
 
 Add better array support
-    smarter indexing like negative indexing and selecting a range and creating empty arrays
+    smarter indexing like negative indexing and selecting a range and creating empty arrays and appending
 
 Better profile management
     smarter checking for profile to load on start or easier way to save over stuff
@@ -111,3 +111,4 @@ DONE - What has my focus?
 DONE - Move cursor when using F4 to the location of the new item
 DONE - what's MY PID
 DONE - make window transluscent? uninteractable? invisible?
+DONE - CONSOLE WRITE
