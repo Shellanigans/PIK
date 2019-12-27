@@ -1941,15 +1941,15 @@ Try{
     }
 
     $DelayTimer.Value        = $LoadedConfig.DelayTimeVal
-    $DelayCheck.Checked      = $(If($LoadedConfig.DelayChecked -eq 'False')  {$False}Else{[Boolean]$LoadedConfig.DelayChecked})
+    $DelayCheck.Checked      = $(If([String]$LoadedConfig.DelayChecked -eq 'False')  {$False}Else{[Boolean]$LoadedConfig.DelayChecked})
     $DelayRandTimer.Value    = $LoadedConfig.DelayRandVal
 
     $CommandDelayTimer.Value = $LoadedConfig.CommTimeVal
-    $CommDelayCheck.Checked  = $(If($LoadedConfig.CommChecked -eq 'False')   {$False}Else{[Boolean]$LoadedConfig.CommChecked})
+    $CommDelayCheck.Checked  = $(If([String]$LoadedConfig.CommChecked -eq 'False')   {$False}Else{[Boolean]$LoadedConfig.CommChecked})
     $CommRandTimer.Value     = $LoadedConfig.CommRandVal
 
-    $ShowCons.Checked        = $(If($LoadedConfig.ShowConsCheck -eq 'False') {$False}Else{[Boolean]$LoadedConfig.ShowConsCheck})
-    $OnTop.Checked           = $(If($LoadedConfig.OnTopCheck -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.OnTopCheck})
+    $ShowCons.Checked        = $(If([String]$LoadedConfig.ShowConsCheck -eq 'False') {$False}Else{[Boolean]$LoadedConfig.ShowConsCheck})
+    $OnTop.Checked           = $(If([String]$LoadedConfig.OnTopCheck -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.OnTopCheck})
 
     $ShowCons.Checked = !$ShowCons.Checked
     Sleep -Milliseconds 40
