@@ -1,5 +1,7 @@
 WhatIf button?
 
+++ and --
+
 add handle and proc name to mouse click helper info
 
 TOP and BOTTOM commands for cursor and maybe goto line? 
