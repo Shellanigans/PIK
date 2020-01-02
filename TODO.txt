@@ -1,5 +1,7 @@
 WhatIf button?
 
+move cursor to end before the F4 append
+
 ++ and --
     maybe just allow basic arithmetic?
 
