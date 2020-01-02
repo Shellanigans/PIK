@@ -1,6 +1,7 @@
 WhatIf button?
 
 ++ and --
+    maybe just allow basic arithmetic?
 
 add handle and proc name to mouse click helper info
 
