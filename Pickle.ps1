@@ -445,18 +445,30 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
                 $Commented = $False
             }
 
-            If($PH -match '^:::'){
-                'B,'+$Count
+            If(!$Commented){
+                If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
+                    'B,'+$Count
+                }
+
+                If($PH -match '^.*{.*}.*$'){
+                    'R,'+$Count
+                }
             }
                         
             $Count++
         }) | %{
+            $PHLine = $MainObj.Lines[$_.Split(',')[-1]]
             $MainObj.SelectionStart = $MainObj.GetFirstCharIndexFromLine($_.Split(',')[-1])
-            $MainObj.SelectionLength = $MainObj.Lines[$_.Split(',')[-1]].Length
-                        
+            $MainObj.SelectionLength = $PHLine.Length
+            
             Switch($_.Split(',')[0]){
                 'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
                 'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                'R' {
+                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
+                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
+                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
+                }
             }
         }
                     
