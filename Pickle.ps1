@@ -12,14 +12,6 @@ Param([String]$Macro = $Null)
 
 Remove-Variable * -Exclude Macro -EA SilentlyContinue
 
-$ReparseRequired = $False
-Try{
-    Add-Type -AssemblyName System.Windows.Forms
-    [Void][System.Windows.Forms.Form]::New()
-}Catch{
-    $ReparseRequired = $True
-}
-
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition @'
 using System; 
@@ -1945,13 +1937,9 @@ $Config = ($Config | Select `
 
 Try{
     Try{
-        $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
+        $LoadedConfig = (Get-Content -RAW ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
     }Catch{
-        Try{
-            $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
-        }Catch{
-            $LoadedConfig = (Get-Content ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
-        }
+        $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
     }
 
     $DelayTimer.Value        = $LoadedConfig.DelayTimeVal
@@ -2067,7 +2055,7 @@ If(!$CommandLine){
 If($Host.Name -match 'Console'){Exit}
 }
 
-If($ReparseRequired){
+If($(Try{[Void][PSObject]::New()}Catch{$True})){
     $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | %{
         $FlipFlop = $True
     }{
