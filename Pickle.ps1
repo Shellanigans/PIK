@@ -466,7 +466,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
                     
         $MainObj.SelectionStart = $TempSelectionIndex
         $MainObj.SelectionLength = $TempSelectionLength
-        $_.SuppressKeyPress = $True
+        
+        Try{$_.SuppressKeyPress = $True}Catch{}
     }ElseIf($KeyCode -eq 'F11'){
         If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
             $Form.Text = ($Form.Text -replace '\*$')
@@ -1308,10 +1309,10 @@ $Pow.AddScript({
 $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $Pow.BeginInvoke() | Out-Null
 
-$Form = [GUI.F]::New(365, 495, 'Pickle')
-$Form.MinimumSize = [GUI.SP]::SI(365,495)
+$Form = [GUI.F]::New(470, 500, 'Pickle')
+$Form.MinimumSize = [GUI.SP]::SI(470,500)
 
-$Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
+$Script:TabController = [GUI.TC]::New(405, 405, 25, 7)
     $Script:TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
         $Script:TabControllerComm = [GUI.TC]::New(0, 0, 0, 0)
         $Script:TabControllerComm.Dock = 'Fill'
@@ -1604,6 +1605,29 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
         $Script:TabControllerState.Parent = $Script:TabPageStatements
     $Script:TabPageStatements.Parent = $Script:TabController
 
+    $Script:TabScratchPad = [GUI.TP]::New(0, 0, 0, 0,'ScratchPad')
+        $Script:TabControllerScratch = [GUI.TC]::New(0, 0, 0, 0)
+        $Script:TabControllerScratch.Dock = 'Fill'
+            $Script:TabPageScratchMain = [GUI.TP]::New(0, 0, 0, 0, 'Main')
+            $ScratchBox = [GUI.RTB]::New(0, 0, 0, 0, '')
+            $ScratchBox.Multiline = $True
+            $ScratchBox.WordWrap = $False
+            $ScratchBox.Scrollbars = 'Both'
+            $ScratchBox.AcceptsTab = $True
+            $ScratchBox.DetectUrls = $False
+            $ScratchBox.Add_TextChanged({
+                If($Form.Text -notmatch '\*$'){
+                    $Form.Text+='*'
+                }
+                $This.Text | Out-File ($env:APPDATA+'\Macro\Scratch.txt') -Width 1000 -Force
+            })
+            $ScratchBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Scratch.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
+            $ScratchBox.Dock = 'Fill'
+            $ScratchBox.Parent = $Script:TabPageScratchMain
+            $Script:TabPageScratchMain.Parent = $Script:TabControllerScratch
+        $Script:TabControllerScratch.Parent = $Script:TabScratchPad
+    $Script:TabScratchPad.Parent = $Script:TabController
+
     $Script:TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Advanced')
         $Script:TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
         $Script:TabControllerAdvanced.Dock = 'Fill'
@@ -1631,6 +1655,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+                        $ScratchBox.Text | Out-File ($TempDir+'\scratch.txt') -Width 10000 -Force
 
                         $SaveAsProfText.Text = ''
                     }
@@ -1647,6 +1672,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Commands.Text = (Get-Content ($TempDir+'\Commands.txt')).TrimEnd([N]::L)
                         $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt')).TrimEnd([N]::L)
                         $StatementsBox.Text = (Get-Content ($TempDir+'\Statements.txt')).TrimEnd([N]::L)
+                        $ScratchBox.Text = (Get-Content ($TempDir+'\Scratch.txt')).TrimEnd([N]::L)
 
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
@@ -1683,6 +1709,7 @@ $Script:TabController = [GUI.TC]::New(300, 400, 25, 7)
                         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+                        $ScratchBox.Text | Out-File ($TempDir+'\scratch.txt') -Width 10000 -Force
 
                         $SavedProfiles.Items.Clear()
                         [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
@@ -1842,7 +1869,7 @@ $Script:TabController.Add_SelectedIndexChanged({
 })
 $Script:TabController.Parent = $Form
 
-$GO = [GUI.B]::New(300, 25, 25, 415, 'Run')
+$GO = [GUI.B]::New(405, 25, 25, 415, 'Run')
 $GO.Add_Click({GO})
 $GO.Parent = $Form
 
@@ -1853,7 +1880,7 @@ $Form.Add_SizeChanged({
     $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width)-65),25)
 })
 
-$RightClickMenu = [GUI.P]::New(135,160,100,100)
+$RightClickMenu = [GUI.P]::New(135,310,100,100)
     $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
     $RClickCopy.Add_Click({$RightClickMenu.Visible = $False;[Cons.Clip]::SetT($Commands.SelectedText)})
     $RClickCopy.Add_MouseLeave({Handle-RMenu $This})
@@ -1868,8 +1895,59 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
     $RClickSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectAll()})
     $RClickSelect.Add_MouseLeave({Handle-RMenu $This})
     $RClickSelect.Parent = $RightClickMenu
+    
+    $RClickSelectLine = [GUI.B]::New(125,25,5,80,'Select Line')
+    $RClickSelectLine.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectionStart = $Commands.GetFirstCharIndexOfCurrentLine();$Commands.SelectionLength = $Commands.Lines[$Commands.GetLineFromCharIndex($Commands.SelectionStart)].Length})
+    $RClickSelectLine.Add_MouseLeave({Handle-RMenu $This})
+    $RClickSelectLine.Parent = $RightClickMenu
 
-    $FindReplace = [GUI.B]::New(125,25,5,80,'Find/Replace')
+    $RClickSyntax = [GUI.B]::New(125,25,5,105,'Highlight Syntax')
+    $RClickSyntax.Add_Click({$RightClickMenu.Visible = $False
+        Handle-TextBoxKey -KeyCode 'F10' -MainObj $(
+        Switch($Script:TabController.SelectedTab.Text)
+        {
+            'Commands'{[Void]$Commands.Focus(); $Commands}
+            'Functions'{[Void]$FunctionsBox.Focus(); $FunctionsBox}
+            'Statements'{[Void]$StatementsBox.Focus(); $StatementsBox}
+        }) -BoxType $Script:TabController.SelectedTab.Text})
+    $RClickSyntax.Add_MouseLeave({Handle-RMenu $This})
+    $RClickSyntax.Parent = $RightClickMenu
+
+    $RClickWhatIfSelect = [GUI.B]::New(125,25,5,130,'WhatIf Selection')
+    $RClickWhatIfSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
+    $RClickWhatIfSelect.Add_MouseLeave({Handle-RMenu $This})
+    $RClickWhatIfSelect.Parent = $RightClickMenu
+
+    $RClickWhatIf = [GUI.B]::New(125,25,5,155,'WhatIf')
+    $RClickWhatIf.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
+    $RClickWhatIf.Add_MouseLeave({Handle-RMenu $This})
+    $RClickWhatIf.Parent = $RightClickMenu
+
+    $RClickGoTop = [GUI.B]::New(125,25,5,180,'Goto Top')
+    $RClickGoTop.Add_Click({$RightClickMenu.Visible = $False
+        Switch($Script:TabController.SelectedTab.Text)
+        {
+            'Commands'{$Commands.Focus(); $Commands.SelectionStart = 0}
+            'Functions'{$FunctionsBox.Focus(); $FunctionsBox.SelectionStart = 0}
+            'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = 0}
+        }
+    })
+    $RClickGoTop.Add_MouseLeave({Handle-RMenu $This})
+    $RClickGoTop.Parent = $RightClickMenu
+
+    $RClickGoBot = [GUI.B]::New(125,25,5,205,'Goto Bottom')
+    $RClickGoBot.Add_Click({$RightClickMenu.Visible = $False
+        Switch($Script:TabController.SelectedTab.Text)
+        {
+            'Commands'{$Commands.Focus(); $Commands.SelectionStart = ($Commands.Text.Length - 1)}
+            'Functions'{$FunctionsBox.Focus(); $FunctionsBox.SelectionStart = ($FunctionsBox.Text.Length - 1)}
+            'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = ($StatementsBox.Text.Length - 1)}
+        }
+    })
+    $RClickGoBot.Add_MouseLeave({Handle-RMenu $This})
+    $RClickGoBot.Parent = $RightClickMenu
+
+    $FindReplace = [GUI.B]::New(125,25,5,230,'Find/Replace')
     $FindReplace.Add_Click({
         $RightClickMenu.Visible = $False
         $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
@@ -1890,12 +1968,12 @@ $RightClickMenu = [GUI.P]::New(135,160,100,100)
     $FindReplace.Add_MouseLeave({Handle-RMenu $This})
     $FindReplace.Parent = $RightClickMenu
 
-    $RunSelection = [GUI.B]::New(125,25,5,105,'Run Selection')
+    $RunSelection = [GUI.B]::New(125,25,5,255,'Run Selection')
     $RunSelection.Add_Click({$RightClickMenu.Visible = $False;GO -SelectionRun})
     $RunSelection.Add_MouseLeave({Handle-RMenu $This})
     $RunSelection.Parent = $RightClickMenu
 
-    $Run = [GUI.B]::New(125,25,5,130,'Run')
+    $Run = [GUI.B]::New(125,25,5,280,'Run')
     $Run.Add_Click({$RightClickMenu.Visible = $False;GO})
     $Run.Add_MouseLeave({Handle-RMenu $This})
     $Run.Parent = $RightClickMenu
@@ -2036,6 +2114,7 @@ If(!$CommandLine){
         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
         $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
         $SaveAsProfText.Text = ''
     }Else{
