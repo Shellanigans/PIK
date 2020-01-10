@@ -7,8 +7,6 @@ make statements accept multiple args and make them inline (remove statements pag
 
 add handle and proc name to mouse click helper info
 
-TOP and BOTTOM commands for cursor and maybe goto line? 
-
 Line numbers?
 
 fix up helper window
@@ -39,8 +37,8 @@ add right click menu (still need to not be able to open too far down or right)
     *copy
     *paste
     *select all
-    re-highlight/parse
-    select line
+    *re-highlight/parse
+    *select line
     un/comment selection
     *find/replace
     *run selection
@@ -119,3 +117,4 @@ DONE - make window transluscent? uninteractable? invisible?
 DONE - CONSOLE WRITE
 DONE - scratch pad?
 DONE - move cursor to end before the F4 append
+DONE - TOP and BOTTOM commands for cursor and maybe goto line? 
