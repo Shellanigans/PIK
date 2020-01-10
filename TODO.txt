@@ -1,6 +1,6 @@
 WhatIf button?
 
-move cursor to end before the F4 append
+make statements accept multiple args and make them inline (remove statements page altogether)
 
 ++ and --
     maybe just allow basic arithmetic?
@@ -10,8 +10,6 @@ add handle and proc name to mouse click helper info
 TOP and BOTTOM commands for cursor and maybe goto line? 
 
 Line numbers?
-
-scratch pad?
 
 fix up helper window
     put hot key stuff in there? maybe settings instead?
@@ -119,3 +117,5 @@ DONE - Move cursor when using F4 to the location of the new item
 DONE - what's MY PID
 DONE - make window transluscent? uninteractable? invisible?
 DONE - CONSOLE WRITE
+DONE - scratch pad?
+DONE - move cursor to end before the F4 append
