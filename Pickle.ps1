@@ -20,85 +20,67 @@ using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
-
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
-
 namespace Cons{
     public class MouseEvnt{
         [DllImport("user32.dll")]
         public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
     }
-
     public class KeyEvnt{
         [DllImport("user32.dll")]
         public static extern void keybd_event(Byte bVk, Byte bScan, Int64 dwFlags, Int64 dwExtraInfo);
     }
-
     public class WindowDisp{
         [DllImport("Kernel32.dll")]
         public static extern IntPtr GetConsoleWindow();
-
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
-
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
-
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetWindowRect(IntPtr hWnd, out DR.Rectangle lpRect);
-
         [DllImport("User32.dll")]
         public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
-
         [DllImport("User32.dll")]
         public extern static bool SetWindowText(IntPtr handle, string text);
         
         [DllImport("User32.dll")]
         public extern static int GetWindowText(IntPtr handle, StringBuilder text, int length);
-
         [DllImport("User32.dll")]
         public extern static int GetWindowTextLength(IntPtr handle);
-
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
         }
     }
-
     public class App{
         public static void Act (string AppTitle){
             Microsoft.VisualBasic.Interaction.AppActivate(AppTitle);
         }
     }
-
     public class Clip{
         public static string GetT (){
             return SWF.Clipboard.GetText();
         }
-
         public static void SetT (string Text){
             SWF.Clipboard.SetText(Text);
         }
     }
-
     public class Curs{
         public static DR.Point GPos (){
             return SWF.Cursor.Position;
         }
-
         public static void SPos (int x, int y){
             SWF.Cursor.Position = new DR.Point(x, y);
         }
     }
-
     public class Send{
         public static void Keys (string Keys){
             SWF.SendKeys.SendWait(Keys);
         }
     }
 }
-
 namespace GUI{
     public class F : SWF.Form{
         public F (int sx, int sy, string tx){
@@ -106,14 +88,12 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class TC : SWF.TabControl{
         public TC (int sx, int sy, int lx, int ly){
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class TP : SWF.TabPage{
         public TP (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -121,7 +101,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class L : SWF.Label{
         public L (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -129,7 +108,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class TB : SWF.TextBox{
         public TB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -137,7 +115,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class RTB : SWF.RichTextBox{
         public RTB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -145,7 +122,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class MTB : SWF.MaskedTextBox{
         public MTB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -153,7 +129,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class B : SWF.Button{
         public B (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -161,7 +136,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class RB : SWF.RadioButton{
         public RB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -169,7 +143,6 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class ChB : SWF.CheckBox{
         public ChB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -184,35 +157,30 @@ namespace GUI{
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class P : SWF.Panel{
         public P (int sx, int sy, int lx, int ly){
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class LB : SWF.ListBox{
         public LB (int sx, int sy, int lx, int ly){
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class CoB : SWF.ComboBox{
         public CoB (int sx, int sy, int lx, int ly){
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class NUD : SWF.NumericUpDown{
         public NUD (int sx, int sy, int lx, int ly){
             this.Size = new DR.Size(sx,sy);
             this.Location = new DR.Point(lx,ly);
         }
     }
-
     public class GB : SWF.GroupBox{
         public GB (int sx, int sy, int lx, int ly, string tx){
             this.Size = new DR.Size(sx,sy);
@@ -220,15 +188,12 @@ namespace GUI{
             this.Text = tx;
         }
     }
-
     public class Rect{
         public static DR.Rectangle E = DR.Rectangle.Empty;
-
         public static DR.Rectangle R (int lx, int ly, int sx, int sy){
             return (new DR.Rectangle(lx, ly, sx, sy));
         }
     }
-
     public class SP{
         public static DR.Point PO (int sx, int sy){
             return (new DR.Point(sx, sy));
@@ -239,15 +204,12 @@ namespace GUI{
         }
     }
 }
-
 public class N{
     public static string L = System.Environment.NewLine;
 }
-
 public class Parser{
     public static string HoldKeys(string X){
         X = X.ToUpper();
-
         if(Regex.IsMatch(X, "NUM") && X.Length == 4){
             return ("&H6"+X.Replace("NUM",""));
         }else if(X.Length == 1){
@@ -294,7 +256,6 @@ public class Parser{
             }
         }
     }
-
     public static string Interpret(string X){
         if(Regex.IsMatch(X.ToUpper(), "{[CPSDGRMW]")){
             if(Regex.IsMatch(X, "{[CPS][OAE]")){
@@ -331,20 +292,16 @@ public class Parser{
                 DR.Point Coords = Cons.Curs.GPos();
                 X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));
                 X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));
-
                 if(Regex.IsMatch(X, "^{GETPIX [0-9]*,[0-9]*}$"))
                 {
                     string PH = (X.Replace("{GETPIX ",""));
                     PH = PH.Substring(0,(PH.Length - 1));
                     string[] PHA = PH.Split(',');
-
                     DR.Rectangle Bounds = DR.Rectangle.FromLTRB(Convert.ToInt32(PHA[0]),Convert.ToInt32(PHA[1]),(Convert.ToInt32(PHA[0])+1),(Convert.ToInt32(PHA[1])+1));
-
                     DR.Bitmap BMP = new DR.Bitmap(Bounds.Width, Bounds.Height);
             
                     DR.Graphics GR = DR.Graphics.FromImage(BMP);
                     GR.CopyFromScreen(Bounds.Location, DR.Point.Empty, Bounds.Size);
-
                     X = BMP.GetPixel(0,0).Name.ToUpper();
             
                     GR.Dispose();
@@ -366,7 +323,7 @@ public class Parser{
              #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
-Function Handle-RMenu($MainObj){
+Function Handle-RMenuExit($MainObj){
     $L = $MainObj.Parent.Location
     $S = $MainObj.Parent.Size
 
@@ -378,6 +335,44 @@ Function Handle-RMenu($MainObj){
         $MainObj.Parent.Visible = $False
     }
 }
+
+Function Handle-MousePosGet{
+    $PH = [Cons.Curs]::GPos()
+
+    $XCoord.Value = $PH.X
+    $YCoord.Value = $PH.Y
+
+    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+    $MouseCoordsBox.Text = $Position
+
+    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+    $PHPix = $BMP.GetPixel(0,0)
+    $PixColorBox.Text = $PHPix.Name.ToUpper()
+    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
+
+    $PHLum = [Math]::Sqrt(
+        [Math]::Pow($PHPix.R,2) * 0.299 +
+        [Math]::Pow($PHPix.G,2) * 0.587 +
+        [Math]::Pow($PHPix.B,2) * 0.114
+    )
+
+    If($PHLum -gt 130){
+        $PixColorBox.ForeColor = [System.Drawing.Color]::Black
+    }Else{
+        $PixColorBox.ForeColor = [System.Drawing.Color]::White
+    }
+
+    $Graphics.Dispose()
+    $BMP.Dispose()
+}
+
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
     If($KeyCode -eq 'F1'){
         $MainObj.SelectionLength = 0
@@ -1357,40 +1352,7 @@ $Script:TabController = [GUI.TC]::New(405, 405, 25, 7)
                     [System.Threading.Thread]::Sleep(1000)
                     $This.Text = $InitialText
 
-                    $PH = [Cons.Curs]::GPos()
-
-                    $XCoord.Value = $PH.X
-                    $YCoord.Value = $PH.Y
-
-                    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                    $MouseCoordsBox.Text = $Position
-
-                    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                    $PHPix = $BMP.GetPixel(0,0)
-                    $PixColorBox.Text = $PHPix.Name.ToUpper()
-                    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
-
-                    $PHLum = [Math]::Sqrt(
-                        [Math]::Pow($PHPix.R,2) * 0.299 +
-                        [Math]::Pow($PHPix.G,2) * 0.587 +
-                        [Math]::Pow($PHPix.B,2) * 0.114
-                    )
-
-                    If($PHLum -gt 130){
-                        $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                    }Else{
-                        $PixColorBox.ForeColor = [System.Drawing.Color]::White
-                    }
-
-                    $Graphics.Dispose()
-                    $BMP.Dispose()
+                    Handle-MousePosGet
                 })
                 $GetMouseCoords.Parent = $Script:TabPageHelper
 
@@ -1414,37 +1376,7 @@ $Script:TabController = [GUI.TC]::New(405, 405, 25, 7)
                     If($_.KeyCode -eq 'Return'){
                         [Cons.Curs]::SPos($This.Value,$YCoord.Value)
 
-                        $PH = [Cons.Curs]::GPos()
-
-                        $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                        $MouseCoordsBox.Text = $Position
-
-                        $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                        $PHPix = $BMP.GetPixel(0,0)
-                        $PixColorBox.Text = $PHPix.Name.ToUpper()
-                        $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
-
-                        $PHLum = [Math]::Sqrt(
-                            [Math]::Pow($PHPix.R,2) * 0.299 +
-                            [Math]::Pow($PHPix.G,2) * 0.587 +
-                            [Math]::Pow($PHPix.B,2) * 0.114
-                        )
-
-                        If($PHLum -gt 130){
-                            $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                        }Else{
-                            $PixColorBox.ForeColor = [System.Drawing.Color]::White
-                        }
-
-                        $Graphics.Dispose()
-                        $BMP.Dispose()
+                        Handle-MousePosGet
                     }
                 })
                 $XCoord.Parent = $Script:TabPageHelper
@@ -1457,37 +1389,7 @@ $Script:TabController = [GUI.TC]::New(405, 405, 25, 7)
                     If($_.KeyCode -eq 'Return'){
                         [Cons.Curs]::SPos($XCoord.Value,$This.Value)
 
-                        $PH = [Cons.Curs]::GPos()
-
-                        $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-                        $MouseCoordsBox.Text = $Position
-
-                        $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-                        $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-                        $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                        $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-                        $PHPix = $BMP.GetPixel(0,0)
-                        $PixColorBox.Text = $PHPix.Name.ToUpper()
-                        $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
-
-                        $PHLum = [Math]::Sqrt(
-                            [Math]::Pow($PHPix.R,2) * 0.299 +
-                            [Math]::Pow($PHPix.G,2) * 0.587 +
-                            [Math]::Pow($PHPix.B,2) * 0.114
-                        )
-
-                        If($PHLum -gt 130){
-                            $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-                        }Else{
-                            $PixColorBox.ForeColor = [System.Drawing.Color]::White
-                        }
-
-                        $Graphics.Dispose()
-                        $BMP.Dispose()
+                        Handle-MousePosGet
                     }
                 })
                 $YCoord.Parent = $Script:TabPageHelper
@@ -1883,22 +1785,22 @@ $Form.Add_SizeChanged({
 $RightClickMenu = [GUI.P]::New(135,310,100,100)
     $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
     $RClickCopy.Add_Click({$RightClickMenu.Visible = $False;[Cons.Clip]::SetT($Commands.SelectedText)})
-    $RClickCopy.Add_MouseLeave({Handle-RMenu $This})
+    $RClickCopy.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickCopy.Parent = $RightClickMenu
     
     $RClickPaste = [GUI.B]::New(125,25,5,30,'Paste')
     $RClickPaste.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.Paste()})
-    $RClickPaste.Add_MouseLeave({Handle-RMenu $This})
+    $RClickPaste.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickPaste.Parent = $RightClickMenu
 
     $RClickSelect = [GUI.B]::New(125,25,5,55,'Select All')
     $RClickSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectAll()})
-    $RClickSelect.Add_MouseLeave({Handle-RMenu $This})
+    $RClickSelect.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSelect.Parent = $RightClickMenu
     
     $RClickSelectLine = [GUI.B]::New(125,25,5,80,'Select Line')
     $RClickSelectLine.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectionStart = $Commands.GetFirstCharIndexOfCurrentLine();$Commands.SelectionLength = $Commands.Lines[$Commands.GetLineFromCharIndex($Commands.SelectionStart)].Length})
-    $RClickSelectLine.Add_MouseLeave({Handle-RMenu $This})
+    $RClickSelectLine.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSelectLine.Parent = $RightClickMenu
 
     $RClickSyntax = [GUI.B]::New(125,25,5,105,'Highlight Syntax')
@@ -1910,17 +1812,17 @@ $RightClickMenu = [GUI.P]::New(135,310,100,100)
             'Functions'{[Void]$FunctionsBox.Focus(); $FunctionsBox}
             'Statements'{[Void]$StatementsBox.Focus(); $StatementsBox}
         }) -BoxType $Script:TabController.SelectedTab.Text})
-    $RClickSyntax.Add_MouseLeave({Handle-RMenu $This})
+    $RClickSyntax.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSyntax.Parent = $RightClickMenu
 
     $RClickWhatIfSelect = [GUI.B]::New(125,25,5,130,'WhatIf Selection')
     $RClickWhatIfSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
-    $RClickWhatIfSelect.Add_MouseLeave({Handle-RMenu $This})
+    $RClickWhatIfSelect.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickWhatIfSelect.Parent = $RightClickMenu
 
     $RClickWhatIf = [GUI.B]::New(125,25,5,155,'WhatIf')
     $RClickWhatIf.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
-    $RClickWhatIf.Add_MouseLeave({Handle-RMenu $This})
+    $RClickWhatIf.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickWhatIf.Parent = $RightClickMenu
 
     $RClickGoTop = [GUI.B]::New(125,25,5,180,'Goto Top')
@@ -1932,7 +1834,7 @@ $RightClickMenu = [GUI.P]::New(135,310,100,100)
             'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = 0}
         }
     })
-    $RClickGoTop.Add_MouseLeave({Handle-RMenu $This})
+    $RClickGoTop.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickGoTop.Parent = $RightClickMenu
 
     $RClickGoBot = [GUI.B]::New(125,25,5,205,'Goto Bottom')
@@ -1944,7 +1846,7 @@ $RightClickMenu = [GUI.P]::New(135,310,100,100)
             'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = ($StatementsBox.Text.Length - 1)}
         }
     })
-    $RClickGoBot.Add_MouseLeave({Handle-RMenu $This})
+    $RClickGoBot.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickGoBot.Parent = $RightClickMenu
 
     $FindReplace = [GUI.B]::New(125,25,5,230,'Find/Replace')
@@ -1965,17 +1867,17 @@ $RightClickMenu = [GUI.P]::New(135,310,100,100)
         $FindForm.BringToFront()
         $Form.Refresh()
     })
-    $FindReplace.Add_MouseLeave({Handle-RMenu $This})
+    $FindReplace.Add_MouseLeave({Handle-RMenuExit $This})
     $FindReplace.Parent = $RightClickMenu
 
     $RunSelection = [GUI.B]::New(125,25,5,255,'Run Selection')
     $RunSelection.Add_Click({$RightClickMenu.Visible = $False;GO -SelectionRun})
-    $RunSelection.Add_MouseLeave({Handle-RMenu $This})
+    $RunSelection.Add_MouseLeave({Handle-RMenuExit $This})
     $RunSelection.Parent = $RightClickMenu
 
     $Run = [GUI.B]::New(125,25,5,280,'Run')
     $Run.Add_Click({$RightClickMenu.Visible = $False;GO})
-    $Run.Add_MouseLeave({Handle-RMenu $This})
+    $Run.Add_MouseLeave({Handle-RMenuExit $This})
     $Run.Parent = $RightClickMenu
 $RightClickMenu.Visible = $False
 $RightClickMenu.Add_MouseLeave({
