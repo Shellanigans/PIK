@@ -324,15 +324,86 @@ public class Parser{
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
 Function Handle-RMenuExit($MainObj){
-    $L = $MainObj.Parent.Location
-    $S = $MainObj.Parent.Size
+    $PHObj = $MainObj
+    
+    If($MainObj.Parent.GetType().BaseType.ToString() -eq 'System.Windows.Forms.Panel'){
+        $PHObj = $PHObj.Parent
+    }
+
+    $L = $PHObj.Location
+    $S = $PHObj.Size
 
     $M = [Cons.Curs]::GPos()
     $M.X = ($M.X - $Form.Location.X)
     $M.Y = ($M.Y - $Form.Location.Y)
 
     If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-        $MainObj.Parent.Visible = $False
+        $PHObj.Visible = $False
+    }
+}
+
+Function Handle-RMenuClick($MainObj){
+    $RightClickMenu.Visible = $False
+    
+    $(Switch($TabController.SelectedTab.Text)
+    {
+        'Commands'{$Commands}
+        'Functions'{$FunctionsBox}
+        'Statements'{$StatementsBox}
+    }) | %{
+        $PHObj = $_
+        $PHObj.Focus()
+
+        Switch($MainObj.Text)
+        {
+            'Copy' {[Cons.Clip]::SetT($PHObj.SelectedText)}
+            'Paste' {$PHObj.Paste()}
+            'Select All'{$PHObj.SelectAll()}
+            'Select Line' {
+                $PHObj.SelectionStart = $PHObj.GetFirstCharIndexOfCurrentLine()
+                $PHObj.SelectionLength = $PHObj.Lines[$PHObj.GetLineFromCharIndex($PHObj.SelectionStart)].Length
+            }
+            'Highlight Syntax'{
+                Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text
+            }
+            'WhatIf Selection'{[System.Console]::WriteLine('Not implemented yet!')}
+            'WhatIf'{[System.Console]::WriteLine('Not implemented yet!')}
+            'Goto Top'{$PHObj.SelectionStart = 0}
+            'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
+            'Find/Replace'{
+                $RightClickMenu.Visible = $False
+                $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
+                    $Finder = [GUI.TB]::New(200,25,25,25,'')
+                    $Finder.Parent = $FindForm
+                    $Replacer = [GUI.TB]::New(200,25,25,50,'')
+                    $Replacer.Parent = $FindForm
+                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace')
+                        $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
+                    $FRGO.Parent = $FindForm
+                    $FRClose = [GUI.B]::New(75,25,150,75,'Close')
+                        $FRClose.Add_Click({$This.Parent.Visible = $False; $This.Parent.Dispose()})
+                    $FRClose.Parent = $FindForm
+                $FindForm.Parent = $Form
+                $FindForm.BringToFront()
+                $Form.Refresh()
+            }
+            'Run Selection'{
+                If($TabController.SelectedTab.Text -match 'Commands'){
+                    GO -SelectionRun
+                }
+                Else{
+                    [System.Console]::WriteLine('Can only be run from commands text box!')
+                }
+            }
+            'Run'{
+                If($TabController.SelectedTab.Text -match 'Commands'){
+                    GO
+                }
+                Else{
+                    [System.Console]::WriteLine('Can only be run from commands text box!')
+                }
+            }
+        }
     }
 }
 
@@ -1476,6 +1547,13 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                     }
                     $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
                 })
+                $FunctionsBox.Add_MouseDown({
+                    If([String]$_.Button -eq 'Right'){
+                        $RightClickMenu.Visible = $True
+                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $RightClickMenu.BringToFront()
+                    }
+                })
                 $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
                 $FunctionsBox.Dock = 'Fill'
                 $FunctionsBox.Parent = $TabPageFunctMain
@@ -1499,6 +1577,13 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                     $Form.Text+='*'
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Statements.txt') -Width 1000 -Force
+            })
+            $StatementsBox.Add_MouseDown({
+                If([String]$_.Button -eq 'Right'){
+                    $RightClickMenu.Visible = $True
+                    $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                    $RightClickMenu.BringToFront()
+                }
             })
             $StatementsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Statements.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
             $StatementsBox.Dock = 'Fill'
@@ -1785,114 +1870,66 @@ $Form.Add_SizeChanged({
 
 $RightClickMenu = [GUI.P]::New(135,310,100,100)
     $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
-    $RClickCopy.Add_Click({$RightClickMenu.Visible = $False;[Cons.Clip]::SetT($Commands.SelectedText)})
+    $RClickCopy.Add_Click({Handle-RMenuClick $This})
     $RClickCopy.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickCopy.Parent = $RightClickMenu
     
     $RClickPaste = [GUI.B]::New(125,25,5,30,'Paste')
-    $RClickPaste.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.Paste()})
+    $RClickPaste.Add_Click({Handle-RMenuClick $This})
     $RClickPaste.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickPaste.Parent = $RightClickMenu
 
     $RClickSelect = [GUI.B]::New(125,25,5,55,'Select All')
-    $RClickSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectAll()})
+    $RClickSelect.Add_Click({Handle-RMenuClick $This})
     $RClickSelect.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSelect.Parent = $RightClickMenu
     
     $RClickSelectLine = [GUI.B]::New(125,25,5,80,'Select Line')
-    $RClickSelectLine.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();$Commands.SelectionStart = $Commands.GetFirstCharIndexOfCurrentLine();$Commands.SelectionLength = $Commands.Lines[$Commands.GetLineFromCharIndex($Commands.SelectionStart)].Length})
+    $RClickSelectLine.Add_Click({Handle-RMenuClick $This})
     $RClickSelectLine.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSelectLine.Parent = $RightClickMenu
 
     $RClickSyntax = [GUI.B]::New(125,25,5,105,'Highlight Syntax')
-    $RClickSyntax.Add_Click({$RightClickMenu.Visible = $False
-        Handle-TextBoxKey -KeyCode 'F10' -MainObj $(
-        Switch($TabController.SelectedTab.Text)
-        {
-            'Commands'{[Void]$Commands.Focus(); $Commands}
-            'Functions'{[Void]$FunctionsBox.Focus(); $FunctionsBox}
-            'Statements'{[Void]$StatementsBox.Focus(); $StatementsBox}
-        }) -BoxType $TabController.SelectedTab.Text})
+    $RClickSyntax.Add_Click({Handle-RMenuClick $This})
     $RClickSyntax.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickSyntax.Parent = $RightClickMenu
 
     $RClickWhatIfSelect = [GUI.B]::New(125,25,5,130,'WhatIf Selection')
-    $RClickWhatIfSelect.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
+    $RClickWhatIfSelect.Add_Click({Handle-RMenuClick $This})
     $RClickWhatIfSelect.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickWhatIfSelect.Parent = $RightClickMenu
 
     $RClickWhatIf = [GUI.B]::New(125,25,5,155,'WhatIf')
-    $RClickWhatIf.Add_Click({$RightClickMenu.Visible = $False;$Commands.Focus();Write-Host 'Not implemented yet!'})
+    $RClickWhatIf.Add_Click({Handle-RMenuClick $This})
     $RClickWhatIf.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickWhatIf.Parent = $RightClickMenu
 
     $RClickGoTop = [GUI.B]::New(125,25,5,180,'Goto Top')
-    $RClickGoTop.Add_Click({$RightClickMenu.Visible = $False
-        Switch($TabController.SelectedTab.Text)
-        {
-            'Commands'{$Commands.Focus(); $Commands.SelectionStart = 0}
-            'Functions'{$FunctionsBox.Focus(); $FunctionsBox.SelectionStart = 0}
-            'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = 0}
-        }
-    })
+    $RClickGoTop.Add_Click({Handle-RMenuClick $This})
     $RClickGoTop.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickGoTop.Parent = $RightClickMenu
 
     $RClickGoBot = [GUI.B]::New(125,25,5,205,'Goto Bottom')
-    $RClickGoBot.Add_Click({$RightClickMenu.Visible = $False
-        Switch($TabController.SelectedTab.Text)
-        {
-            'Commands'{$Commands.Focus(); $Commands.SelectionStart = ($Commands.Text.Length - 1)}
-            'Functions'{$FunctionsBox.Focus(); $FunctionsBox.SelectionStart = ($FunctionsBox.Text.Length - 1)}
-            'Statements'{$StatementsBox.Focus(); $StatementsBox.SelectionStart = ($StatementsBox.Text.Length - 1)}
-        }
-    })
+    $RClickGoBot.Add_Click({Handle-RMenuClick $This})
     $RClickGoBot.Add_MouseLeave({Handle-RMenuExit $This})
     $RClickGoBot.Parent = $RightClickMenu
 
     $FindReplace = [GUI.B]::New(125,25,5,230,'Find/Replace')
-    $FindReplace.Add_Click({
-        $RightClickMenu.Visible = $False
-        $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
-            $Finder = [GUI.TB]::New(200,25,25,25,'')
-            $Finder.Parent = $FindForm
-            $Replacer = [GUI.TB]::New(200,25,25,50,'')
-            $Replacer.Parent = $FindForm
-            $FRGO = [GUI.B]::New(75,25,25,75,'Replace')
-                $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
-            $FRGO.Parent = $FindForm
-            $FRClose = [GUI.B]::New(75,25,150,75,'Close')
-                $FRClose.Add_Click({$This.Parent.Visible = $False; $This.Parent.Dispose()})
-            $FRClose.Parent = $FindForm
-        $FindForm.Parent = $Form
-        $FindForm.BringToFront()
-        $Form.Refresh()
-    })
+    $FindReplace.Add_Click({Handle-RMenuClick $This})
     $FindReplace.Add_MouseLeave({Handle-RMenuExit $This})
     $FindReplace.Parent = $RightClickMenu
 
     $RunSelection = [GUI.B]::New(125,25,5,255,'Run Selection')
-    $RunSelection.Add_Click({$RightClickMenu.Visible = $False;GO -SelectionRun})
+    $RunSelection.Add_Click({Handle-RMenuClick $This})
     $RunSelection.Add_MouseLeave({Handle-RMenuExit $This})
     $RunSelection.Parent = $RightClickMenu
 
     $Run = [GUI.B]::New(125,25,5,280,'Run')
-    $Run.Add_Click({$RightClickMenu.Visible = $False;GO})
+    $Run.Add_Click({Handle-RMenuClick $This})
     $Run.Add_MouseLeave({Handle-RMenuExit $This})
     $Run.Parent = $RightClickMenu
 $RightClickMenu.Visible = $False
-$RightClickMenu.Add_MouseLeave({
-    $L = $This.Location
-    $S = $This.Size
-
-    $M = [Cons.Curs]::GPos()
-    $M.X = ($M.X - $Form.Location.X)
-    $M.Y = ($M.Y - $Form.Location.Y)
-
-    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-        $RightClickMenu.Visible = $False
-    }
-})
+$RightClickMenu.Add_MouseLeave({Handle-RMenuExit $This})
 $RightClickMenu.Parent = $Form
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
