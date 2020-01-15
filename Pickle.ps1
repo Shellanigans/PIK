@@ -323,267 +323,6 @@ public class Parser{
              #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
-Function Handle-RMenuExit($MainObj){
-    $PHObj = $MainObj
-    
-    If($MainObj.Parent.GetType().BaseType.ToString() -eq 'System.Windows.Forms.Panel'){
-        $PHObj = $PHObj.Parent
-    }
-
-    $L = $PHObj.Location
-    $S = $PHObj.Size
-
-    $M = [Cons.Curs]::GPos()
-    $M.X = ($M.X - $Form.Location.X)
-    $M.Y = ($M.Y - $Form.Location.Y)
-
-    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
-        $PHObj.Visible = $False
-    }
-}
-
-Function Handle-RMenuClick($MainObj){
-    $RightClickMenu.Visible = $False
-    
-    $(Switch($TabController.SelectedTab.Text)
-    {
-        'Commands'{$Commands}
-        'Functions'{$FunctionsBox}
-        'Statements'{$StatementsBox}
-    }) | %{
-        $PHObj = $_
-        $PHObj.Focus()
-
-        Switch($MainObj.Text)
-        {
-            'Copy' {[Cons.Clip]::SetT($PHObj.SelectedText)}
-            'Paste' {$PHObj.Paste()}
-            'Select All'{$PHObj.SelectAll()}
-            'Select Line' {
-                $PHObj.SelectionStart = $PHObj.GetFirstCharIndexOfCurrentLine()
-                $PHObj.SelectionLength = $PHObj.Lines[$PHObj.GetLineFromCharIndex($PHObj.SelectionStart)].Length
-            }
-            'Highlight Syntax'{
-                Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text
-            }
-            'WhatIf Selection'{[System.Console]::WriteLine('Not implemented yet!')}
-            'WhatIf'{[System.Console]::WriteLine('Not implemented yet!')}
-            'Goto Top'{$PHObj.SelectionStart = 0}
-            'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
-            'Find/Replace'{
-                $RightClickMenu.Visible = $False
-                $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
-                    $Finder = [GUI.TB]::New(200,25,25,25,'')
-                    $Finder.Parent = $FindForm
-                    $Replacer = [GUI.TB]::New(200,25,25,50,'')
-                    $Replacer.Parent = $FindForm
-                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace')
-                        $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
-                    $FRGO.Parent = $FindForm
-                    $FRClose = [GUI.B]::New(75,25,150,75,'Close')
-                        $FRClose.Add_Click({$This.Parent.Visible = $False; $This.Parent.Dispose()})
-                    $FRClose.Parent = $FindForm
-                $FindForm.Parent = $Form
-                $FindForm.BringToFront()
-                $Form.Refresh()
-            }
-            'Run Selection'{
-                If($TabController.SelectedTab.Text -match 'Commands'){
-                    GO -SelectionRun
-                }
-                Else{
-                    [System.Console]::WriteLine('Can only be run from commands text box!')
-                }
-            }
-            'Run'{
-                If($TabController.SelectedTab.Text -match 'Commands'){
-                    GO
-                }
-                Else{
-                    [System.Console]::WriteLine('Can only be run from commands text box!')
-                }
-            }
-        }
-    }
-}
-
-Function Handle-MousePosGet{
-    $PH = [Cons.Curs]::GPos()
-
-    $XCoord.Value = $PH.X
-    $YCoord.Value = $PH.Y
-
-    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
-    $MouseCoordsBox.Text = $Position
-
-    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
-
-    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
-    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
-    
-    $PHPix = $BMP.GetPixel(0,0)
-    $PixColorBox.Text = $PHPix.Name.ToUpper()
-    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
-
-    $PHLum = [Math]::Sqrt(
-        [Math]::Pow($PHPix.R,2) * 0.299 +
-        [Math]::Pow($PHPix.G,2) * 0.587 +
-        [Math]::Pow($PHPix.B,2) * 0.114
-    )
-
-    If($PHLum -gt 130){
-        $PixColorBox.ForeColor = [System.Drawing.Color]::Black
-    }Else{
-        $PixColorBox.ForeColor = [System.Drawing.Color]::White
-    }
-
-    $Graphics.Dispose()
-    $BMP.Dispose()
-}
-
-Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
-    If($KeyCode -eq 'F1'){
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '<\\# '
-    }ElseIf($KeyCode -eq 'F2'){
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '\\#> '
-    }ElseIf($KeyCode -eq 'F3'){
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '\\# '
-    }ElseIf($KeyCode -eq 'F4'){
-        Switch($BoxType){
-            'Commands'{
-                $MainObj.SelectionLength = 0
-                $MainObj.SelectedText = (':::label_me'+[N]::L)
-            }
-            'Functions'{
-                $MainObj.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+$Tab+[N]::L+'{FUNCTION END}'+[N]::L)
-                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
-            }
-            'Statements'{
-                $MainObj.Text+=([N]::L+'{STATEMENT NAME rename_me}'+[N]::L+$Tab+'{OP1 ___}'+[N]::L+$Tab+'{CMP ___}'+[N]::L+$Tab+'{OP2 ___}'+[N]::L+$Tab+$Tab+[N]::L+$Tab+$Tab+'{ELSE}'+[N]::L+$Tab+$Tab+[N]::L+'{STATEMENT END}'+[N]::L)
-                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
-            }
-        }
-    }ElseIf($KeyCode -eq 'F5'){
-        $PH = [Cons.Curs]::GPos()
-
-        $XCoord.Value = $PH.X
-        $YCoord.Value = $PH.Y
-
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
-    }ElseIf($KeyCode -eq 'F6'){
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '{WAIT M 100}'
-    }ElseIf($KeyCode -eq 'F10'){
-        $TempSelectionIndex = $MainObj.SelectionStart
-        $TempSelectionLength = $MainObj.SelectionLength
-
-        $MainObj.SelectionStart = 0
-        $MainObj.SelectionLength = $MainObj.Text.Length
-        $MainObj.SelectionColor = [System.Drawing.Color]::Black
-                    
-        ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
-            $PH = $_.TrimStart(' ').TrimStart($Tab)
-
-            If($PH -match '^<\\\\#'){
-                $Commented = $True
-            }
-
-            If($PH -match '^\\\\#' -OR $Commented){
-                'G,'+$Count
-            }
-
-            If($PH -match '^\\\\#>'){
-                $Commented = $False
-            }
-
-            If(!$Commented){
-                If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
-                    'B,'+$Count
-                }
-
-                If($PH -match '^.*{.*}.*$'){
-                    'R,'+$Count
-                }
-            }
-                        
-            $Count++
-        }) | %{
-            $PHLine = $MainObj.Lines[$_.Split(',')[-1]]
-            $MainObj.SelectionStart = $MainObj.GetFirstCharIndexFromLine($_.Split(',')[-1])
-            $MainObj.SelectionLength = $PHLine.Length
-            
-            Switch($_.Split(',')[0]){
-                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
-                'R' {
-                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
-                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
-                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
-                }
-            }
-        }
-                    
-        $MainObj.SelectionStart = $TempSelectionIndex
-        $MainObj.SelectionLength = $TempSelectionLength
-        
-        Try{$_.SuppressKeyPress = $True}Catch{}
-    }ElseIf($KeyCode -eq 'F11'){
-        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
-            $Form.Text = ($Form.Text -replace '\*$')
-
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
-
-            [Void](MKDIR $TempDir)
-
-            $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-            $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-            $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
-
-            $SaveAsProfText.Text = ''
-        }
-    }ElseIf($KeyCode -eq 'F12'){
-        $GO.PerformClick()
-    }ElseIf($KeyCode -eq 'TAB'){
-        If($MainObj.SelectionLength -gt 0){
-            $Start = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart)
-            $End = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart + $MainObj.SelectionLength)
-
-            $TempSelectionIndex = $MainObj.GetFirstCharIndexFromLine($Start)
-            $TempSelectionLength = $MainObj.SelectionLength
-
-            If($_.Shift -AND ($MainObj.SelectedText -contains ($Tab))){
-                $TempLines = $MainObj.Lines
-                $Start..($End - 1) | %{
-                    If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1){
-                        $TempLines[$_] = $TempLines[$_].Substring(1, ($TempLines[$_].Length - 1))
-                        $TempSelectionLength--
-                    }ElseIf([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -eq 1){
-                        $TempLines[$_] = ''
-                        $TempSelectionLength--
-                    }
-                }
-                $MainObj.Lines = $TempLines
-            }ElseIf(!$_.Shift){
-                $TempLines = $MainObj.Lines
-                $Start..($End - 1) | %{$TempLines[$_] = ($Tab + $TempLines[$_]); $TempSelectionLength++}
-                $MainObj.Lines = $TempLines
-            }
-
-            $MainObj.SelectionStart = $TempSelectionIndex
-            $MainObj.SelectionLength = $TempSelectionLength
-
-            $_.SuppressKeyPress = $True
-        }
-    }
-}
-
 Function Interpret{
     Param([String]$X)
 
@@ -1327,6 +1066,266 @@ Function GO ([Switch]$SelectionRun){
              #     #  #     #   #  
               #####    #####   ### 
 ############################################################################################################################################################################################################################################################################################################
+Function Handle-RMenuExit($MainObj){
+    $PHObj = $MainObj
+    
+    If($MainObj.Parent.GetType().BaseType.ToString() -eq 'System.Windows.Forms.Panel'){
+        $PHObj = $PHObj.Parent
+    }
+
+    $L = $PHObj.Location
+    $S = $PHObj.Size
+
+    $M = [Cons.Curs]::GPos()
+    $M.X = ($M.X - $Form.Location.X)
+    $M.Y = ($M.Y - $Form.Location.Y)
+
+    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
+        $PHObj.Visible = $False
+    }
+}
+
+Function Handle-RMenuClick($MainObj){
+    $RightClickMenu.Visible = $False
+    
+    $(Switch($TabController.SelectedTab.Text)
+    {
+        'Commands'{$Commands}
+        'Functions'{$FunctionsBox}
+        'Statements'{$StatementsBox}
+    }) | %{
+        $PHObj = $_
+        $PHObj.Focus()
+
+        Switch($MainObj.Text)
+        {
+            'Copy' {[Cons.Clip]::SetT($PHObj.SelectedText)}
+            'Paste' {$PHObj.Paste()}
+            'Select All'{$PHObj.SelectAll()}
+            'Select Line' {
+                $PHObj.SelectionStart = $PHObj.GetFirstCharIndexOfCurrentLine()
+                $PHObj.SelectionLength = $PHObj.Lines[$PHObj.GetLineFromCharIndex($PHObj.SelectionStart)].Length
+            }
+            'Highlight Syntax'{
+                Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text
+            }
+            'WhatIf Selection'{[System.Console]::WriteLine('Not implemented yet!')}
+            'WhatIf'{[System.Console]::WriteLine('Not implemented yet!')}
+            'Goto Top'{$PHObj.SelectionStart = 0}
+            'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
+            'Find/Replace'{
+                $RightClickMenu.Visible = $False
+                $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
+                    $Finder = [GUI.TB]::New(200,25,25,25,'')
+                    $Finder.Parent = $FindForm
+                    $Replacer = [GUI.TB]::New(200,25,25,50,'')
+                    $Replacer.Parent = $FindForm
+                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace')
+                        $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
+                    $FRGO.Parent = $FindForm
+                    $FRClose = [GUI.B]::New(75,25,150,75,'Close')
+                        $FRClose.Add_Click({$This.Parent.Visible = $False; $This.Parent.Dispose()})
+                    $FRClose.Parent = $FindForm
+                $FindForm.Parent = $Form
+                $FindForm.BringToFront()
+                $Form.Refresh()
+            }
+            'Run Selection'{
+                If($TabController.SelectedTab.Text -match 'Commands'){
+                    GO -SelectionRun
+                }
+                Else{
+                    [System.Console]::WriteLine('Can only be run from commands text box!')
+                }
+            }
+            'Run'{
+                If($TabController.SelectedTab.Text -match 'Commands'){
+                    GO
+                }
+                Else{
+                    [System.Console]::WriteLine('Can only be run from commands text box!')
+                }
+            }
+        }
+    }
+}
+
+Function Handle-MousePosGet{
+    $PH = [Cons.Curs]::GPos()
+
+    $XCoord.Value = $PH.X
+    $YCoord.Value = $PH.Y
+
+    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
+    $MouseCoordsBox.Text = $Position
+
+    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+
+    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    
+    $PHPix = $BMP.GetPixel(0,0)
+    $PixColorBox.Text = $PHPix.Name.ToUpper()
+    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
+
+    $PHLum = [Math]::Sqrt(
+        [Math]::Pow($PHPix.R,2) * 0.299 +
+        [Math]::Pow($PHPix.G,2) * 0.587 +
+        [Math]::Pow($PHPix.B,2) * 0.114
+    )
+
+    If($PHLum -gt 130){
+        $PixColorBox.ForeColor = [System.Drawing.Color]::Black
+    }Else{
+        $PixColorBox.ForeColor = [System.Drawing.Color]::White
+    }
+
+    $Graphics.Dispose()
+    $BMP.Dispose()
+}
+
+Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
+    If($KeyCode -eq 'F1'){
+        $MainObj.SelectionLength = 0
+        $MainObj.SelectedText = '<\\# '
+    }ElseIf($KeyCode -eq 'F2'){
+        $MainObj.SelectionLength = 0
+        $MainObj.SelectedText = '\\#> '
+    }ElseIf($KeyCode -eq 'F3'){
+        $MainObj.SelectionLength = 0
+        $MainObj.SelectedText = '\\# '
+    }ElseIf($KeyCode -eq 'F4'){
+        Switch($BoxType){
+            'Commands'{
+                $MainObj.SelectionLength = 0
+                $MainObj.SelectedText = (':::label_me'+[N]::L)
+            }
+            'Functions'{
+                $MainObj.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+$Tab+[N]::L+'{FUNCTION END}'+[N]::L)
+                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
+            }
+            'Statements'{
+                $MainObj.Text+=([N]::L+'{STATEMENT NAME rename_me}'+[N]::L+$Tab+'{OP1 ___}'+[N]::L+$Tab+'{CMP ___}'+[N]::L+$Tab+'{OP2 ___}'+[N]::L+$Tab+$Tab+[N]::L+$Tab+$Tab+'{ELSE}'+[N]::L+$Tab+$Tab+[N]::L+'{STATEMENT END}'+[N]::L)
+                $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
+            }
+        }
+    }ElseIf($KeyCode -eq 'F5'){
+        $PH = [Cons.Curs]::GPos()
+
+        $XCoord.Value = $PH.X
+        $YCoord.Value = $PH.Y
+
+        $MainObj.SelectionLength = 0
+        $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+    }ElseIf($KeyCode -eq 'F6'){
+        $MainObj.SelectionLength = 0
+        $MainObj.SelectedText = '{WAIT M 100}'
+    }ElseIf($KeyCode -eq 'F10'){
+        $TempSelectionIndex = $MainObj.SelectionStart
+        $TempSelectionLength = $MainObj.SelectionLength
+
+        $MainObj.SelectionStart = 0
+        $MainObj.SelectionLength = $MainObj.Text.Length
+        $MainObj.SelectionColor = [System.Drawing.Color]::Black
+                    
+        ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
+            $PH = $_.TrimStart(' ').TrimStart($Tab)
+
+            If($PH -match '^<\\\\#'){
+                $Commented = $True
+            }
+
+            If($PH -match '^\\\\#' -OR $Commented){
+                'G,'+$Count
+            }
+
+            If($PH -match '^\\\\#>'){
+                $Commented = $False
+            }
+
+            If(!$Commented){
+                If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
+                    'B,'+$Count
+                }
+
+                If($PH -match '^.*{.*}.*$'){
+                    'R,'+$Count
+                }
+            }
+                        
+            $Count++
+        }) | %{
+            $PHLine = $MainObj.Lines[$_.Split(',')[-1]]
+            $MainObj.SelectionStart = $MainObj.GetFirstCharIndexFromLine($_.Split(',')[-1])
+            $MainObj.SelectionLength = $PHLine.Length
+            
+            Switch($_.Split(',')[0]){
+                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                'R' {
+                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
+                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
+                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
+                }
+            }
+        }
+                    
+        $MainObj.SelectionStart = $TempSelectionIndex
+        $MainObj.SelectionLength = $TempSelectionLength
+        
+        Try{$_.SuppressKeyPress = $True}Catch{}
+    }ElseIf($KeyCode -eq 'F11'){
+        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+            $Form.Text = ($Form.Text -replace '\*$')
+
+            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
+
+            [Void](MKDIR $TempDir)
+
+            $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+            $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+            $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
+
+            $SaveAsProfText.Text = ''
+        }
+    }ElseIf($KeyCode -eq 'F12'){
+        $GO.PerformClick()
+    }ElseIf($KeyCode -eq 'TAB'){
+        If($MainObj.SelectionLength -gt 0){
+            $Start = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart)
+            $End = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart + $MainObj.SelectionLength)
+
+            $TempSelectionIndex = $MainObj.GetFirstCharIndexFromLine($Start)
+            $TempSelectionLength = $MainObj.SelectionLength
+
+            If($_.Shift -AND ($MainObj.SelectedText -contains ($Tab))){
+                $TempLines = $MainObj.Lines
+                $Start..($End - 1) | %{
+                    If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1){
+                        $TempLines[$_] = $TempLines[$_].Substring(1, ($TempLines[$_].Length - 1))
+                        $TempSelectionLength--
+                    }ElseIf([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -eq 1){
+                        $TempLines[$_] = ''
+                        $TempSelectionLength--
+                    }
+                }
+                $MainObj.Lines = $TempLines
+            }ElseIf(!$_.Shift){
+                $TempLines = $MainObj.Lines
+                $Start..($End - 1) | %{$TempLines[$_] = ($Tab + $TempLines[$_]); $TempSelectionLength++}
+                $MainObj.Lines = $TempLines
+            }
+
+            $MainObj.SelectionStart = $TempSelectionIndex
+            $MainObj.SelectionLength = $TempSelectionLength
+
+            $_.SuppressKeyPress = $True
+        }
+    }
+}
 
 If($Host.Name -match 'Console'){
     [Console]::Title = 'Pickle'
