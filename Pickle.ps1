@@ -1856,15 +1856,20 @@ $TabController.Add_SelectedIndexChanged({
 })
 $TabController.Parent = $Form
 
-$GO = [GUI.B]::New(405, 25, 25, 415, 'Run')
+$GO = [GUI.B]::New(200, 25, 25, 415, 'Run')
 $GO.Add_Click({GO})
 $GO.Parent = $Form
+$GOSel = [GUI.B]::New(200, 25, 230, 415, 'Run Selection')
+$GOSel.Add_Click({GO -Selection})
+$GOSel.Parent = $Form
 
 $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
-    $GO.Location                       = [GUI.SP]::PO(25,(([Int]$This.Height)-80))
-    $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width)-65),25)
+    $GO.Location                       = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
+    $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
+    $GOSel.Location                    = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
+    $GOSel.Size                        = [GUI.SP]::SI($GO.Width,25)
 })
 
 $RightClickMenu = [GUI.P]::New(135,310,100,100)
