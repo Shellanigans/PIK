@@ -849,7 +849,7 @@ Function Actions{
                         }
                     )
                     
-                    [Cons.Send]::Keys($PHX)
+                    [Cons.Send]::Keys([String]$PHX)
                     
                     If($DelayCheck.Checked){
                         $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
@@ -1011,22 +1011,15 @@ Function GO ([Switch]$SelectionRun){
     $Results = (Measure-Command {
         Do{
             [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
-            #$Form.Visible = $False
 
             $SyncHash.Restart = $False
         
             ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
-                If(!$SyncHash.Stop){
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){
-                        Actions $_
-                    }Else{
-                        [System.Console]::WriteLine($Tab+$_)
-                    }
-                }
-            }
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
+            } | %{If(!$SyncHash.Stop){Action $_}}
         }While($SyncHash.Restart)
 
         $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
@@ -1037,19 +1030,14 @@ Function GO ([Switch]$SelectionRun){
         $StatementsBox.ReadOnly = $False
 
         [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
-        #$Form.Visible = $True
 
         [System.Console]::WriteLine('Complete!'+[N]::L)
 
         $Form.Refresh()
 
         If($Script:Refocus){
-            #[Cons.App]::Act($Form.Text)
-            #$Form.Focus()
             $Form.Activate()
             $Commands.Focus()
-            #$Commands.SelectionLength = 0
-            #$Commands.SelectionStart = $Commands.Text.Length
         }
     })
 
