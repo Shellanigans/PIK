@@ -83,110 +83,69 @@ namespace Cons{
 }
 namespace GUI{
     public class F : SWF.Form{
-        public F (int sx, int sy, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Text = tx;
-        }
+        public F (){}
+        public F (int sx, int sy, string tx){this.Size = new DR.Size(sx,sy);this.Text = tx;}
     }
     public class TC : SWF.TabControl{
-        public TC (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public TC (){}
+        public TC (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class TP : SWF.TabPage{
-        public TP (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public TP (){}
+        public TP (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class L : SWF.Label{
-        public L (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public L (){}
+        public L (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class TB : SWF.TextBox{
-        public TB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public TB (){}
+        public TB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class RTB : SWF.RichTextBox{
-        public RTB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public RTB (){}
+        public RTB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class MTB : SWF.MaskedTextBox{
-        public MTB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public MTB (){}
+        public MTB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class B : SWF.Button{
-        public B (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public B (){}
+        public B (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class RB : SWF.RadioButton{
-        public RB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public RB (){}
+        public RB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class ChB : SWF.CheckBox{
-        public ChB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public ChB (){}
+        public ChB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     
     public class CB : SWF.ComboBox{
-        public CB (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public CB (){}
+        public CB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class P : SWF.Panel{
-        public P (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public P (){}
+        public P (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class LB : SWF.ListBox{
-        public LB (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public LB (){}
+        public LB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class CoB : SWF.ComboBox{
-        public CoB (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public CoB (){}
+        public CoB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class NUD : SWF.NumericUpDown{
-        public NUD (int sx, int sy, int lx, int ly){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-        }
+        public NUD (){}
+        public NUD (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class GB : SWF.GroupBox{
-        public GB (int sx, int sy, int lx, int ly, string tx){
-            this.Size = new DR.Size(sx,sy);
-            this.Location = new DR.Point(lx,ly);
-            this.Text = tx;
-        }
+        public GB (){}
+        public GB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class Rect{
         public static DR.Rectangle E = DR.Rectangle.Empty;
