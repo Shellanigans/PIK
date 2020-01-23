@@ -978,7 +978,7 @@ Function GO ([Switch]$SelectionRun){
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
                     If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
-            } | %{If(!$SyncHash.Stop){Action $_}}
+            } | %{If(!$SyncHash.Stop){Actions $_}}
         }While($SyncHash.Restart)
 
         $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
