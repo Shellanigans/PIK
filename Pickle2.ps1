@@ -163,9 +163,6 @@ namespace GUI{
         }
     }
 }
-public class N{
-    public static string L = System.Environment.NewLine;
-}
 public class Parser{
     public static string HoldKeys(string X){
         X = X.ToUpper();
@@ -302,7 +299,7 @@ Function Interpret{
                 [System.Console]::WriteLine($Tab+$PH+' was not found!')
             }
 
-            [System.Console]::WriteLine($X)
+            [System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)
         }
         
         $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
@@ -379,7 +376,7 @@ Function Interpret{
             $Operator = $PH.Split(' ')[0]
             $Operands = [String[]]($PH.Substring(4).Split(','))
 
-            $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))}; $Index++}
+            $Operands | %{$Index = 0}{If($_){$Operands[$Index] = ($_.Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',$NL).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}'))}; $Index++}
             
             $Output = ''
 
@@ -510,7 +507,7 @@ Function Interpret{
 
                     $PHName+='_ESCAPED'
                 }Else{
-                    $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',[N]::L).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
+                    $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',$NL).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
                 }
 
 
@@ -520,10 +517,8 @@ Function Interpret{
         }
 
         $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
-            [System.Console]::WriteLine('{'+$_)
-        
-            [System.Console]::WriteLine($Tab+'Potential bad logic, null value found after parsing.')
-            [System.Console]::WriteLine($Tab+'This is not inherently bad and may be intended.')
+            [System.Console]::WriteLine($Tab+'POTENTIAL BAD LOGIC, NULL VALUE FOUND AFTER PARSING.')
+            [System.Console]::WriteLine($Tab+'THIS IS NOT INHERENTLY BAD AND MAY BE INTENDED.')
 
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
 
@@ -541,7 +536,12 @@ Function Actions{
     Param([String]$X)
 
     If(!$SyncHash.Stop){
+        [System.Console]::WriteLine($X)
+
         If($X -match '{IF \(.*?\)}'){
+            [System.Console]::WriteLine($NL + 'BEGIN IF')
+            [System.Console]::WriteLine('--------')
+            
             $Script:IfEl = $False
             
             $x = $X.Replace('{IF (','')
@@ -555,20 +555,25 @@ Function Actions{
 
                 $Op1 = ($X -replace '-.*','').Trim(' ')
                 $Op2 = ($X -replace ('.*-'+$Comparator),'').Trim(' ')
-
+                
+                [System.Console]::WriteLine('OPERAND1: ' + $Op1)
                 $Op1,$PHEsc1 = (Interpret $Op1)
+
+                [System.Console]::WriteLine('OPERAND2: ' + $Op2)
                 $Op2,$PHEsc2 = (Interpret $Op2)
             }
+            
+            [System.Console]::WriteLine('COMPARATOR: ' + $Comparator)
 
             If(!$PHEsc1 -AND !$PHEsc2){
                 Switch($Comparator){
                     'MATCH'    {If($Op1 -match $Op2)                       {$Script:IfEl = $True}}
                     'EQ'       {If($Op1 -eq $Op2)                          {$Script:IfEl = $True}}
                     'LIKE'     {If($Op1 -like $Op2)                        {$Script:IfEl = $True}}
-                    'LT'       {If($Op1 -lt $Op2)                          {$Script:IfEl = $True}}
-                    'LE'       {If($Op1 -le $Op2)                          {$Script:IfEl = $True}}
-                    'GT'       {If($Op1 -gt $Op2)                          {$Script:IfEl = $True}}
-                    'GE'       {If($Op1 -ge $Op2)                          {$Script:IfEl = $True}}
+                    'LT'       {Try{If([Double]$Op1 -lt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'LE'       {Try{If([Double]$Op1 -le [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'GT'       {Try{If([Double]$Op1 -gt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'GE'       {Try{If([Double]$Op1 -ge [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
                     'NOTMATCH' {If($Op1 -notmatch $Op2)                    {$Script:IfEl = $True}}
                     'NE'       {If($Op1 -ne $Op2)                          {$Script:IfEl = $True}}
                     'NOTLIKE'  {If($Op1 -notlike $Op2)                     {$Script:IfEl = $True}}
@@ -579,6 +584,14 @@ Function Actions{
                     'NOT'      {If($Op2 -eq 'FALSE')                       {$Script:IfEl = $True}}
                     default    {If($X -eq 'TRUE')                          {$Script:IfEl = $True}}
                 }
+
+                #If($OP1 -eq $Null){$OP1 = '(NULL)'}
+                #If($OP2 -eq $Null){$OP2 = '(NULL)'}
+                #If($OP1 -eq ''){$OP1 = '(EMPTY STRING)'}
+                #If($OP2 -eq ''){$OP2 = '(EMPTY STRING)'}
+
+                [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
+                [System.Console]::WriteLine($Tab + 'EVALUATION: ' + $Script:IfEl.ToString().ToUpper() + $NL)
             }
             Else{
                 [System.Console]::WriteLine('IF STATEMENT FAILED! CHECK PARAMS! AN ARGUMENT WAS ESCAPED FOR SOME REASON!')
@@ -597,10 +610,7 @@ Function Actions{
             }
         }
         ElseIf($Script:IfEl){
-            [System.Console]::WriteLine($X)
-
             $Escaped = $False
-
             $X,$Escaped = (Interpret $X)
 
             $TempX = $Null
@@ -747,20 +757,14 @@ Function Actions{
                 $BMP.Dispose()
             }ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
                 $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
-                    $FuncHash.($X.Trim('{}').Split()[0]).Split([N]::L) | %{
-                        ($_ -replace ('`'+[N]::L),'' -replace '^\s*' | ?{$_ -ne ''})
+                    $FuncHash.($X.Trim('{}').Split()[0]).Split($NL) | %{
+                        ($_ -replace ('`'+$NL),'' -replace '^\s*' | ?{$_ -ne ''})
                     } | %{$Commented = $False}{
-                        If(!$SyncHash.Stop){
-                            If($_ -match '^\s*?<\\\\#'){$Commented = $True}
-                            If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+                        If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                        If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                            If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
-                                Actions $_
-                            }Else{
-                                [System.Console]::WriteLine($Tab+$_)
-                            }
-                        }
-                    }
+                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
+                    } | %{If(!$SyncHash.Stop){Actions $_}}
                 }
             }ElseIf($X -match '{SETWIND '){
                 If($X -match ' -ID '){
@@ -859,7 +863,7 @@ Function Actions{
 
 Function GO ([Switch]$SelectionRun){
     [System.Console]::WriteLine('Initializing:')
-    [System.Console]::WriteLine('------------------------------'+[N]::L)
+    [System.Console]::WriteLine('------------------------------'+$NL)
 
     $Script:Refocus = $False
     $Script:IfEl = $True
@@ -878,9 +882,9 @@ Function GO ([Switch]$SelectionRun){
 
     If($FunctionsBox.Text -replace '\s*'){
         [System.Console]::WriteLine($Tab+'Parsing Functions:')
-        [System.Console]::WriteLine($Tab+'-------------------'+[N]::L)
+        [System.Console]::WriteLine($Tab+'-------------------'+$NL)
 
-        $FunctionsBox.Text.Split([N]::L) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
+        $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
             $FunctionStart = $False
 
             $FunctionText = @()
@@ -891,7 +895,7 @@ Function GO ([Switch]$SelectionRun){
                     $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
                 }ElseIf($_ -match '^{FUNCTION END}'){
                     $FunctionStart = $False
-                    $FuncHash.Add($NameFunc,($FunctionText -join [N]::L))
+                    $FuncHash.Add($NameFunc,($FunctionText -join $NL))
                     $FunctionText = @()
                 }Else{
                     $FunctionText+=$_
@@ -900,11 +904,11 @@ Function GO ([Switch]$SelectionRun){
         }
 
         $FuncHash.Keys | Sort | %{
-            [System.Console]::WriteLine(($Tab*2) + $_ + [N]::L + ($Tab*2) + '-------------------------' + [N]::L + (($FuncHash.$_.Split([N]::L) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join [N]::L) + [N]::L)
+            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
         }
     }
 
-    [System.Console]::WriteLine('Starting Macro!'+[N]::L+'-------------------')
+    [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------')
     
     $Results = (Measure-Command {
         Do{
@@ -912,7 +916,7 @@ Function GO ([Switch]$SelectionRun){
 
             $SyncHash.Restart = $False
         
-            ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+[N]::L),'').Split([N]::L) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
+            ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
@@ -928,7 +932,7 @@ Function GO ([Switch]$SelectionRun){
 
         [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
 
-        [System.Console]::WriteLine('Complete!'+[N]::L)
+        [System.Console]::WriteLine('Complete!'+$NL)
 
         $Form.Refresh()
 
@@ -938,7 +942,7 @@ Function GO ([Switch]$SelectionRun){
         }
     })
 
-    [System.Console]::WriteLine('Stats'+[N]::L+'-------------------')
+    [System.Console]::WriteLine('Stats'+$NL+'-------------------')
     [System.Console]::WriteLine(($Results | Out-String))
 }
 
@@ -1085,10 +1089,10 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
         Switch($BoxType){
             'Commands'{
                 $MainObj.SelectionLength = 0
-                $MainObj.SelectedText = (':::label_me'+[N]::L)
+                $MainObj.SelectedText = (':::label_me'+$NL)
             }
             'Functions'{
-                $MainObj.Text+=([N]::L+'{FUNCTION NAME rename_me}'+[N]::L+$Tab+[N]::L+'{FUNCTION END}'+[N]::L)
+                $MainObj.Text+=($NL+'{FUNCTION NAME rename_me}'+$NL+$Tab+$NL+'{FUNCTION END}'+$NL)
                 $MainObj.SelectionStart = ($MainObj.Text.Length - 1)
             }
         }
@@ -1099,7 +1103,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
         $YCoord.Value = $PH.Y
 
         $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+[N]::L)
+        $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+$NL)
     }ElseIf($KeyCode -eq 'F6'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '{WAIT M 100}'
@@ -1114,17 +1118,9 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
         ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
             $PH = $_.TrimStart(' ').TrimStart($Tab)
 
-            If($PH -match '^<\\\\#'){
-                $Commented = $True
-            }
-
-            If($PH -match '^\\\\#' -OR $Commented){
-                'G,'+$Count
-            }
-
-            If($PH -match '^\\\\#>'){
-                $Commented = $False
-            }
+            If($PH -match '^<\\\\#'){$Commented = $True}
+            If($PH -match '^\\\\#' -OR $Commented){'G,'+$Count}
+            If($PH -match '^\\\\#>'){$Commented = $False}
 
             If(!$Commented){
                 If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
@@ -1220,6 +1216,7 @@ If(!(Test-Path ($env:APPDATA+'\Macro\Profiles'))){[Void](MKDIR ($env:APPDATA+'\M
 $CommandLine = $False
 
 $Tab = ([String][Char][Int]9)
+$NL = [System.Environment]::NewLine
 
 $Script:Refocus = $False
 $Script:IfEl = $True
@@ -1283,7 +1280,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                         $RightClickMenu.BringToFront()
                     }
                 })
-                $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
+                $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
                 $Commands.Parent = $TabPageCommMain
                 $Commands.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Commands'})
             $TabPageCommMain.Parent = $TabControllerComm
@@ -1433,7 +1430,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                         $RightClickMenu.BringToFront()
                     }
                 })
-                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
+                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
                 $FunctionsBox.Dock = 'Fill'
                 $FunctionsBox.Parent = $TabPageFunctMain
                 $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions'})
@@ -1457,7 +1454,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Scratch.txt') -Width 1000 -Force
             })
-            $ScratchBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Scratch.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd([N]::L) -join [N]::L}Catch{''}
+            $ScratchBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Scratch.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
             $ScratchBox.Dock = 'Fill'
             $ScratchBox.Parent = $TabPageScratchMain
             $TabPageScratchMain.Parent = $TabControllerScratch
@@ -1504,9 +1501,9 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
 
-                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt')).TrimEnd([N]::L)
-                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt')).TrimEnd([N]::L)
-                        $ScratchBox.Text = (Get-Content ($TempDir+'\Scratch.txt')).TrimEnd([N]::L)
+                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt')).TrimEnd($NL)
+                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt')).TrimEnd($NL)
+                        $ScratchBox.Text = (Get-Content ($TempDir+'\Scratch.txt')).TrimEnd($NL)
 
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
@@ -1643,9 +1640,9 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $GetFuncts = [GUI.B]::New(110, 25, 10, 125, 'Get Functs')
                 $GetFuncts.Add_Click({
                     $FuncHash.Keys | Sort | %{
-                        [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $FuncHash.$_ + [N]::L + [N]::L)
+                        [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $FuncHash.$_ + $NL + $NL)
 
-                        [System.Console]::WriteLine([N]::L * 3)
+                        [System.Console]::WriteLine($NL * 3)
                     }
                 })
                 $GetFuncts.Parent = $TabPageDebug
@@ -1657,10 +1654,10 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                         $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
                         $PH = $(If($PH -contains ($_+'NUMERIC')){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
                         
-                        [System.Console]::WriteLine(($_+[N]::L+'-------------------------'))
+                        [System.Console]::WriteLine(($_+$NL+'-------------------------'))
                         [System.Console]::WriteLine(('If('+$IfElHash.($PH[1])+' -'+$IfElHash.($PH[2])+' '+$IfElHash.($PH[3])+')'))
-                        [System.Console]::WriteLine(('{'+[N]::L+(($IfElHash.($PH[4]).Split([N]::L) | ?{$_ -ne ''} | %{$Tab+$_}) -join [N]::L)+[N]::L+'}'+[N]::L+'Else'))
-                        [System.Console]::WriteLine(('{'+[N]::L+(($IfElHash.($PH[5]).Split([N]::L) | ?{$_ -ne ''} | %{$Tab+$_}) -join [N]::L)+[N]::L+'}'+[N]::L))
+                        [System.Console]::WriteLine(('{'+$NL+(($IfElHash.($PH[4]).Split($NL) | ?{$_ -ne ''} | %{$Tab+$_}) -join $NL)+$NL+'}'+$NL+'Else'))
+                        [System.Console]::WriteLine(('{'+$NL+(($IfElHash.($PH[5]).Split($NL) | ?{$_ -ne ''} | %{$Tab+$_}) -join $NL)+$NL+'}'+$NL))
                     }
                 })
                 $GetStates.Parent = $TabPageDebug
@@ -1668,9 +1665,9 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $GetVars = [GUI.B]::New(110, 25, 10, 160, 'Get Vars')
                 $GetVars.Add_Click({
                     $VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
-                        [System.Console]::WriteLine([N]::L + $_ + [N]::L + '-------------------------' + [N]::L + $VarsHash.$_ + [N]::L + [N]::L)
+                        [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $VarsHash.$_ + $NL + $NL)
 
-                        [System.Console]::WriteLine([N]::L * 3)
+                        [System.Console]::WriteLine($NL * 3)
                     }
                 })
                 $GetVars.Parent = $TabPageDebug
