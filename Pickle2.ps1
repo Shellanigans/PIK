@@ -39,7 +39,6 @@ namespace Cons{
         [DllImport("user32.dll")]
         public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
         [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool GetWindowRect(IntPtr hWnd, out DR.Rectangle lpRect);
         [DllImport("User32.dll")]
         public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
@@ -60,106 +59,90 @@ namespace Cons{
         }
     }
     public class Clip{
-        public static string GetT (){
-            return SWF.Clipboard.GetText();
-        }
-        public static void SetT (string Text){
-            SWF.Clipboard.SetText(Text);
-        }
+        public static string GetT ()           {return SWF.Clipboard.GetText();}
+        public static void SetT (string Text)  {SWF.Clipboard.SetText(Text);}
     }
     public class Curs{
-        public static DR.Point GPos (){
-            return SWF.Cursor.Position;
-        }
-        public static void SPos (int x, int y){
-            SWF.Cursor.Position = new DR.Point(x, y);
-        }
+        public static DR.Point GPos ()         {return SWF.Cursor.Position;}
+        public static void SPos (int x, int y) {SWF.Cursor.Position = new DR.Point(x, y);}
     }
     public class Send{
-        public static void Keys (string Keys){
-            SWF.SendKeys.SendWait(Keys);
-        }
+        public static void Keys (string Keys)  {SWF.SendKeys.SendWait(Keys);}
     }
 }
 namespace GUI{
+    public class SP{
+        public static DR.Point PO (int sx, int sy) {return (new DR.Point(sx, sy));}
+        public static DR.Size SI (int sx, int sy)  {return (new DR.Size(sx, sy));}
+    }
     public class F : SWF.Form{
         public F (){}
-        public F (int sx, int sy, string tx){this.Size = new DR.Size(sx,sy);this.Text = tx;}
+        public F (int sx, int sy, string tx)                   {this.Size = new DR.Size(sx,sy);this.Text = tx;}
     }
     public class TC : SWF.TabControl{
         public TC (){}
-        public TC (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public TC (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
-    public class TP : SWF.TabPage{
-        public TP (){}
-        public TP (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class L : SWF.Label{
-        public L (){}
-        public L (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class TB : SWF.TextBox{
-        public TB (){}
-        public TB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class RTB : SWF.RichTextBox{
-        public RTB (){}
-        public RTB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class MTB : SWF.MaskedTextBox{
-        public MTB (){}
-        public MTB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class B : SWF.Button{
-        public B (){}
-        public B (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class RB : SWF.RadioButton{
-        public RB (){}
-        public RB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    public class ChB : SWF.CheckBox{
-        public ChB (){}
-        public ChB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-    
     public class CB : SWF.ComboBox{
         public CB (){}
-        public CB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public CB (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class P : SWF.Panel{
         public P (){}
-        public P (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public P (int sx, int sy, int lx, int ly)              {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class LB : SWF.ListBox{
         public LB (){}
-        public LB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public LB (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class CoB : SWF.ComboBox{
         public CoB (){}
-        public CoB (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public CoB (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class NUD : SWF.NumericUpDown{
         public NUD (){}
-        public NUD (int sx, int sy, int lx, int ly){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+        public NUD (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
     public class GB : SWF.GroupBox{
         public GB (){}
-        public GB (int sx, int sy, int lx, int ly, string tx){this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+        public GB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class TP : SWF.TabPage{
+        public TP (){}
+        public TP (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class L : SWF.Label{
+        public L (){}
+        public L (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class TB : SWF.TextBox{
+        public TB (){}
+        public TB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class RTB : SWF.RichTextBox{
+        public RTB (){}
+        public RTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class MTB : SWF.MaskedTextBox{
+        public MTB (){}
+        public MTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class B : SWF.Button{
+        public B (){}
+        public B (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class RB : SWF.RadioButton{
+        public RB (){}
+        public RB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+    public class ChB : SWF.CheckBox{
+        public ChB (){}
+        public ChB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
     }
     public class Rect{
         public static DR.Rectangle E = DR.Rectangle.Empty;
         public static DR.Rectangle R (int lx, int ly, int sx, int sy){
             return (new DR.Rectangle(lx, ly, sx, sy));
-        }
-    }
-    public class SP{
-        public static DR.Point PO (int sx, int sy){
-            return (new DR.Point(sx, sy));
-        }
-        
-        public static DR.Size SI (int sx, int sy){
-            return (new DR.Size(sx, sy));
         }
     }
 }
@@ -491,8 +474,8 @@ Function Interpret{
         }
 
         $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
-            [System.Console]::WriteLine($Tab+'POTENTIAL BAD LOGIC, NULL VALUE FOUND AFTER PARSING.')
-            [System.Console]::WriteLine($Tab+'THIS IS NOT INHERENTLY BAD AND MAY BE INTENDED.')
+            #[System.Console]::WriteLine($Tab+'POTENTIAL BAD LOGIC, NULL VALUE FOUND AFTER PARSING.')
+            #[System.Console]::WriteLine($Tab+'THIS IS NOT INHERENTLY BAD AND MAY BE INTENDED.')
 
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
 
@@ -507,7 +490,7 @@ Function Interpret{
 }
 
 Function Actions{
-    Param([String]$X)
+    Param([String]$X,[Switch]$WhatIf)
 
     If(!$SyncHash.Stop){
         [System.Console]::WriteLine($X)
@@ -594,7 +577,7 @@ Function Actions{
             }
 
             If($X -match '^{POWER .*}$'){
-                $X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
+                If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
             }
 
         
@@ -602,7 +585,7 @@ Function Actions{
                 $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
                 $Commands.Lines | %{$FoundLabel = $False}{
                     If($FoundLabel){
-                        Actions $_
+                        If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}
                     }ElseIf($_.Trim(' ') -eq (':::'+$X)){
                         $FoundLabel = $True
                     }
@@ -621,27 +604,35 @@ Function Actions{
                 $VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                     $VarsHash.Remove($PH[0])
                     $VarsHash.Add($PH[0],$VarsHash.$_)
-                    Actions $PH[2]
+                    If(!$WhatIf){Actions $PH[2]}Else{Actions $PH[2] -WhatIf}
                 }
                 $VarsHash.Remove($PH[0])
             }ElseIf($X -match '^{SETCON'){
                 $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
                 $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
 
-                If($X -notmatch '^{SETCONA '){
-                    $PHFileContent | Out-File $PHFileName -Force
+                If(!$WhatIf){
+                    If($X -notmatch '^{SETCONA '){
+                        $PHFileContent | Out-File $PHFileName -Force
+                    }Else{
+                        $PHFileContent | Out-File $PHFileName -Append -Force
+                    }
                 }Else{
-                    $PHFileContent | Out-File $PHFileName -Append -Force
+                    [System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)
                 }
             }ElseIf($X -match '{FOCUS'){
-                If($X -match ' -ID '){
-                    Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                If(!$WhatIf){
+                    If($X -match ' -ID '){
+                        Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                    }Else{
+                        Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                    }
                 }Else{
-                    Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                    [System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '^{FOCUS ' -replace '}'))
                 }
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
-                    [Cons.Clip]::SetT($_.Substring(8))
+                    If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}
                     $X = ($X -replace ('{'+$_+'}'))
                 }
             }ElseIf($X -match '{WAIT ?(M )?\d*}'){
@@ -668,38 +659,53 @@ Function Actions{
                 }
             }ElseIf($X -match '{[/\\]?HOLD'){
                 $Rel = ($X -match '[/\\]')
-
-                If($X -match 'MOUSE'){
-                    [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
+                If(!$WhatIf){
+                    If($X -match 'MOUSE'){
+                        [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
+                    }Else{
+                        $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
+                        $UndoHash.KeyList+=([String]$Temp)
+                        [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
+                    }
                 }Else{
-                    $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
-                    $UndoHash.KeyList+=([String]$Temp)
-                    [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
+                    [System.Console]::WriteLine(($Tab+'WHATIF: '+$(If($Rel){'RELEASE'}ELSE{'HOLD'})+' '+($X.Split()[-1] -replace '}')))
                 }
             }ElseIf($X -match '^{[LRM]?MOUSE'){
-                If($X -match ','){
-                    If($X -match '\+' -OR $X -match '-'){
-                        $Coords = [Cons.Curs]::GPos()
-                        $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos(([Int]$_.Split(',')[0] + [Int]$Coords.X), ([Int]$_.Split(',')[-1] + [Int]$Coords.Y))}
+                If(!$WhatIf){
+                    If($X -match ','){
+                        If($X -match '\+' -OR $X -match '-'){
+                            $Coords = [Cons.Curs]::GPos()
+                            $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos(([Int]$_.Split(',')[0] + [Int]$Coords.X), ([Int]$_.Split(',')[-1] + [Int]$Coords.Y))}
+                        }Else{
+                            $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
+                        }
+                    }ElseIf($X -match ' '){
+                        0..([Int](($X -replace '}').Split(' ')[-1])) | %{
+                            [Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
+                                [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                            }
+                        }
                     }Else{
-                        $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
-                    }
-                }ElseIf($X -match ' '){
-                    0..([Int](($X -replace '}').Split(' ')[-1])) | %{
-                        [Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
+                        [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
                             [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
                         }
                     }
                 }Else{
-                    [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
-                        [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                    If($X -match ','){
+                        [System.Console]::WriteLine($Tab+'WHATIF: MOVE MOUSE TO '+($X -replace '{MOUSE ' -replace '}'))
+                    }Else{
+                        [System.Console]::WriteLine($Tab+'WHATIF: CLICK '+($X -replace '{MOUSE ' -replace '}'))
                     }
                 }
             }ElseIf($X -match 'WINDOWS}'){
-                Switch($X){
-                    '{WINDOWS}'  {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
-                    '{LWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
-                    '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
+                If(!$WhatIf){
+                    Switch($X){
+                        '{WINDOWS}'  {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
+                        '{LWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
+                        '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
+                    }
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: PRESS WINDOWS KEY')
                 }
             }ElseIf($X -match '^{RESTART}$'){
                 $SyncHash.Restart = $True
@@ -718,17 +724,21 @@ Function Actions{
                 $PH = $PH.Substring(0,($PH.Length - 1))
                 $PH = $PH.Split(',')
 
-                $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
+                If(!$WhatIf){
+                    $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
 
-                $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+                    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
-                $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
+                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
             
-                $BMP.Save($PH[4])
+                    $BMP.Save($PH[4])
             
-                $Graphics.Dispose()
-                $BMP.Dispose()
+                    $Graphics.Dispose()
+                    $BMP.Dispose()
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') AND BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
+                }
             }ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
                 $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
                     $FuncHash.($X.Trim('{}').Split()[0]).Split($NL) | %{
@@ -738,7 +748,7 @@ Function Actions{
                         If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
                         If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
-                    } | %{If(!$SyncHash.Stop){Actions $_}}
+                    } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
                 }
             }ElseIf($X -match '{SETWIND '){
                 If($X -match ' -ID '){
@@ -749,7 +759,11 @@ Function Actions{
                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
                 }
             
-                [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
+                }
             }
             ElseIf($X -match '{SETWINDTEXT '){
                 If($X -match ' -ID '){
@@ -761,8 +775,12 @@ Function Actions{
                     $PHHandle = ((PS $PHIdentifier).MainWindowHandle | ?{[Int]$_})
                     $PHWindText = ($X -replace ('{SETWINDTEXT '+$PHIdentifier+',') -replace '}$')
                 }
-            
-                [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
+
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW '+$PHIdentifier+' TO '+$PHWindText)
+                }
             }
             ElseIf($X -match '{CONSOLE .*?}'){
                 [System.Console]::WriteLine((($X.Split('{') | ?{$_ -match '^CONSOLE '}) -replace '^CONSOLE ').Split('}')[0])
@@ -790,7 +808,11 @@ Function Actions{
                             }
                         )
                     
-                        [Cons.Send]::Keys([String]$PHX)
+                        If(!$WhatIf){
+                            [Cons.Send]::Keys([String]$PHX)
+                        }Else{
+                            [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$PHX)
+                        }
                     
                         If($DelayCheck.Checked){
                             $PH = (([Random]::New()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))
@@ -802,7 +824,11 @@ Function Actions{
                     }
                 }Else{
                     Try{
-                        [Cons.Send]::Keys($X)
+                        If(!$WhatIf){
+                            [Cons.Send]::Keys([String]$X)
+                        }Else{
+                            [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)
+                        }
                     }
                     Catch{
                         If(!$Escaped){
@@ -814,7 +840,11 @@ Function Actions{
                         }
                     
                         Try{
-                            [Cons.Send]::Keys($X)
+                            If(!$WhatIf){
+                                [Cons.Send]::Keys([String]$X)
+                            }Else{
+                                [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)
+                            }
                         }Catch{
                             [System.Console]::WriteLine($Tab+'Failed!')    
                         }
@@ -835,7 +865,7 @@ Function Actions{
     }
 }
 
-Function GO ([Switch]$SelectionRun){
+Function GO ([Switch]$SelectionRun,[Switch]$WhatIf){
     [System.Console]::WriteLine('Initializing:')
     [System.Console]::WriteLine('------------------------------'+$NL)
 
@@ -895,7 +925,7 @@ Function GO ([Switch]$SelectionRun){
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
                     If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
-            } | %{If(!$SyncHash.Stop){Actions $_}}
+            } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
         }While($SyncHash.Restart)
 
         $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
@@ -917,7 +947,7 @@ Function GO ([Switch]$SelectionRun){
     })
 
     [System.Console]::WriteLine('Stats'+$NL+'-------------------')
-    [System.Console]::WriteLine(($Results | Out-String))
+    [System.Console]::WriteLine((($Results | Out-String) -replace '^\s*'))
 }
 
 ############################################################################################################################################################################################################################################################################################################
@@ -968,11 +998,9 @@ Function Handle-RMenuClick($MainObj){
                 $PHObj.SelectionStart = $PHObj.GetFirstCharIndexOfCurrentLine()
                 $PHObj.SelectionLength = $PHObj.Lines[$PHObj.GetLineFromCharIndex($PHObj.SelectionStart)].Length
             }
-            'Highlight Syntax'{
-                Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text
-            }
-            'WhatIf Selection'{[System.Console]::WriteLine('Not implemented yet!')}
-            'WhatIf'{[System.Console]::WriteLine('Not implemented yet!')}
+            'Highlight Syntax'{Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text}
+            'WhatIf Selection'{GO -SelectionRun -WhatIf}
+            'WhatIf'{GO -WhatIf}
             'Goto Top'{$PHObj.SelectionStart = 0}
             'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
             'Find/Replace'{
@@ -992,22 +1020,8 @@ Function Handle-RMenuClick($MainObj){
                 $FindForm.BringToFront()
                 $Form.Refresh()
             }
-            'Run Selection'{
-                If($TabController.SelectedTab.Text -match 'Commands'){
-                    GO -SelectionRun
-                }
-                Else{
-                    [System.Console]::WriteLine('Can only be run from commands text box!')
-                }
-            }
-            'Run'{
-                If($TabController.SelectedTab.Text -match 'Commands'){
-                    GO
-                }
-                Else{
-                    [System.Console]::WriteLine('Can only be run from commands text box!')
-                }
-            }
+            'Run Selection'{GO -SelectionRun}
+            'Run'{GO}
         }
     }
 }
@@ -1093,10 +1107,12 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
             $PH = $_.TrimStart(' ').TrimStart($Tab)
 
             If($PH -match '^<\\\\#'){$Commented = $True}
-            If($PH -match '^\\\\#' -OR $Commented){'G,'+$Count}
             If($PH -match '^\\\\#>'){$Commented = $False}
 
-            If(!$Commented){
+            If($PH -match '^\\\\#' -OR $Commented){
+                'G,'+$Count
+            }
+            ElseIf(!$Commented){
                 If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
                     'B,'+$Count
                 }
@@ -1151,7 +1167,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
             $TempSelectionIndex = $MainObj.GetFirstCharIndexFromLine($Start)
             $TempSelectionLength = $MainObj.SelectionLength
 
-            If($_.Shift -AND ($MainObj.SelectedText -contains ($Tab))){
+            If($_.Shift -AND ($MainObj.SelectedText -match ($Tab))){
                 $TempLines = $MainObj.Lines
                 $Start..($End - 1) | %{
                     If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1){
@@ -1539,7 +1555,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                         $Form.Text = ('Pickle')
                     }
 
-                    (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -recurse -Force
+                    (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -Recurse -Force
                     $SavedProfiles.Items.Clear()
                     [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
 
@@ -1630,9 +1646,9 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 })
                 $GetVars.Parent = $TabPageDebug
 
-                $ClearVars = [GUI.B]::New(110, 25, 160, 160, 'Clear Vars')
-                $ClearVars.Add_Click({$VarsHash = @{}})
-                $ClearVars.Parent = $TabPageDebug
+                #$ClearVars = [GUI.B]::New(110, 25, 160, 160, 'Clear Vars')
+                #$ClearVars.Add_Click({$VarsHash = @{}})
+                #$ClearVars.Parent = $TabPageDebug
 
                 $ClearCons = [GUI.B]::New(260, 25, 10, 195, 'Clear Console')
                 $ClearCons.Add_Click({Cls})
@@ -1668,10 +1684,10 @@ $GOSel.Parent = $Form
 $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
-    $GO.Location                       = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
-    $GO.Size                           = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
-    $GOSel.Location                    = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
-    $GOSel.Size                        = [GUI.SP]::SI($GO.Width,25)
+    $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
+    $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
+    $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
+    $GOSel.Size                 = [GUI.SP]::SI($GO.Width,25)
 })
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
