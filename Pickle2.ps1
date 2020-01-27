@@ -82,10 +82,6 @@ namespace GUI{
         public TC (){}
         public TC (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
     }
-    public class CB : SWF.ComboBox{
-        public CB (){}
-        public CB (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
     public class P : SWF.Panel{
         public P (){}
         public P (int sx, int sy, int lx, int ly)              {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
@@ -1403,7 +1399,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $SavedProfilesLabel = [GUI.L]::New(120, 20, 10, 36, 'Saved Profiles:')
                 $SavedProfilesLabel.Parent = $TabPageProfiles
 
-                $SavedProfiles = [GUI.CB]::New(250, 25, 10, 60)
+                $SavedProfiles = [GUI.CoB]::New(250, 25, 10, 60)
                 $SavedProfiles.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
                 [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
                 $SavedProfiles.Parent = $TabPageProfiles
@@ -1613,11 +1609,13 @@ $TabController.Add_SelectedIndexChanged({
 $TabController.Parent = $Form
 
 $GO = [GUI.B]::New(200, 25, 25, 415, 'Run')
-$GO.Add_Click({GO})
+$GO.Add_Click({If(!$WhatIfCheck.Checked){GO}Else{GO -WhatIf}})
 $GO.Parent = $Form
-$GOSel = [GUI.B]::New(200, 25, 230, 415, 'Run Selection')
-$GOSel.Add_Click({GO -Selection})
+$GOSel = [GUI.B]::New(125, 25, 230, 415, 'Run Selection')
+$GOSel.Add_Click({If(!$WhatIfCheck.Checked){GO -Selection}Else{GO -Selection -WhatIf}})
 $GOSel.Parent = $Form
+$WhatIfCheck = [GUI.ChB]::New(75,25,360,415,'WhatIf?')
+$WhatIfCheck.Parent = $Form
 
 $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
@@ -1625,7 +1623,8 @@ $Form.Add_SizeChanged({
     $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
     $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
     $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
-    $GOSel.Size                 = [GUI.SP]::SI($GO.Width,25)
+    $GOSel.Size                 = [GUI.SP]::SI(($GO.Width-75),25)
+    $WhatIfCheck.Location       = [GUI.SP]::PO(($This.Width-110),(([Int]$This.Height)-85))
 })
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
