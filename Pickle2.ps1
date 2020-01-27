@@ -381,45 +381,19 @@ Function Interpret{
             $Output = ''
 
             Switch($Operator){
-                'ADD'{
-                    $Output = ([Double]$Operands[0] + [Double]$Operands[1])
-                }
-                'SUB'{
-                    $Output = ([Double]$Operands[0] - [Double]$Operands[1])
-                }
-                'MUL'{
-                    $Output = ([Double]$Operands[0] * [Double]$Operands[1])
-                }
-                'DIV'{
-                    $Output = ([Double]$Operands[0] / [Double]$Operands[1])
-                }
-                'POW'{
-                    $Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])
-                }
-                'MOD'{
-                    $Output = ([Double]$Operands[0] % [Double]$Operands[1])
-                }
-                'SIN'{
-                    $Output = [Math]::Sin([Double]$Operands[0])
-                }
-                'COS'{
-                    $Output = [Math]::Cos([Double]$Operands[0])
-                }
-                'TAN'{
-                    $Output = [Math]::Tan([Double]$Operands[0])
-                }
-                'FLR'{
-                    $Output = [Math]::Floor([Double]$Operands[0])
-                }
-                'CEI'{
-                    $Output = [Math]::Ceiling([Double]$Operands[0])
-                }
-                'LEN'{
-                    $Output = $Operands[0].Length
-                }
-                'CNT'{
-                    $Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count
-                }
+                'ADD'{$Output = ([Double]$Operands[0] + [Double]$Operands[1])}
+                'SUB'{$Output = ([Double]$Operands[0] - [Double]$Operands[1])}
+                'MUL'{$Output = ([Double]$Operands[0] * [Double]$Operands[1])}
+                'DIV'{$Output = ([Double]$Operands[0] / [Double]$Operands[1])}
+                'POW'{$Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])}
+                'MOD'{$Output = ([Double]$Operands[0] % [Double]$Operands[1])}
+                'SIN'{$Output = [Math]::Sin([Double]$Operands[0])}
+                'COS'{$Output = [Math]::Cos([Double]$Operands[0])}
+                'TAN'{$Output = [Math]::Tan([Double]$Operands[0])}
+                'FLR'{$Output = [Math]::Floor([Double]$Operands[0])}
+                'CEI'{$Output = [Math]::Ceiling([Double]$Operands[0])}
+                'LEN'{$Output = $Operands[0].Length}
+                'CNT'{$Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count}
                 'APP'{
                     If($Operands.Count -gt 2){
                         $Output = [String]($Operands[0..($Operands.Count - 2)] -join ',')+[String]$Operands[-1]
@@ -1646,21 +1620,6 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 })
                 $GetFuncts.Parent = $TabPageDebug
 
-                $GetStates = [GUI.B]::New(110, 25, 160, 125, 'Get States')
-                $GetStates.Add_Click({
-                    $IfElHash.Keys | ?{$IfElHash.$_ -eq ($_+'_NAME')} | %{
-                        $PH = $_
-                        $PH = [String[]]($IfElHash.Keys | ?{$_ -match $PH} | Sort)
-                        $PH = $(If($PH -contains ($_+'NUMERIC')){$PH[0,4,1,5,6,2,3]}Else{$PH[0,3,1,4,5,2]})
-                        
-                        [System.Console]::WriteLine(($_+$NL+'-------------------------'))
-                        [System.Console]::WriteLine(('If('+$IfElHash.($PH[1])+' -'+$IfElHash.($PH[2])+' '+$IfElHash.($PH[3])+')'))
-                        [System.Console]::WriteLine(('{'+$NL+(($IfElHash.($PH[4]).Split($NL) | ?{$_ -ne ''} | %{$Tab+$_}) -join $NL)+$NL+'}'+$NL+'Else'))
-                        [System.Console]::WriteLine(('{'+$NL+(($IfElHash.($PH[5]).Split($NL) | ?{$_ -ne ''} | %{$Tab+$_}) -join $NL)+$NL+'}'+$NL))
-                    }
-                })
-                $GetStates.Parent = $TabPageDebug
-
                 $GetVars = [GUI.B]::New(110, 25, 10, 160, 'Get Vars')
                 $GetVars.Add_Click({
                     $VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
@@ -1715,66 +1674,16 @@ $Form.Add_SizeChanged({
     $GOSel.Size                        = [GUI.SP]::SI($GO.Width,25)
 })
 
-$RightClickMenu = [GUI.P]::New(135,310,100,100)
-    $RClickCopy = [GUI.B]::New(125,25,5,5,'Copy')
-    $RClickCopy.Add_Click({Handle-RMenuClick $This})
-    $RClickCopy.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickCopy.Parent = $RightClickMenu
-    
-    $RClickPaste = [GUI.B]::New(125,25,5,30,'Paste')
-    $RClickPaste.Add_Click({Handle-RMenuClick $This})
-    $RClickPaste.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickPaste.Parent = $RightClickMenu
-
-    $RClickSelect = [GUI.B]::New(125,25,5,55,'Select All')
-    $RClickSelect.Add_Click({Handle-RMenuClick $This})
-    $RClickSelect.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickSelect.Parent = $RightClickMenu
-    
-    $RClickSelectLine = [GUI.B]::New(125,25,5,80,'Select Line')
-    $RClickSelectLine.Add_Click({Handle-RMenuClick $This})
-    $RClickSelectLine.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickSelectLine.Parent = $RightClickMenu
-
-    $RClickSyntax = [GUI.B]::New(125,25,5,105,'Highlight Syntax')
-    $RClickSyntax.Add_Click({Handle-RMenuClick $This})
-    $RClickSyntax.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickSyntax.Parent = $RightClickMenu
-
-    $RClickWhatIfSelect = [GUI.B]::New(125,25,5,130,'WhatIf Selection')
-    $RClickWhatIfSelect.Add_Click({Handle-RMenuClick $This})
-    $RClickWhatIfSelect.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickWhatIfSelect.Parent = $RightClickMenu
-
-    $RClickWhatIf = [GUI.B]::New(125,25,5,155,'WhatIf')
-    $RClickWhatIf.Add_Click({Handle-RMenuClick $This})
-    $RClickWhatIf.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickWhatIf.Parent = $RightClickMenu
-
-    $RClickGoTop = [GUI.B]::New(125,25,5,180,'Goto Top')
-    $RClickGoTop.Add_Click({Handle-RMenuClick $This})
-    $RClickGoTop.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickGoTop.Parent = $RightClickMenu
-
-    $RClickGoBot = [GUI.B]::New(125,25,5,205,'Goto Bottom')
-    $RClickGoBot.Add_Click({Handle-RMenuClick $This})
-    $RClickGoBot.Add_MouseLeave({Handle-RMenuExit $This})
-    $RClickGoBot.Parent = $RightClickMenu
-
-    $FindReplace = [GUI.B]::New(125,25,5,230,'Find/Replace')
-    $FindReplace.Add_Click({Handle-RMenuClick $This})
-    $FindReplace.Add_MouseLeave({Handle-RMenuExit $This})
-    $FindReplace.Parent = $RightClickMenu
-
-    $RunSelection = [GUI.B]::New(125,25,5,255,'Run Selection')
-    $RunSelection.Add_Click({Handle-RMenuClick $This})
-    $RunSelection.Add_MouseLeave({Handle-RMenuExit $This})
-    $RunSelection.Parent = $RightClickMenu
-
-    $Run = [GUI.B]::New(125,25,5,280,'Run')
-    $Run.Add_Click({Handle-RMenuClick $This})
-    $Run.Add_MouseLeave({Handle-RMenuExit $This})
-    $Run.Parent = $RightClickMenu
+$RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
+    $RClickMenuArr = (('Copy','Paste','Select All','Select Line','Highlight Syntax','WhatIf Selection','WhatIf','Goto Top','Goto Bottom','Find/Replace','Run Selection','Run') | %{$Index = 0}{
+        $PH = [GUI.B]::New(125,25,5,(5+(25*$Index)),$_)
+        $PH.Add_Click({Handle-RMenuClick $This})
+        $PH.Add_MouseLeave({Handle-RMenuExit $This})
+        $PH.Parent = $RightClickMenu
+        $PH
+        $Index++
+    })
+$RightClickMenu.Size = [GUI.SP]::SI(135,(10+($Index*25)))
 $RightClickMenu.Visible = $False
 $RightClickMenu.Add_MouseLeave({Handle-RMenuExit $This})
 $RightClickMenu.Parent = $Form
