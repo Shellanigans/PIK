@@ -1487,7 +1487,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
 
                         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                        $ScratchBox.Text | Out-File ($TempDir+'\scratch.txt') -Width 10000 -Force
+                        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
                         $SaveAsProfText.Text = ''
                     }
@@ -1518,7 +1518,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
 
                     $Commands.Text = ''
                     $FunctionsBox.Text = ''
-                    $StatementsBox.Text = ''
+                    $ScratchBox.Text = ''
 
                     $Form.Text = ('Pickle')
                 })
@@ -1539,8 +1539,7 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
 
                         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                        $StatementsBox.Text | Out-File ($TempDir+'\Statements.txt') -Width 10000 -Force
-                        $ScratchBox.Text | Out-File ($TempDir+'\scratch.txt') -Width 10000 -Force
+                        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
                         $SavedProfiles.Items.Clear()
                         [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
