@@ -44,7 +44,6 @@ namespace Cons{
         public extern static bool MoveWindow(IntPtr handle, int x, int y, int width, int height, bool redraw);
         [DllImport("User32.dll")]
         public extern static bool SetWindowText(IntPtr handle, string text);
-        
         [DllImport("User32.dll")]
         public extern static int GetWindowText(IntPtr handle, StringBuilder text, int length);
         [DllImport("User32.dll")]
@@ -474,9 +473,6 @@ Function Interpret{
         }
 
         $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
-            #[System.Console]::WriteLine($Tab+'POTENTIAL BAD LOGIC, NULL VALUE FOUND AFTER PARSING.')
-            #[System.Console]::WriteLine($Tab+'THIS IS NOT INHERENTLY BAD AND MAY BE INTENDED.')
-
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
 
             $VarsHash.Remove($PHName)
@@ -541,11 +537,6 @@ Function Actions{
                     'NOT'      {If($Op2 -eq 'FALSE')                       {$Script:IfEl = $True}}
                     default    {If($X -eq 'TRUE')                          {$Script:IfEl = $True}}
                 }
-
-                #If($OP1 -eq $Null){$OP1 = '(NULL)'}
-                #If($OP2 -eq $Null){$OP2 = '(NULL)'}
-                #If($OP1 -eq ''){$OP1 = '(EMPTY STRING)'}
-                #If($OP2 -eq ''){$OP2 = '(EMPTY STRING)'}
 
                 [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
                 [System.Console]::WriteLine($Tab + 'EVALUATION: ' + $Script:IfEl.ToString().ToUpper() + $NL)
@@ -1341,55 +1332,6 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $PixColorBox.Parent = $TabPageHelper
 
-                $SpawnClicker = [GUI.B]::New(260, 25, 10, 285, 'Spawn Click Helper')
-                $SpawnClicker.Add_Click({
-                    $Pow = [Powershell]::Create()
-                    $Run = [RunspaceFactory]::CreateRunspace()
-                    $Run.Open()
-                    $Pow.Runspace = $Run
-                    $Pow.AddScript({
-                        Param($ClickHelperParent)
-                        
-                        Add-Type -AssemblyName System.Windows.Forms,System.Drawing
-
-                        $Temp = [DateTime]::UtcNow.Ticks
-
-                        $TempForm = [System.Windows.Forms.Form]::New()
-                        $TempForm.Size = [System.Drawing.Size]::New(150,25)
-                        $TempForm.FormBorderStyle = 'None'
-                        $TempForm.Add_DoubleClick({$This.Close();$ClickHelperParent.Remove($Temp)})
-
-                        $TempName = [System.Windows.Forms.TextBox]::New()
-                        #$TempName.ReadOnly = $True
-                        $TempName.Location = [System.Drawing.Point]::New(0,9)
-                        $TempName.Size = [System.Drawing.Size]::New(130,20)
-                        $TempName.Text = $Temp
-                        $TempName.Add_TextChanged({
-                            If(!($ClickHelperParent.Keys -contains ($This.Text))){
-                                $ClickHelperParent.Add($Temp,[String]$This.Parent.Location.X+','+[String]$This.Parent.Location.Y)
-                            }
-                        })
-                        $TempName.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
-                        $TempName.Parent = $TempForm
-                        
-                        $TempTarget = [System.Windows.Forms.Label]::New()
-                        $TempTarget.Location = [System.Drawing.Point]::New(130,12)
-                        $TempTarget.Size = [System.Drawing.Size]::New(20,20)
-                        $TempTarget.Text = ' +'
-                        $TempTarget.Add_DoubleClick({$TempForm.Close();$ClickHelperParent.Remove($Temp)})
-                        $TempTarget.Parent = $TempForm
-
-                        $ClickHelperParent.Add($Temp,[String]$TempForm.Parent.Location.X+','+[String]$TempForm.Parent.Location.Y)
-                        
-                        If($TempForm.ShowDialog() -eq 'Cancel'){$ClickHelperParent.Remove($Temp);$TempForm.Dispose()}
-
-                    }) | Out-Null
-                    $Pow.AddParameter('ClickHelperParent', $ClickHelperParent) | Out-Null
-                    $Pow.BeginInvoke() | Out-Null
-
-                })
-                $SpawnClicker.Parent = $TabPageHelper
-
                 $Help = [GUI.B]::New(260, 25, 10, 315, 'About/Help')
                 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
                 $Help.Parent = $TabPageHelper
@@ -1646,10 +1588,6 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 })
                 $GetVars.Parent = $TabPageDebug
 
-                #$ClearVars = [GUI.B]::New(110, 25, 160, 160, 'Clear Vars')
-                #$ClearVars.Add_Click({$VarsHash = @{}})
-                #$ClearVars.Parent = $TabPageDebug
-
                 $ClearCons = [GUI.B]::New(260, 25, 10, 195, 'Clear Console')
                 $ClearCons.Add_Click({Cls})
                 $ClearCons.Parent = $TabPageDebug
@@ -1727,7 +1665,7 @@ $Config = ($Config | Select `
 
 Try{
     Try{
-        $LoadedConfig = (Get-Content -RAW ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-Json)
+        $LoadedConfig = (Get-Content -RAW ($env:APPDATA+'\Macro\_Config_.json') -ErrorAction Stop | ConvertFrom-JSON)
     }Catch{
         $LoadedConfig = (Get-Content -Raw ($env:APPDATA+'\Macro\_Config_.csv') -ErrorAction Stop | ConvertFrom-CSV)
     }
@@ -1836,7 +1774,7 @@ If(!$CommandLine){
     $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
 
     Try{
-        $Config | ConvertTo-Json | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
+        $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
     }Catch{
         $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
     }
