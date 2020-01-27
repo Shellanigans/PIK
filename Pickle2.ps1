@@ -20,8 +20,10 @@ using System.Text;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
+
 namespace Cons{
     public class MouseEvnt{
         [DllImport("user32.dll")]
@@ -69,6 +71,7 @@ namespace Cons{
         public static void Keys (string Keys)  {SWF.SendKeys.SendWait(Keys);}
     }
 }
+
 namespace GUI{
     public class SP{
         public static DR.Point PO (int sx, int sy) {return (new DR.Point(sx, sy));}
@@ -141,6 +144,7 @@ namespace GUI{
         }
     }
 }
+
 public class Parser{
     public static string HoldKeys(string X){
         X = X.ToUpper();
@@ -343,7 +347,12 @@ Function Interpret{
         }
 
         $PHSplitX | ?{$_ -match 'READIN \S+'} | %{
-            $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
+            If($CommandLine -OR ($X -match '{READIN -C')){
+                $PH = $_.Substring(9)
+            }Else{
+                $PH = [Microsoft.VisualBasic.Interaction]::InputBox(($_.Substring(7)),'READIN')
+            }
+
             $X = ($X.Replace(('{'+$_+'}'),($PH)))
             [System.Console]::WriteLine($X)
         }
@@ -997,7 +1006,7 @@ Function Handle-RMenuClick($MainObj){
                     $Finder.Parent = $FindForm
                     $Replacer = [GUI.TB]::New(200,25,25,50,'')
                     $Replacer.Parent = $FindForm
-                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace')
+                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace All')
                         $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
                     $FRGO.Parent = $FindForm
                     $FRClose = [GUI.B]::New(75,25,150,75,'Close')
