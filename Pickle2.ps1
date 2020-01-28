@@ -8,9 +8,9 @@
              ###  #    #  #    #    #  #    #  ######  #  ######  ######      #             #####     # #   
 ############################################################################################################################################################################################################################################################################################################                                                                                                
 
-Param([String]$Macro = $Null)
+Param([String]$Macro = $Null,[String]$CLICMD = '')
 
-Remove-Variable * -Exclude Macro -EA SilentlyContinue
+Remove-Variable * -Exclude Macro,CLICMD -EA SilentlyContinue
 
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition @'
@@ -733,7 +733,7 @@ Function Actions{
                     $Graphics.Dispose()
                     $BMP.Dispose()
                 }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') AND BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
+                    [System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') TO BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
                 }
             }ElseIf($FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
                 $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
@@ -861,7 +861,7 @@ Function Actions{
     }
 }
 
-Function GO ([Switch]$SelectionRun,[Switch]$WhatIf){
+Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     [System.Console]::WriteLine('Initializing:')
     [System.Console]::WriteLine('------------------------------'+$NL)
 
@@ -880,7 +880,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf){
 
     $Form.Refresh()
 
-    If($FunctionsBox.Text -replace '\s*'){
+    If($FunctionsBox.Text -replace '\s*' -AND !$InlineCommand){
         [System.Console]::WriteLine($Tab+'Parsing Functions:')
         [System.Console]::WriteLine($Tab+'-------------------'+$NL)
 
@@ -915,8 +915,18 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf){
             [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
 
             $SyncHash.Restart = $False
-        
-            ($(If($SelectionRun){$Commands.SelectedText}Else{$Commands.Text}) -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
+            
+            If($InlineCommand){
+                $PHText = $InlineCommand
+            }Else{
+                If($SelectionRun){
+                    $PHText = $Commands.SelectedText
+                }Else{
+                    $PHText = $Commands.Text
+                }
+            }
+
+            ($PHText -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
@@ -924,21 +934,23 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf){
             } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
         }While($SyncHash.Restart)
 
-        $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-        $SyncHash.Stop = $False
-    
-        $Commands.ReadOnly     = $False
-        $FunctionsBox.ReadOnly = $False
+            $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+            $SyncHash.Stop = $False
 
-        [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+        If(!$CommandLine){    
+            $Commands.ReadOnly     = $False
+            $FunctionsBox.ReadOnly = $False
 
-        [System.Console]::WriteLine('Complete!'+$NL)
+            [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
 
-        $Form.Refresh()
+            [System.Console]::WriteLine('Complete!'+$NL)
 
-        If($Script:Refocus){
-            $Form.Activate()
-            $Commands.Focus()
+            $Form.Refresh()
+
+            If($Script:Refocus){
+                $Form.Activate()
+                $Commands.Focus()
+            }
         }
     })
 
@@ -981,6 +993,7 @@ Function Handle-RMenuClick($MainObj){
     {
         'Commands'{$Commands}
         'Functions'{$FunctionsBox}
+        'ScratchPad'{$ScratchBox}
     }) | %{
         $PHObj = $_
         $PHObj.Focus()
@@ -995,6 +1008,8 @@ Function Handle-RMenuClick($MainObj){
                 $PHObj.SelectionLength = $PHObj.Lines[$PHObj.GetLineFromCharIndex($PHObj.SelectionStart)].Length
             }
             'Highlight Syntax'{Handle-TextBoxKey -KeyCode 'F10' -MainObj $PHObj -BoxType $TabController.SelectedTab.Text}
+            'Undo'{$PHObj.Undo()}
+            'Redo'{$PHObj.Redo()}
             'WhatIf Selection'{GO -SelectionRun -WhatIf}
             'WhatIf'{GO -WhatIf}
             'Goto Top'{$PHObj.SelectionStart = 0}
@@ -1016,8 +1031,8 @@ Function Handle-RMenuClick($MainObj){
                 $FindForm.BringToFront()
                 $Form.Refresh()
             }
-            'Run Selection'{GO -SelectionRun}
-            'Run'{GO}
+            'Run Selection'{If($TabController.SelectedTab.Text -ne 'Commands'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO -SelectionRun}}
+            'Run'{If($TabController.SelectedTab.Text -ne 'Commands'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO}}
         }
     }
 }
@@ -1391,6 +1406,13 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 }
                 $This.Text | Out-File ($env:APPDATA+'\Macro\Scratch.txt') -Width 1000 -Force
             })
+            $ScratchBox.Add_MouseDown({
+                    If([String]$_.Button -eq 'Right'){
+                        $RightClickMenu.Visible = $True
+                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $RightClickMenu.BringToFront()
+                    }
+                })
             $ScratchBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Scratch.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
             $ScratchBox.Dock = 'Fill'
             $ScratchBox.Parent = $TabPageScratchMain
@@ -1637,15 +1659,15 @@ $Form.Add_SizeChanged({
 })
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
-    $RClickMenuArr = (('Copy','Paste','Select All','Select Line','Highlight Syntax','WhatIf Selection','WhatIf','Goto Top','Goto Bottom','Find/Replace','Run Selection','Run') | %{$Index = 0}{
-        $PH = [GUI.B]::New(125,25,5,(5+(25*$Index)),$_)
+    $RClickMenuArr = (('Copy','Paste','Select All','Select Line','Highlight Syntax','Undo','Redo','WhatIf Selection','WhatIf','Goto Top','Goto Bottom','Find/Replace','Run Selection','Run') | %{$Index = 0}{
+        $PH = [GUI.B]::New(125,20,5,(5+(20*$Index)),$_)
         $PH.Add_Click({Handle-RMenuClick $This})
         $PH.Add_MouseLeave({Handle-RMenuExit $This})
         $PH.Parent = $RightClickMenu
         $PH
         $Index++
     })
-$RightClickMenu.Size = [GUI.SP]::SI(135,(10+($Index*25)))
+$RightClickMenu.Size = [GUI.SP]::SI(135,(10+($Index*20)))
 $RightClickMenu.Visible = $False
 $RightClickMenu.Add_MouseLeave({Handle-RMenuExit $This})
 $RightClickMenu.Parent = $Form
@@ -1697,7 +1719,7 @@ Try{
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
 
-    If($LoadedConfig.PrevProfile -OR $Macro){
+    If($LoadedConfig.PrevProfile -OR $Macro -OR $CLICMD){
         If($Macro){
             If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$Macro)){
                 $Profile.Text = ('Working Profile: ' + $Macro)
@@ -1707,6 +1729,8 @@ Try{
                 [System.Console]::WriteLine('No macro by that name!')
             }
 
+            $CommandLine = $True
+        }ElseIf($CLICMD){
             $CommandLine = $True
         }Else{
             $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
@@ -1728,7 +1752,11 @@ Try{
 }
 
 If($CommandLine){
-    GO
+    If($CLICMD){
+        GO -InlineCommand $CLICMD
+    }Else{
+        GO
+    }
 }Else{
     $Form.Show()
 
