@@ -266,11 +266,26 @@ Function Interpret{
 
     $X = [Parser]::Interpret($X)
 
-    While(($X -match '{VAR ') -OR ($X -match '{MANIP ') -OR ($X -match '{GETCON ') -OR ($X -match '{FINDVAR ') -OR ($X -match '{GETPROC ') -OR ($X -match '{MYPID}') -OR ($X -match '{GETWIND ') -OR ($X -match '{GETWINDTEXT ') -OR ($X -match '{GETFOCUS') -OR ($X -match '{READIN ')){
+    While(
+            ($X -match '{VAR ') -OR `
+            ($X -match '{VAR\+\+ ') -OR `
+            ($X -match '{VAR-- ') -OR `
+            ($X -match '{EVAL ') -OR `
+            ($X -match '{MANIP ') -OR `
+            ($X -match '{GETCON ') -OR `
+            ($X -match '{FINDVAR ') -OR `
+            ($X -match '{GETPROC ') -OR `
+            ($X -match '{MYPID}') -OR `
+            ($X -match '{GETWIND ') -OR `
+            ($X -match '{GETWINDTEXT ') -OR `
+            ($X -match '{GETFOCUS') -OR `
+            ($X -match '{READIN ')
+        ){
         $PHSplitX = $X.Split('{}')
         
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
+            $PHFound = $True
             If($VarsHash.ContainsKey($PH)){
                 $X = $X.Replace(('{'+$_+'}'),($VarsHash.$PH))
             }ElseIf($VarsHash.ContainsKey(($PH+'_ESCAPED'))){
@@ -278,10 +293,11 @@ Function Interpret{
                 $Esc = $True
             }Else{
                 $X = ''
-                [System.Console]::WriteLine($Tab+$PH+' was not found!')
+                $PHFound = $False
+                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
             }
 
-            [System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)
+            If($PHFound){[System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)}
         }
         
         $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
@@ -357,6 +373,100 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
+        $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
+            $_.SubString(5) | %{
+                $PHOut = $_
+                $_.Split('*+-') | %{
+                    If($_ -match '/'){
+                        $PHRegex = $_
+                        $PH = $_.Split('/')
+
+                        $PHTotal = $PH[0]
+                        $PH | Select -Skip 1 | %{$PHTotal = $PHTotal / [Double]$_}
+                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
+                    }
+                }
+                [System.Console]::WriteLine($PHOut)
+                $PHOut
+            } | %{
+                $PHOut = $_
+                $_.Split('+-') | %{
+                    If($_ -match '\*'){
+                        $PHRegex = $_ -replace '\*','\*'
+                        $PH = $_.Split('*')
+                        Try{
+                            $PHTotal = 1
+                            $PH | %{$PHTotal = $PHTotal * [Double]$_}
+                            $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
+                        }Catch{
+                            $PHOut = ($PHOut -replace $PHRegex,([String]$PH[0] * [Int]$PH[1]))
+                        }
+                    }
+                }
+                [System.Console]::WriteLine($PHOut)
+                $PHOut
+            } | %{
+                $PHOut = $_
+                $_.Split('+') | %{
+                    If($_ -match '-'){
+                        $PHRegex = $_
+                        $PH = $_.Split('-')
+
+                        $PHTotal = $PH[0]
+                        $PH | Select -Skip 1 | %{$PHTotal = $PHTotal - [Double]$_}
+                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
+                    }
+                }
+                [System.Console]::WriteLine($PHOut)
+                $PHOut
+            } | %{
+                $PHOut = $_
+                If($_ -match '\+'){
+                    $PHRegex = $_ -replace '\+','\+'
+                    $PH = $_.Split('+')
+                    Try{
+                        $PHTotal = 0
+                        $PH | %{$PHTotal+=[Double]$_}
+                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
+                    }Catch{
+                        $PHOut = ($PHOut -replace $PHRegex,([String]$PH[0] + [String]$PH[1]))
+                    }
+                }
+                [System.Console]::WriteLine($PHOut)
+            }
+
+            $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^VAR\+\+ \S+'} | %{
+            $PH = $_.Split(' ')[1]
+            If($VarsHash.ContainsKey($PH)){
+                Try{
+                    $VarsHash.$PH = ([Double]$VarsHash.$PH + 1)
+                }Catch{
+                    [System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')
+                }
+            }Else{
+                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
+            }
+            $X = ''
+        }
+
+        $PHSplitX | ?{$_ -match '^VAR-- \S+'} | %{
+            $PH = $_.Split(' ')[1]
+            If($VarsHash.ContainsKey($PH)){
+                Try{
+                    $VarsHash.$PH = ([Double]$VarsHash.$PH - 1)
+                }Catch{
+                    [System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')
+                }
+            }Else{
+                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
+            }
+            $X = ''
+        }
+
         $PHSplitX | ?{$_ -match '^MANIP \S+'} | %{
             $PH = ($_.Substring(6))
 
@@ -368,10 +478,6 @@ Function Interpret{
             $Output = ''
 
             Switch($Operator){
-                'ADD'{$Output = ([Double]$Operands[0] + [Double]$Operands[1])}
-                'SUB'{$Output = ([Double]$Operands[0] - [Double]$Operands[1])}
-                'MUL'{$Output = ([Double]$Operands[0] * [Double]$Operands[1])}
-                'DIV'{$Output = ([Double]$Operands[0] / [Double]$Operands[1])}
                 'POW'{$Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])}
                 'MOD'{$Output = ([Double]$Operands[0] % [Double]$Operands[1])}
                 'SIN'{$Output = [Math]::Sin([Double]$Operands[0])}
@@ -507,6 +613,8 @@ Function Actions{
 
             $Comparator = ''
 
+            $PHEsc1 = $False
+            $PHEsc2 = $False
             If($X -match '-'){
                 $Comparator = $X.Split('-')[-1]
                 $Comparator = $Comparator.Split(' ')[0]
@@ -519,9 +627,13 @@ Function Actions{
 
                 [System.Console]::WriteLine('OPERAND2: ' + $Op2)
                 $Op2,$PHEsc2 = (Interpret $Op2)
+
+                [System.Console]::WriteLine('COMPARATOR: ' + $Comparator)
+            }Else{
+                $Op1,$PHEsc1 = (Interpret $X)
+                $Comparator = $Op1
+                $Op2 = ''
             }
-            
-            [System.Console]::WriteLine('COMPARATOR: ' + $Comparator)
 
             If(!$PHEsc1 -AND !$PHEsc2){
                 Switch($Comparator){
@@ -539,11 +651,15 @@ Function Actions{
                     'OR'       {If($Op1 -eq 'TRUE' -OR $Op2 -eq 'TRUE')    {$Script:IfEl = $True}}
                     'NAND'     {If($Op1 -eq 'FALSE' -OR $Op2 -eq 'FALSE')  {$Script:IfEl = $True}}
                     'NOR'      {If($Op1 -eq 'FALSE' -AND $Op2 -eq 'FALSE') {$Script:IfEl = $True}}
-                    'NOT'      {If($Op2 -eq 'FALSE')                       {$Script:IfEl = $True}}
-                    default    {If($X -eq 'TRUE')                          {$Script:IfEl = $True}}
+                    'NOT'      {If(!$Op2 -OR $Op2 -eq 'FALSE')             {$Script:IfEl = $True}}
+                    'TRUE'     {If($Op1 -eq 'TRUE')                        {$Script:IfEl = $True}}
                 }
 
-                [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
+                If($Comparator -eq 'TRUE' -OR $Comparator -eq 'FALSE'){
+                    [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $Comparator + ')}')
+                }Else{
+                    [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
+                }
                 [System.Console]::WriteLine($Tab + 'EVALUATION: ' + $Script:IfEl.ToString().ToUpper() + $NL)
             }
             Else{
