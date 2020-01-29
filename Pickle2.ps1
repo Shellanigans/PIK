@@ -1885,7 +1885,8 @@ If($CommandLine){
 
     $Form.Visible = $False
 
-    [Void]$Form.ShowDialog()
+    #[Void]$Form.ShowDialog()
+    [System.Windows.Forms.Application]::Run($Form)
 }
 
 $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
