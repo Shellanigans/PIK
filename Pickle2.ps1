@@ -376,13 +376,14 @@ Function Interpret{
         $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
             $_.SubString(5) | %{
                 $PHOut = $_
-                $_.Split('*+-') | %{
+                $_.Split('*+') | %{
                     If($_ -match '/'){
                         $PHRegex = $_
                         $PH = $_.Split('/')
 
                         $PHTotal = $PH[0]
-                        $PH | Select -Skip 1 | %{$PHTotal = $PHTotal / [Double]$_}
+                        #$PH | Select -Skip 1 | %{$PHTotal = $PHTotal / [Double]$_}
+                        $PH | Select -Skip 1  | %{$PHTotal = $PHTotal / $(If($_ -match '^-'){[Double]($_.Split('-') | ?{$_ -ne ''} | Select -First 1)*(-1)}Else{[Double]$_})}
                         $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
                     }
                 }
@@ -390,13 +391,13 @@ Function Interpret{
                 $PHOut
             } | %{
                 $PHOut = $_
-                $_.Split('+-') | %{
+                $_.Split('+') | %{
                     If($_ -match '\*'){
                         $PHRegex = $_ -replace '\*','\*'
                         $PH = $_.Split('*')
                         Try{
                             $PHTotal = 1
-                            $PH | %{$PHTotal = $PHTotal * [Double]$_}
+                            $PH | %{$PHTotal = $PHTotal * $(If($_ -match '^-'){[Double]($_.Split('-') | ?{$_ -ne ''} | Select -First 1)*(-1)}Else{[Double]$_})}
                             $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
                         }Catch{
                             $PHOut = ($PHOut -replace $PHRegex,([String]$PH[0] * [Int]$PH[1]))
