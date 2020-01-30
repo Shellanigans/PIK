@@ -374,7 +374,7 @@ Function Interpret{
         }
 
         $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
-            $_.SubString(5) | %{
+            ($_.SubString(5) -replace ' ') | %{
                 $PHOut = $_
                 [System.Console]::WriteLine($PHOut)
                 $PHout.Split('*+') | %{
@@ -387,7 +387,7 @@ Function Interpret{
                             $PHTotal = [Double]$PHOpTmp
                             $PHTotal = $PHTotal*(-1)
                             $PHRegexRemove = ('-' + $PHOpTmp + '$')
-                            $PHRegex = ($PHRegex -replace ($_ -replace $PHRegexRemove))
+                            #$PHRegex = ($PHRegex -replace (($_ -replace '\.','\.') -replace $PHRegexRemove))
                         }Else{
                             $PHTotal = $PH[0]
                         }
@@ -408,7 +408,6 @@ Function Interpret{
                                     }
                                     $PHRegexRemove = ('^' + $PHOpTmp)
                                 }
-                                    
                                 $PHRegex = ($PHRegex -replace ($_ -replace $PHRegexRemove))
                             }Else{$PHDivisor = [Double]$_}
                             $PHTotal = $PHTotal / $PHDivisor
