@@ -268,9 +268,17 @@ Function Interpret{
 
     While(
             ($X -match '{VAR ') -OR `
+            ($X -match '{LEN ') -OR `
+            ($X -match '{POW ') -OR `
+            ($X -match '{SIN ') -OR `
+            ($X -match '{COS ') -OR `
+            ($X -match '{TAN ') -OR `
+            ($X -match '{FLR ') -OR `
+            ($X -match '{CEI ') -OR `
+            ($X -match '{MOD ') -OR `
+            ($X -match '{EVAL ') -OR `
             ($X -match '{VAR\+\+ ') -OR `
             ($X -match '{VAR-- ') -OR `
-            ($X -match '{EVAL ') -OR `
             ($X -match '{MANIP ') -OR `
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
@@ -373,6 +381,72 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
+        $PHSplitX | ?{$_ -match '^LEN \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = $PH.Length
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^POW \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = $PH.Split(',')
+            $PH = [Math]::Pow([Double]$PH[0],[Double]$PH[1])
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^SIN \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = [Math]::Sin([Double]$PH)
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^COS \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = [Math]::Cos([Double]$PH)
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^TAN \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = [Math]::Tan([Double]$PH)
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^FLR \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = [Math]::Floor([Double]$PH)
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^CEI \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = [Math]::Ceiling([Double]$PH)
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match '^MOD \S+'} | %{
+            $PH = $_.Substring(4)
+            $PH = $PH.Split(',')
+            $PH = [Double]$PH[0] % [Double]$PH[1]
+    
+            $X = ($X.Replace(('{'+$_+'}'),$PH))
+            [System.Console]::WriteLine($X)
+        }
+
         $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
             ($_.SubString(5) -replace ' ') | %{
                 #Preparse
@@ -412,7 +486,7 @@ Function Interpret{
                 $PHOut = $_
                 [System.Console]::WriteLine($Tab+$PHOut)
                 $PHOut = $PHOut -replace '-','+-'
-                While($PHOut -match '\+\+'){$PHOOut = $PHOut.Replace('++','+')}
+                While($PHOut -match '\+\+'){$PHOut = $PHOut.Replace('++','+')}
                 $PHOut
             }  | %{
                 #Addition
@@ -473,14 +547,6 @@ Function Interpret{
             $Output = ''
 
             Switch($Operator){
-                'POW'{$Output = [Math]::Pow([Double]$Operands[0],[Double]$Operands[1])}
-                'MOD'{$Output = ([Double]$Operands[0] % [Double]$Operands[1])}
-                'SIN'{$Output = [Math]::Sin([Double]$Operands[0])}
-                'COS'{$Output = [Math]::Cos([Double]$Operands[0])}
-                'TAN'{$Output = [Math]::Tan([Double]$Operands[0])}
-                'FLR'{$Output = [Math]::Floor([Double]$Operands[0])}
-                'CEI'{$Output = [Math]::Ceiling([Double]$Operands[0])}
-                'LEN'{$Output = $Operands[0].Length}
                 'CNT'{$Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count}
                 'APP'{
                     If($Operands.Count -gt 2){
