@@ -375,124 +375,60 @@ Function Interpret{
 
         $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
             ($_.SubString(5) -replace ' ') | %{
+                #Preparse
+                $PHOut = ($_ -replace '\+-','-')
+                [System.Console]::WriteLine($Tab+$PHOut)
+                $PHOut
+            } | %{
+                #Division
                 $PHOut = $_
-                [System.Console]::WriteLine($PHOut)
-                $PHout.Split('*+') | %{
-                    If($_ -match '/'){
-                        $PHRegex = $_
-                        $PH = $_.Split('/')
-
-                        If($PH[0] -match '-'){
-                            $PHOpTmp = ($PH[0].Split('-') | ?{$_ -ne ''} | Select -Last 1)
-                            $PHTotal = [Double]$PHOpTmp
-                            $PHTotal = $PHTotal*(-1)
-                            $PHRegexRemove = ('-' + $PHOpTmp + '$')
-                            #$PHRegex = ($PHRegex -replace (($_ -replace '\.','\.') -replace $PHRegexRemove))
-                        }Else{
-                            $PHTotal = $PH[0]
-                        }
-                        $PH | Select -Skip 1 | %{$FirstOp = $True}{
-                            If($_ -match '-' -AND ($_.Split('-') | ?{$_ -ne ''}).Count -ge 2){
-                                $PHRegexRemove= $_
-                                If($FirstOp){
-                                    $PHOpTmp = ($_.Split('-') | ?{$_ -ne ''} | Select -Last 1)
-                                    $PHDivisor = [Double]$PHOpTmp
-                                    $PHDivisor = $PHDivisor*(-1)
-                                    $PHRegexRemove = ('-' + $PHOpTmp + '$')
-                                }Else{
-                                    $PHOpTmp = ($_.Split('-') | ?{$_ -ne ''} | Select -First 1)
-                                    $PHDivisor = [Double]$PHOpTmp
-                                    If($_ -match '^\s*-'){
-                                        $PHDivisor = $PHDivisor*(-1)
-                                        $PHRegexRemove = ('-' + $PHOpTmp)
-                                    }
-                                    $PHRegexRemove = ('^' + $PHOpTmp)
-                                }
-                                $PHRegex = ($PHRegex -replace ($_ -replace $PHRegexRemove))
-                            }Else{$PHDivisor = [Double]$_}
-                            $PHTotal = $PHTotal / $PHDivisor
-                            $FirstOp = $False
-                        }
-                        If($PHTotal -gt 0){$PHTotal = ('+' + $PHTotal)}
-                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
+                [System.Console]::WriteLine($Tab+$PHOut)
+                While($PHOut -match '/'){
+                    (($_ -replace '-','+-' -replace '\*','+*' -replace '/\+','/').Split('+') | ?{$_ -match '/' -AND $_ -ne ''}) | Select -Unique | %{
+                        $PHArr =  $_.Split('/')
+                        $PHTotal = [Double]$PHArr[0]
+                        $PHArr | Select -Skip 1 | %{$PHTotal = $PHTotal / [Double]$_}
+                        If($PHTotal -ge 0){$PHTotal = '+' + $PHTotal}
+                        $PHOut = $PHOut.Replace($_,$PHTotal)
                     }
                 }
                 $PHOut
             } | %{
-                $PHOut = $_
-                $PHOut = $PHOut -replace '\*\+','*'
-                $PHOut = $PHOut -replace '/+','/'
-                Do{$PHOut = $PHOut -replace '\+\+','+'}While($PHOut -match '\+\+')
-                [System.Console]::WriteLine($PHOut)
-                $PHOut.Split('+') | %{
-                    If($_ -match '\*'){
-                        $PHRegex = $_ -replace '\*','\*'
-                        $PH = $_.Split('*')
-                        Try{
-                            $PHTotal = 1
-                            $PH | %{$FirstOp = $True}{
-                                If($_ -match '-' -AND ($_.Split('-') | ?{$_ -ne ''}).Count -ge 2){
-                                    $PHRegexRemove= $_
-                                    If($FirstOp){
-                                        $PHOpTmp = ($_.Split('-') | ?{$_ -ne ''} | Select -Last 1)
-                                        $PHMultiplicand = [Double]$PHOpTmp
-                                        $PHMultiplicand = $PHMultiplicand*(-1)
-                                        $PHRegexRemove = ('-' + $PHOpTmp + '$')
-                                    }Else{
-                                        $PHOpTmp = ($_.Split('-') | ?{$_ -ne ''} | Select -First 1)
-                                        $PHMultiplicand = [Double]$PHOpTmp
-                                        If($_ -match '^\s*-'){
-                                            $PHMultiplicand = $PHMultiplicand*(-1)
-                                            $PHRegexRemove = ('-' + $PHOpTmp)
-                                        }
-                                        $PHRegexRemove = ('^' + $PHOpTmp)
-                                    }
-                                    
-                                    $PHRegex = ($PHRegex -replace ($_ -replace $PHRegexRemove))
-                                }Else{$PHMultiplicand = [Double]$_}
-                                $PHTotal = $PHTotal * $PHMultiplicand
-                                $FirstOp = $False
-                            }
-                            If($PHTotal -gt 0){$PHTotal = ('+' + $PHTotal)}
-                            $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
-                        }Catch{
-                            $PHOut = ($PHOut -replace $PHRegex,([String]$PH[0] * [Int]$PH[1]))
-                        }
+                #Multiplication
+                $PHOut = $_ -replace '\*\+','*'
+                [System.Console]::WriteLine($Tab+$PHOut)
+                While($PHOut -match '\*'){
+                    (($_ -replace '-','+-' -replace '\*\+','*').Split('+') | ?{$_ -match '\*' -AND $_ -ne ''}) | Select -Unique | %{
+                        $PHArr =  $_.Split('*')
+                        $PHTotal = 1
+                        $PHArr | %{$PHTotal = $PHTotal * [Double]$_}
+                        If($PHTotal -ge 0){$PHTotal = '+' + $PHTotal}
+                        $PHOut = $PHOut.Replace($_,$PHTotal)
                     }
                 }
                 $PHOut
-            } | %{
+            }  | %{
+                #Subtraction
                 $PHOut = $_
-                Do{$PHOut = $PHOut -replace '\+\+','+'}While($PHOut -match '\+\+')
-                [System.Console]::WriteLine($PHOut)
-                $PHout.Split('+') | %{
-                    If($_ -match '-'){
-                        $PHRegex = $_
-                        $PH = $_.Split('-')
-
-                        $PHTotal = $PH[0]
-                        $PH | Select -Skip 1 | %{$PHTotal = $PHTotal - [Double]$_}
-                        If($PHTotal -gt 0){$PHTotal = ('+' + $PHTotal)}
-                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
-                    }
-                }
+                [System.Console]::WriteLine($Tab+$PHOut)
+                $PHOut = $PHOut -replace '-','+-'
+                While($PHOut -match '\+\+'){$PHOOut = $PHOut.Replace('++','+')}
                 $PHOut
-            } | %{
+            }  | %{
+                #Addition
                 $PHOut = $_
-                [System.Console]::WriteLine($PHOut)
-                If($_ -match '\+'){
-                    $PHRegex = $_ -replace '\+','\+'
-                    $PH = $_.Split('+')
-                    Try{
-                        $PHTotal = 0
-                        $PH | %{$PHTotal+=[Double]$_}
-                        $PHOut = ($PHOut -replace $PHRegex,$PHTotal)
-                    }Catch{
-                        $PHOut = ($PHOut -replace $PHRegex,([String]$PH[0] + [String]$PH[1]))
+                [System.Console]::WriteLine($Tab+$PHOut)
+                $PHTotal = 0
+                While($PHOut -match '\+'){
+                    ($_.Split('+') | ?{$_ -ne ''}) | %{
+                        $PHTotal = $PHTotal + [Double]$_
                     }
+                    If($PHTotal -ge 0){$PHTotal = '+' + $PHTotal}
+                    $PHOut = $PHOut.Replace($_,$PHTotal)
                 }
-                [System.Console]::WriteLine($PHOut)
             }
+
+            [System.Console]::WriteLine($Tab+$PHOut)
 
             $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
             [System.Console]::WriteLine($X)
