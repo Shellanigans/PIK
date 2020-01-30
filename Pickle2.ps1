@@ -497,7 +497,6 @@ Function Interpret{
                     ($_.Split('+') | ?{$_ -ne ''}) | %{
                         $PHTotal = $PHTotal + [Double]$_
                     }
-                    If($PHTotal -ge 0){$PHTotal = '+' + $PHTotal}
                     $PHOut = $PHOut.Replace($_,$PHTotal)
                 }
             }
