@@ -201,7 +201,7 @@ public class Parser{
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
             }
-            if(Regex.IsMatch(X, "{MYPID}")){
+            if(Regex.IsMatch(X, "{PID}")){
                 X = (X.Replace("{MYPID}",(Process.GetCurrentProcess().Id.ToString())));
             }
             if(Regex.IsMatch(X, "{WHOAMI}")){
@@ -265,9 +265,11 @@ Function Interpret{
     Param([String]$X)
 
     $X = [Parser]::Interpret($X)
+    $DepthOverflow = 0
 
     While(
-            ($X -match '{VAR ') -OR `
+            $DepthOverflow -lt 500 -AND `
+            (($X -match '{VAR ') -OR `
             ($X -match '{LEN ') -OR `
             ($X -match '{POW ') -OR `
             ($X -match '{SIN ') -OR `
@@ -283,11 +285,10 @@ Function Interpret{
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
             ($X -match '{GETPROC ') -OR `
-            ($X -match '{MYPID}') -OR `
             ($X -match '{GETWIND ') -OR `
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
-            ($X -match '{READIN ')
+            ($X -match '{READIN '))
         ){
         $PHSplitX = $X.Split('{}')
         
@@ -579,7 +580,7 @@ Function Interpret{
                     $Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{$VarsHash.$_}) -join $Operands[1]
                 }
                 'SPL'{
-                    ($VarsHash.($Operands[0])).ToString().Split($Operands[1]) | %{$Count = 0}{
+                    ($VarsHash.($Operands[0])).ToString().Split($Operands[-1]) | %{$Count = 0}{
                         $VarsHash.Remove(([String]$Count+'_'+$Operands[0]))
                         $VarsHash.Add(([String]$Count+'_'+$Operands[0]),$(If($_ -eq $Null){''}Else{$_}))
                         $Count++
@@ -651,7 +652,11 @@ Function Interpret{
 
             $X = $X.Replace('{'+$_,'')
         }
+
+        $DepthOverflow++
     }
+
+    If($DepthOverflow -ge 500){[System.Console]::WriteLine($Tab+'OVERFLOW DEPTH REACHED! POSSIBLE INFINITE LOOP!')}
 
     Return $X,$Esc
 }
@@ -750,15 +755,12 @@ Function Actions{
 
             If($X -match '^{POWER .*}$'){
                 If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
-            }
-
-        
-            If($X -match '^{GOTO'){
-                $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
+            }ElseIf($X -match '^{GOTO'){
+                $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ' -replace ' ')
                 $Commands.Lines | %{$FoundLabel = $False}{
                     If($FoundLabel){
                         If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}
-                    }ElseIf($_.Trim(' ') -eq (':::'+$X)){
+                    }ElseIf(($_ -replace ' ') -eq (':::'+$X)){
                         $FoundLabel = $True
                     }
                 }
@@ -1004,7 +1006,7 @@ Function Actions{
                     }
                     Catch{
                         If(!$Escaped){
-                            [System.Console]::WriteLine($Tab+'Potential unclosed or bad braces. Re-attempting...')
+                            [System.Console]::WriteLine($Tab+'Potential unclosed or bad braces, possible non-valid command. Re-attempting as keystrokes...')
                             $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
                             $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
                             $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
