@@ -794,16 +794,6 @@ Function Actions{
                 }Else{
                     [System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)
                 }
-            }ElseIf($X -match '{FOCUS'){
-                If(!$WhatIf){
-                    If($X -match ' -ID '){
-                        Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
-                    }Else{
-                        Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
-                    }
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '^{FOCUS ' -replace '}'))
-                }
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
                     If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}
@@ -924,6 +914,16 @@ Function Actions{
                         If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
                     } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
                 }
+            }ElseIf($X -match '{FOCUS'){
+                If(!$WhatIf){
+                    If($X -match ' -ID '){
+                        Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                    }Else{
+                        Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
+                    }
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))
+                }
             }ElseIf($X -match '{SETWIND '){
                 If($X -match ' -ID '){
                     $PHHandle = ((PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
@@ -937,6 +937,55 @@ Function Actions{
                     [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
                 }Else{
                     [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
+                }
+            }ElseIf($X -match '{MIN '){
+                If($X -match ' -ID '){
+                    $PHHandle = ((PS -Id ($X -replace '{MIN -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }Else{
+                    $PHHandle = ((PS ($X -replace '{MIN ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }
+            
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::ShowWindow($PHHandle,6)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))
+                }
+            }ElseIf($X -match '{MAX '){
+                If($X -match ' -ID '){
+                    $PHHandle = ((PS -Id ($X -replace '{MAX -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }Else{
+                    $PHHandle = ((PS ($X -replace '{MAX ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }
+            
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::ShowWindow($PHHandle,3)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))
+                }
+            }ElseIf($X -match '{HIDE '){
+                If($X -match ' -ID '){
+                    $PHHandle = ((PS -Id ($X -replace '{HIDE -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }Else{
+                    $PHHandle = ((PS ($X -replace '{HIDE ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }
+            
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::ShowWindow($PHHandle,0)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))
+                }
+            }
+            ElseIf($X -match '{SHOW '){
+                If($X -match ' -ID '){
+                    $PHHandle = ((PS -Id ($X -replace '{SHOW -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }Else{
+                    $PHHandle = ((PS ($X -replace '{SHOW ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
+                }
+            
+                If(!$WhatIf){
+                    [Cons.WindowDisp]::ShowWindow($PHHandle,9)
+                }Else{
+                    [System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))
                 }
             }
             ElseIf($X -match '{SETWINDTEXT '){
@@ -953,11 +1002,11 @@ Function Actions{
                 If(!$WhatIf){
                     [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
                 }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW '+$PHIdentifier+' TO '+$PHWindText)
+                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+$PHIdentifier+' TO '+$PHWindText)
                 }
             }
             ElseIf($X -match '{CONSOLE .*?}'){
-                [System.Console]::WriteLine((($X.Split('{') | ?{$_ -match '^CONSOLE '}) -replace '^CONSOLE ').Split('}')[0])
+                [System.Console]::WriteLine(($X -replace '^{CONSOLE ' -replace '}$'))
             }
             ElseIf($X -notmatch '{GOTO '){
                 If($Escaped){
@@ -1194,18 +1243,23 @@ Function Handle-RMenuClick($MainObj){
             'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
             'Find/Replace'{
                 $RightClickMenu.Visible = $False
-                $FindForm = [GUI.P]::New(250,110,(($This.Parent.Parent.Size.Width - 250) / 2),(($This.Parent.Parent.Size.Height - 90) / 2))
-                    $Finder = [GUI.TB]::New(200,25,25,25,'')
+                $FindForm.Visible = $True
+                    $FLabel = [GUI.L]::New(18,20,6,28,'F:')
+                    $FLabel.Parent = $FindForm
+                    $Finder = [GUI.RTB]::New(200,20,25,25,'')
+                    $Finder.AcceptsTab = $True
                     $Finder.Parent = $FindForm
-                    $Replacer = [GUI.TB]::New(200,25,25,50,'')
+                    $RLabel = [GUI.L]::New(18,20,6,53,'R:')
+                    $RLabel.Parent = $FindForm
+                    $Replacer = [GUI.RTB]::New(200,20,25,50,'')
+                    $Replacer.AcceptsTab = $True
                     $Replacer.Parent = $FindForm
-                    $FRGO = [GUI.B]::New(75,25,25,75,'Replace All')
-                        $FRGO.Add_Click({$Commands.Text = ($Commands.Text -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text))})
+                    $FRGO = [GUI.B]::New(90,25,25,75,'Replace All')
+                        $FRGO.Add_Click({$Commands.Text = ((($Commands.Text.Split($NL) | ?{$_ -ne ''}) | %{$_ -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text.Replace('(NEWLINE)',$NL))}) -join $NL)})
                     $FRGO.Parent = $FindForm
-                    $FRClose = [GUI.B]::New(75,25,150,75,'Close')
-                        $FRClose.Add_Click({$This.Parent.Visible = $False; $This.Parent.Dispose()})
+                    $FRClose = [GUI.B]::New(90,25,135,75,'Close')
+                        $FRClose.Add_Click({$This.Parent.Visible = $False})
                     $FRClose.Parent = $FindForm
-                $FindForm.Parent = $Form
                 $FindForm.BringToFront()
                 $Form.Refresh()
             }
@@ -1638,9 +1692,9 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
 
-                        $Commands.Text = (Get-Content ($TempDir+'\Commands.txt')).TrimEnd($NL)
-                        $FunctionsBox.Text = (Get-Content ($TempDir+'\Functions.txt')).TrimEnd($NL)
-                        $ScratchBox.Text = (Get-Content ($TempDir+'\Scratch.txt')).TrimEnd($NL)
+                        $Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                        $FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                        $ScratchBox.Text = ((Get-Content ($TempDir+'\Scratch.txt')).Split($NL) -join $NL).TrimEnd($NL)
 
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
@@ -1823,7 +1877,8 @@ $GO.Parent = $Form
 $GOSel = [GUI.B]::New(125, 25, 230, 415, 'Run Selection')
 $GOSel.Add_Click({If(!$WhatIfCheck.Checked){GO -Selection}Else{GO -Selection -WhatIf}})
 $GOSel.Parent = $Form
-$WhatIfCheck = [GUI.ChB]::New(75,25,360,415,'WhatIf?')
+$WhatIfCheck = [GUI.ChB]::New(75,27,365,415,'WhatIf?')
+#$WhatIfCheck.RightToLeft = [System.Windows.Forms.RightToLeft]::Yes
 $WhatIfCheck.Parent = $Form
 
 $Form.Add_SizeChanged({
@@ -1833,7 +1888,8 @@ $Form.Add_SizeChanged({
     $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
     $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
     $GOSel.Size                 = [GUI.SP]::SI(($GO.Width-75),25)
-    $WhatIfCheck.Location       = [GUI.SP]::PO(($This.Width-110),(([Int]$This.Height)-85))
+    $WhatIfCheck.Location       = [GUI.SP]::PO(($This.Width-105),(([Int]$This.Height)-85))
+    $FindForm.Location          = [GUI.SP]::PO((($This.Width - 250) / 2),(($This.Size.Height - 90) / 2))
 })
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
@@ -1846,9 +1902,16 @@ $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
         $Index++
     })
 $RightClickMenu.Size = [GUI.SP]::SI(135,(10+($Index*20)))
+
 $RightClickMenu.Visible = $False
+$RightClickMenu.BorderStyle = 'FixedSingle'
 $RightClickMenu.Add_MouseLeave({Handle-RMenuExit $This})
 $RightClickMenu.Parent = $Form
+
+$FindForm = [GUI.P]::New(250,110,(($Form.Width - 250) / 2),(($Form.Height - 90) / 2))
+$FindForm.BorderStyle = 'FixedSingle'
+$FindForm.Visible = $False
+$FindForm.Parent = $Form
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
 
