@@ -1488,7 +1488,7 @@ $Pow.BeginInvoke() | Out-Null
 $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
 
-$TabController = [GUI.TC]::New(405, 405, 25, 7)
+$TabController = [GUI.TC]::New(405, 375, 25, 7)
     $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
         $TabControllerComm = [GUI.TC]::New(0, 0, 0, 0)
         $TabControllerComm.Dock = 'Fill'
@@ -1509,7 +1509,14 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $Commands.Add_MouseDown({
                     If([String]$_.Button -eq 'Right'){
                         $RightClickMenu.Visible = $True
-                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
+                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
+                        $M = [Cons.Curs]::Gpos()
+
+                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
+                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+
+                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
                         $RightClickMenu.BringToFront()
                     }
                 })
@@ -1610,7 +1617,14 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
                 $FunctionsBox.Add_MouseDown({
                     If([String]$_.Button -eq 'Right'){
                         $RightClickMenu.Visible = $True
-                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
+                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
+                        $M = [Cons.Curs]::Gpos()
+
+                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
+                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+
+                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
                         $RightClickMenu.BringToFront()
                     }
                 })
@@ -1641,7 +1655,14 @@ $TabController = [GUI.TC]::New(405, 405, 25, 7)
             $ScratchBox.Add_MouseDown({
                     If([String]$_.Button -eq 'Right'){
                         $RightClickMenu.Visible = $True
-                        $RightClickMenu.Location = [GUI.SP]::PO(($_.Location.X+35),($_.Location.Y+50))
+                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
+                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
+                        $M = [Cons.Curs]::Gpos()
+
+                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
+                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+
+                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
                         $RightClickMenu.BringToFront()
                     }
                 })
@@ -1871,19 +1892,33 @@ $TabController.Add_SelectedIndexChanged({
 })
 $TabController.Parent = $Form
 
-$GO = [GUI.B]::New(200, 25, 25, 415, 'Run')
+$SingleCMD = [GUI.RTB]::New(300, 20, 25, 388, '')
+$SingleCMD.AcceptsTab = $True
+$SingleCMD.Parent = $Form
+
+$SingleGO = [GUI.B]::New(93, 20, 335, 388, 'Run Line')
+$SingleGO.Add_Click({
+    If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){Actions $SingleCMD.Text}Else{Actions $SingleCMD.Text -WhatIf}
+})
+$SingleGO.Parent = $Form
+
+$GO = [GUI.B]::New(200, 25, 25, 415, 'Run Main')
 $GO.Add_Click({If(!$WhatIfCheck.Checked){GO}Else{GO -WhatIf}})
 $GO.Parent = $Form
+
 $GOSel = [GUI.B]::New(125, 25, 230, 415, 'Run Selection')
 $GOSel.Add_Click({If(!$WhatIfCheck.Checked){GO -Selection}Else{GO -Selection -WhatIf}})
 $GOSel.Parent = $Form
+
 $WhatIfCheck = [GUI.ChB]::New(75,27,365,415,'WhatIf?')
-#$WhatIfCheck.RightToLeft = [System.Windows.Forms.RightToLeft]::Yes
 $WhatIfCheck.Parent = $Form
 
 $Form.Add_SizeChanged({
-    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-95))
+    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-125))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
+    $SingleCMD.Location         = [GUI.SP]::PO(25,(([Int]$This.Height)-112))
+    $SingleCMD.Size             = [GUI.SP]::SI((([Int]$This.Width)-170),20)
+    $SingleGO.Location          = [GUI.SP]::PO(($This.Width-135),(([Int]$This.Height)-112))
     $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
     $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
     $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
