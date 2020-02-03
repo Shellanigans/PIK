@@ -735,13 +735,9 @@ Function Actions{
         }
         
         If(($X -match '{ELSE}') -OR ($X -match '{FI}')){
-            If($X -match '{ELSE}'){
-                $Script:IfEl = !$Script:IfEl
-            }
+            If($X -match '{ELSE}'){$Script:IfEl = !$Script:IfEl}
 
-            If($X -match '{FI}'){
-                $Script:IfEl = $True
-            }
+            If($X -match '{FI}'){$Script:IfEl = $True}
         }
         ElseIf($Script:IfEl){
             $Escaped = $False
@@ -753,9 +749,10 @@ Function Actions{
                 $X = ''
             }
 
-            If($X -match '^{POWER .*}$'){
-                If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
-            }ElseIf($X -match '^{GOTO'){
+            #If($X -match '^{POWER .*}$'){
+            #    If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
+            #}Else
+            If($X -match '^{GOTO'){
                 $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ' -replace ' ')
                 $Commands.Lines | %{$FoundLabel = $False}{
                     If($FoundLabel){
@@ -1487,6 +1484,7 @@ $Pow.BeginInvoke() | Out-Null
 
 $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
+#$Form.BackColor = [System.Drawing.Color]::Gray
 
 $TabController = [GUI.TC]::New(405, 375, 25, 7)
     $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
@@ -1898,7 +1896,7 @@ $SingleCMD.Parent = $Form
 
 $SingleGO = [GUI.B]::New(93, 20, 335, 388, 'Run Line')
 $SingleGO.Add_Click({
-    If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){Actions $SingleCMD.Text}Else{Actions $SingleCMD.Text -WhatIf}
+    If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){GO -InlineCommand $SingleCMD.Text}Else{GO -InlineCommand $SingleCMD.Text -WhatIf}
 })
 $SingleGO.Parent = $Form
 
