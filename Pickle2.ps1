@@ -1205,7 +1205,7 @@ Function Handle-RMenuExit($MainObj){
     $M.X = ($M.X - $Form.Location.X)
     $M.Y = ($M.Y - $Form.Location.Y)
 
-    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 5)) -OR ($M.Y -gt ($S.Height + $L.Y + 30))){
+    If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 4)) -OR ($M.Y -gt ($S.Height + $L.Y + 29))){
         $PHObj.Visible = $False
     }
 }
@@ -1369,7 +1369,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
             $MainObj.SelectionLength = $PHLine.Length
             
             Switch($_.Split(',')[0]){
-                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
+                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::Gray}
                 'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
                 'R' {
                     $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
@@ -1486,7 +1486,7 @@ $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
 #$Form.BackColor = [System.Drawing.Color]::Gray
 
-$TabController = [GUI.TC]::New(405, 375, 25, 7)
+$TabController = [GUI.TC]::New(405, 400, 25, 7)
     $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
         $TabControllerComm = [GUI.TC]::New(0, 0, 0, 0)
         $TabControllerComm.Dock = 'Fill'
@@ -1589,7 +1589,17 @@ $TabController = [GUI.TC]::New(405, 375, 25, 7)
                 $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $PixColorBox.Parent = $TabPageHelper
 
-                $Help = [GUI.B]::New(260, 25, 10, 315, 'About/Help')
+                $SingleCMD = [GUI.RTB]::New(260, 20, 10, 285, '')
+                $SingleCMD.AcceptsTab = $True
+                $SingleCMD.Parent = $TabPageHelper
+
+                $SingleGO = [GUI.B]::New(93, 20, 280, 285, 'Run Line')
+                $SingleGO.Add_Click({
+                    If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){GO -InlineCommand $SingleCMD.Text}Else{GO -InlineCommand $SingleCMD.Text -WhatIf}
+                })
+                $SingleGO.Parent = $TabPageHelper
+
+                $Help = [GUI.B]::New(363, 25, 10, 315, 'About/Help')
                 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
                 $Help.Parent = $TabPageHelper
             $TabPageHelper.Parent = $TabControllerComm
@@ -1669,7 +1679,7 @@ $TabController = [GUI.TC]::New(405, 375, 25, 7)
             $ScratchBox.Parent = $TabPageScratchMain
             $TabPageScratchMain.Parent = $TabControllerScratch
         $TabControllerScratch.Parent = $TabScratchPad
-    $TabScratchPad.Parent = $TabController
+    #$TabScratchPad.Parent = $TabController
 
     $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Advanced')
         $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
@@ -1885,20 +1895,10 @@ $TabController.Add_SelectedIndexChanged({
         $TempTextBox = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
 
         $TempTextBox.Focus()
-        $TempTextBox.SelectionStart = $TempTextBox.Text.Length
+        #$TempTextBox.SelectionStart = $TempTextBox.Text.Length
     }
 })
 $TabController.Parent = $Form
-
-$SingleCMD = [GUI.RTB]::New(300, 20, 25, 388, '')
-$SingleCMD.AcceptsTab = $True
-$SingleCMD.Parent = $Form
-
-$SingleGO = [GUI.B]::New(93, 20, 335, 388, 'Run Line')
-$SingleGO.Add_Click({
-    If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){GO -InlineCommand $SingleCMD.Text}Else{GO -InlineCommand $SingleCMD.Text -WhatIf}
-})
-$SingleGO.Parent = $Form
 
 $GO = [GUI.B]::New(200, 25, 25, 415, 'Run Main')
 $GO.Add_Click({If(!$WhatIfCheck.Checked){GO}Else{GO -WhatIf}})
@@ -1912,17 +1912,26 @@ $WhatIfCheck = [GUI.ChB]::New(75,27,365,415,'WhatIf?')
 $WhatIfCheck.Parent = $Form
 
 $Form.Add_SizeChanged({
-    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-125))
+    $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-100))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
-    $SingleCMD.Location         = [GUI.SP]::PO(25,(([Int]$This.Height)-112))
-    $SingleCMD.Size             = [GUI.SP]::SI((([Int]$This.Width)-170),20)
-    $SingleGO.Location          = [GUI.SP]::PO(($This.Width-135),(([Int]$This.Height)-112))
+    
+    $SingleCMD.Location         = [GUI.SP]::PO(10,($TabController.Height-115))
+    $SingleCMD.Size             = [GUI.SP]::SI(($TabController.Width-145),20)
+    
+    $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-125),($TabController.Height-115))
+    
     $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
     $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
+    
     $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
     $GOSel.Size                 = [GUI.SP]::SI(($GO.Width-75),25)
+    
+    $Help.Location              = [GUI.SP]::PO(10,($TabController.Height-85))
+    $Help.Size                  = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),25)
+    
     $WhatIfCheck.Location       = [GUI.SP]::PO(($This.Width-105),(([Int]$This.Height)-85))
-    $FindForm.Location          = [GUI.SP]::PO((($This.Width - 250) / 2),(($This.Size.Height - 90) / 2))
+    
+    $FindForm.Location          = [GUI.SP]::PO((($This.Width - 250) / 2),(($This.Height - 90) / 2))
 })
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
