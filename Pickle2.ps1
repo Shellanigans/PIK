@@ -822,6 +822,8 @@ Function Actions{
                 $Rel = ($X -match '[/\\]')
                 If(!$WhatIf){
                     If($X -match 'MOUSE'){
+                        $Temp = ($X.Split()[-1] -replace '}')
+                        $UndoHash.KeyList+=([String]$Temp)
                         [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
                     }Else{
                         $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
@@ -1158,8 +1160,14 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
             } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
         }While($SyncHash.Restart)
 
-            $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-            $SyncHash.Stop = $False
+        $UndoHash.KeyList | %{
+            If($_ -notmatch 'MOUSE'){
+                [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+            }Else{
+                [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+            }
+        }
+        $SyncHash.Stop = $False
 
         If(!$CommandLine){    
             $Commands.ReadOnly     = $False
@@ -2056,7 +2064,13 @@ If($CommandLine){
     [System.Windows.Forms.Application]::Run($Form)
 }
 
-$UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
+$UndoHash.KeyList | %{
+    If($_ -notmatch 'MOUSE'){
+        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+    }Else{
+        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+    }
+}
 
 $SyncHash.Kill = $True
 
