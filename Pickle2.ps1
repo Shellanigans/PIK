@@ -547,7 +547,9 @@ Function Interpret{
             $Output = ''
 
             Switch($Operator){
-                'CNT'{$Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count}
+                'CNT'{
+                    $Output = ($VarsHash.Keys | ?{$_ -match ('^([0-9]*_)?'+$Operands[0]+'$')}).Count
+                }
                 'APP'{
                     If($Operands.Count -gt 2){
                         $Output = [String]($Operands[0..($Operands.Count - 2)] -join ',')+[String]$Operands[-1]
@@ -664,8 +666,18 @@ Function Interpret{
 Function Actions{
     Param([String]$X,[Switch]$WhatIf)
 
-    If(!$SyncHash.Stop){
+    If(!$SyncHash.Stop -AND ($X -notmatch '^:::')){
         [System.Console]::WriteLine($X)
+
+        $GOTOLabel = ''
+        
+        If($X -match '^{GOTO '){
+            $GOTOLabel = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
+            $SyncHash.Restart = $True
+            $SyncHash.Stop = $True
+                
+            $X = ''
+        }
 
         If($X -match '{IF \(.*?\)}'){
             [System.Console]::WriteLine($NL + 'BEGIN IF')
@@ -752,16 +764,7 @@ Function Actions{
             #If($X -match '^{POWER .*}$'){
             #    If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
             #}Else
-            If($X -match '^{GOTO'){
-                $X = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ' -replace ' ')
-                $Commands.Lines | %{$FoundLabel = $False}{
-                    If($FoundLabel){
-                        If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}
-                    }ElseIf(($_ -replace ' ') -eq (':::'+$X)){
-                        $FoundLabel = $True
-                    }
-                }
-            }ElseIf($X -match '{PAUSE'){
+            If($X -match '{PAUSE'){
                 If($CommandLine -OR ($X -match '{PAUSE -C}')){
                     [System.Console]::WriteLine('Press any key to continue...')
                     [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -775,7 +778,12 @@ Function Actions{
                 $VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                     $VarsHash.Remove($PH[0])
                     $VarsHash.Add($PH[0],$VarsHash.$_)
-                    If(!$WhatIf){Actions $PH[2]}Else{Actions $PH[2] -WhatIf}
+                    
+                    If(!$WhatIf){
+                        Actions $PH[2]
+                    }Else{
+                        Actions $PH[2] -WhatIf
+                    }
                 }
                 $VarsHash.Remove($PH[0])
             }ElseIf($X -match '^{SETCON'){
@@ -911,7 +919,15 @@ Function Actions{
                         If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
                         If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
-                    } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
+                    } | %{
+                        If(!$SyncHash.Stop){
+                            If(!$WhatIf){
+                                [Void](Actions $_)
+                            }Else{
+                                [Void](Actions $_ -WhatIf)
+                            }
+                        }
+                    }
                 }
             }ElseIf($X -match '{FOCUS'){
                 If(!$WhatIf){
@@ -1085,6 +1101,8 @@ Function Actions{
             }
         }
     }
+
+    Return $GOTOLabel
 }
 
 Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
@@ -1094,12 +1112,18 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     $Script:Refocus = $False
     $Script:IfEl = $True
 
-    $Vars = [String[]]@()
+    #$Vars = [String[]]@()
 
     $VarsHash = @{}
     $FuncHash = @{}
-    $UndoHash.KeyList | %{[Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)}
-    $SyncHash.Stop = $False
+    $UndoHash.KeyList | %{
+        If($_ -notmatch 'MOUSE'){
+            [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+        }Else{
+            [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+        }
+    }
+    $UndoHash = @{KeyList=[String[]]@()}
 
     $Commands.ReadOnly      = $True
     $FunctionsBox.ReadOnly  = $True
@@ -1137,16 +1161,22 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------')
     
     $Results = (Measure-Command {
+        $PHGOTO = ''
         Do{
             [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
 
+            $SyncHash.Stop = $False
             $SyncHash.Restart = $False
             
             If($InlineCommand){
                 $PHText = $InlineCommand
             }Else{
                 If($SelectionRun){
-                    $PHText = $Commands.SelectedText
+                    $(Switch($TabControllerComm.SelectedTab.Text)
+                    {
+                        'Commands'{$Commands}
+                        'Functions'{$FunctionsBox}
+                    }) | %{$PHText = $_.SelectedText}
                 }Else{
                     $PHText = $Commands.Text
                 }
@@ -1156,8 +1186,24 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                     If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                     If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
-            } | %{If(!$SyncHash.Stop){If(!$WhatIf){Actions $_}Else{Actions $_ -WhatIf}}}
+                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
+                        $_
+                    }Else{
+                        [System.Console]::WriteLine($Tab+$_)
+                    }
+            } | %{
+                If(!$SyncHash.Stop){
+                    If(!$WhatIf){
+                        If(!$PHGOTO){
+                            $PHGOTO = (Actions $_)
+                        }ElseIf(($_ -match '^:::'+$PHGOTO)){
+                            $PHGOTO = ''
+                        }
+                    }Else{
+                        $PHGOTO = (Actions $_ -WhatIf)
+                    }
+                }
+            }
         }While($SyncHash.Restart)
 
         $UndoHash.KeyList | %{
@@ -1221,11 +1267,10 @@ Function Handle-RMenuExit($MainObj){
 Function Handle-RMenuClick($MainObj){
     $RightClickMenu.Visible = $False
     
-    $(Switch($TabController.SelectedTab.Text)
+    $(Switch($TabControllerComm.SelectedTab.Text)
     {
         'Commands'{$Commands}
         'Functions'{$FunctionsBox}
-        'ScratchPad'{$ScratchBox}
     }) | %{
         $PHObj = $_
         $PHObj.Focus()
@@ -1268,8 +1313,8 @@ Function Handle-RMenuClick($MainObj){
                 $FindForm.BringToFront()
                 $Form.Refresh()
             }
-            'Run Selection'{If($TabController.SelectedTab.Text -ne 'Commands'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO -SelectionRun}}
-            'Run'{If($TabController.SelectedTab.Text -ne 'Commands'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO}}
+            'Run Selection'{If($TabController.SelectedTab.Text -ne 'Main'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO -SelectionRun}}
+            'Run'{If($TabController.SelectedTab.Text -ne 'Main'){[System.Console]::WriteLine('ONLY FOR COMMANDS PAGE!')}Else{GO}}
         }
     }
 }
@@ -1401,7 +1446,6 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
 
             $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
             $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-            $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
             $SaveAsProfText.Text = ''
         }
@@ -1484,6 +1528,7 @@ $Pow.AddScript({
         [System.Threading.Thread]::Sleep(50)
         If([API.Win32]::GetAsyncKeyState(145)){
             $SyncHash.Stop = $True
+            $SyncHash.Restart = $False
         }
     }
 }) | Out-Null
@@ -1492,13 +1537,12 @@ $Pow.BeginInvoke() | Out-Null
 
 $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
-#$Form.BackColor = [System.Drawing.Color]::Gray
 
 $TabController = [GUI.TC]::New(405, 400, 25, 7)
-    $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Commands')
+    $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Main')
         $TabControllerComm = [GUI.TC]::New(0, 0, 0, 0)
         $TabControllerComm.Dock = 'Fill'
-            $TabPageCommMain = [GUI.TP]::New(0, 0, 0, 0, 'Main')
+            $TabPageCommMain = [GUI.TP]::New(0, 0, 0, 0, 'Commands')
                 $Commands = [GUI.RTB]::New(0, 0, 0, 0, '')
                 $Commands.Dock = 'Fill'
                 $Commands.Multiline = $True
@@ -1530,6 +1574,39 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $Commands.Parent = $TabPageCommMain
                 $Commands.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Commands'})
             $TabPageCommMain.Parent = $TabControllerComm
+
+            $TabPageFunctMain = [GUI.TP]::New(0, 0, 0, 0, 'Functions')
+                $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
+                $FunctionsBox.Multiline = $True
+                $FunctionsBox.WordWrap = $False
+                $FunctionsBox.Scrollbars = 'Both'
+                $FunctionsBox.AcceptsTab = $True
+                $FunctionsBox.DetectUrls = $False
+                $FunctionsBox.Add_TextChanged({
+                    If($Form.Text -notmatch '\*$'){
+                        $Form.Text+='*'
+                    }
+                    $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
+                })
+                $FunctionsBox.Add_MouseDown({
+                    If([String]$_.Button -eq 'Right'){
+                        $RightClickMenu.Visible = $True
+                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
+                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
+                        $M = [Cons.Curs]::Gpos()
+
+                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
+                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+
+                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
+                        $RightClickMenu.BringToFront()
+                    }
+                })
+                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
+                $FunctionsBox.Dock = 'Fill'
+                $FunctionsBox.Parent = $TabPageFunctMain
+                $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions'})
+            $TabPageFunctMain.Parent = $TabControllerComm
 
             $TabPageHelper = [GUI.TP]::new(0, 0, 0, 0, 'Helper')
                 $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
@@ -1614,197 +1691,118 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
         $TabControllerComm.Parent = $TabPageComm
     $TabPageComm.Parent = $TabController
 
-    $TabPageFunctions = [GUI.TP]::New(0, 0, 0, 0,'Functions')
-        $TabControllerFunct = [GUI.TC]::New(0, 0, 0, 0)
-        $TabControllerFunct.Dock = 'Fill'
-            $TabPageFunctMain = [GUI.TP]::New(0, 0, 0, 0, 'Main')
-                $FunctionsBox = [GUI.RTB]::New(0, 0, 0, 0, '')
-                $FunctionsBox.Multiline = $True
-                $FunctionsBox.WordWrap = $False
-                $FunctionsBox.Scrollbars = 'Both'
-                $FunctionsBox.AcceptsTab = $True
-                $FunctionsBox.DetectUrls = $False
-                $FunctionsBox.Add_TextChanged({
-                    If($Form.Text -notmatch '\*$'){
-                        $Form.Text+='*'
-                    }
-                    $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
-                })
-                $FunctionsBox.Add_MouseDown({
-                    If([String]$_.Button -eq 'Right'){
-                        $RightClickMenu.Visible = $True
-                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
-                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
-                        $M = [Cons.Curs]::Gpos()
+    $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Save/Load')
+        $Profile = [GUI.L]::New(250, 20, 10, 10, 'Working Profile: None/Prev Text Vals')
+        $Profile.Parent = $TabPageProfiles
 
-                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
-                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+        $SavedProfilesLabel = [GUI.L]::New(120, 20, 10, 36, 'Saved Profiles:')
+        $SavedProfilesLabel.Parent = $TabPageProfiles
 
-                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
-                        $RightClickMenu.BringToFront()
-                    }
-                })
-                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
-                $FunctionsBox.Dock = 'Fill'
-                $FunctionsBox.Parent = $TabPageFunctMain
-                $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions'})
-            $TabPageFunctMain.Parent = $TabControllerFunct
-        $TabControllerFunct.Parent = $TabPageFunctions
-    $TabPageFunctions.Parent = $TabController
+        $SavedProfiles = [GUI.CoB]::New(250, 25, 10, 60)
+        $SavedProfiles.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
+        [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+        $SavedProfiles.Parent = $TabPageProfiles
 
-    $TabScratchPad = [GUI.TP]::New(0, 0, 0, 0,'ScratchPad')
-        $TabControllerScratch = [GUI.TC]::New(0, 0, 0, 0)
-        $TabControllerScratch.Dock = 'Fill'
-            $TabPageScratchMain = [GUI.TP]::New(0, 0, 0, 0, 'Main')
-            $ScratchBox = [GUI.RTB]::New(0, 0, 0, 0, '')
-            $ScratchBox.Multiline = $True
-            $ScratchBox.WordWrap = $False
-            $ScratchBox.Scrollbars = 'Both'
-            $ScratchBox.AcceptsTab = $True
-            $ScratchBox.DetectUrls = $False
-            $ScratchBox.Add_TextChanged({
-                If($Form.Text -notmatch '\*$'){
-                    $Form.Text+='*'
-                }
-                $This.Text | Out-File ($env:APPDATA+'\Macro\Scratch.txt') -Width 1000 -Force
-            })
-            $ScratchBox.Add_MouseDown({
-                    If([String]$_.Button -eq 'Right'){
-                        $RightClickMenu.Visible = $True
-                        $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
-                        $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
-                        $M = [Cons.Curs]::Gpos()
+        $QuickSave = [GUI.B]::New(75, 25, 10, 85, 'SAVE')
+        $QuickSave.Add_Click({
+            If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+                $Form.Text = ($Form.Text -replace '\*$')
 
-                        If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
-                        If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
 
-                        $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
-                        $RightClickMenu.BringToFront()
-                    }
-                })
-            $ScratchBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Scratch.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
-            $ScratchBox.Dock = 'Fill'
-            $ScratchBox.Parent = $TabPageScratchMain
-            $TabPageScratchMain.Parent = $TabControllerScratch
-        $TabControllerScratch.Parent = $TabScratchPad
-    #$TabScratchPad.Parent = $TabController
+                [Void](MKDIR $TempDir)
 
-    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Advanced')
+                $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+
+                $SaveAsProfText.Text = ''
+            }
+        })
+        $QuickSave.Parent = $TabPageProfiles
+
+        $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
+        $LoadProfile.Add_Click({
+            If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2){
+                $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
+
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
+
+                $Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                $FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+
+                $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
+            }
+        })
+        $LoadProfile.Parent = $TabPageProfiles
+
+        $BlankProfile = [GUI.B]::New(75, 25, 186, 85, 'BLANK')
+        $BlankProfile.Add_Click({
+            $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                    
+            $SavedProfiles.SelectedIndex = -1
+
+            $Commands.Text = ''
+            $FunctionsBox.Text = ''
+
+            $Form.Text = ('Pickle')
+        })
+        $BlankProfile.Parent = $TabPageProfiles
+
+        $SaveNewProfLabel = [GUI.L]::New(170, 20, 10, 170, 'Save Current Profile As:')
+        $SaveNewProfLabel.Parent = $TabPageProfiles
+
+        $SaveProfile = [GUI.B]::New(75, 20, 186, 189, 'SAVE AS')
+        $SaveProfile.Add_Click({
+            If($SaveAsProfText.Text){
+                $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
+                $Profile.Text = ('Working Profile: ' + $SaveAsProfText.Text)
+
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
+
+                [Void](MKDIR $TempDir)
+
+                $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+
+                $SavedProfiles.Items.Clear()
+                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                $SavedProfiles.SelectedItem = $SaveAsProfText.Text
+
+                $SaveAsProfText.Text = ''
+            }
+        })
+        $SaveProfile.Parent = $TabPageProfiles
+
+        $SaveAsProfText = [GUI.TB]::New(165, 25, 10, 190, '')
+        $SaveAsProfText.Parent = $TabPageProfiles
+
+        $DelProfLabel = [GUI.L]::New(170, 20, 10, 240, 'Delete Profile:')
+        $DelProfLabel.Parent = $TabPageProfiles
+
+        $DelProfile = [GUI.B]::New(75, 20, 186, 259, 'DELETE')
+        $DelProfile.Add_Click({
+            If($Profile.Text -eq ('Working Profile: ' + $DelProfText.Text)){
+                $Profile.Text = ('Working Profile: None/Prev Text Vals')
+                $SavedProfiles.SelectedItem = $Null
+
+                $Form.Text = ('Pickle')
+            }
+
+            (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -Recurse -Force
+            $SavedProfiles.Items.Clear()
+            [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+
+            $DelProfText.Text = ''
+        })
+        $DelProfile.Parent = $TabPageProfiles
+
+        $DelProfText = [GUI.TB]::New(165, 25, 10, 260, '')
+        $DelProfText.Parent = $TabPageProfiles
+    $TabPageProfiles.Parent = $TabController
+
+    $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'Adv')
         $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
         $TabControllerAdvanced.Dock = 'Fill'
-            $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Load/Save')
-                $Profile = [GUI.L]::New(250, 20, 10, 10, 'Working Profile: None/Prev Text Vals')
-                $Profile.Parent = $TabPageProfiles
-
-                $SavedProfilesLabel = [GUI.L]::New(120, 20, 10, 36, 'Saved Profiles:')
-                $SavedProfilesLabel.Parent = $TabPageProfiles
-
-                $SavedProfiles = [GUI.CoB]::New(250, 25, 10, 60)
-                $SavedProfiles.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
-                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                $SavedProfiles.Parent = $TabPageProfiles
-
-                $QuickSave = [GUI.B]::New(75, 25, 10, 85, 'SAVE')
-                $QuickSave.Add_Click({
-                    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
-                        $Form.Text = ($Form.Text -replace '\*$')
-
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
-
-                        [Void](MKDIR $TempDir)
-
-                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
-
-                        $SaveAsProfText.Text = ''
-                    }
-                })
-                $QuickSave.Parent = $TabPageProfiles
-
-                $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
-                $LoadProfile.Add_Click({
-                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2){
-                        $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
-
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
-
-                        $Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                        $FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                        $ScratchBox.Text = ((Get-Content ($TempDir+'\Scratch.txt')).Split($NL) -join $NL).TrimEnd($NL)
-
-                        $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
-                    }
-                })
-                $LoadProfile.Parent = $TabPageProfiles
-
-                $BlankProfile = [GUI.B]::New(75, 25, 186, 85, 'BLANK')
-                $BlankProfile.Add_Click({
-                    $Profile.Text = 'Working Profile: None/Prev Text Vals'
-                    
-                    $SavedProfiles.SelectedIndex = -1
-
-                    $Commands.Text = ''
-                    $FunctionsBox.Text = ''
-                    $ScratchBox.Text = ''
-
-                    $Form.Text = ('Pickle')
-                })
-                $BlankProfile.Parent = $TabPageProfiles
-
-                $SaveNewProfLabel = [GUI.L]::New(170, 20, 10, 170, 'Save Current Profile As:')
-                $SaveNewProfLabel.Parent = $TabPageProfiles
-
-                $SaveProfile = [GUI.B]::New(75, 20, 186, 189, 'SAVE AS')
-                $SaveProfile.Add_Click({
-                    If($SaveAsProfText.Text){
-                        $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
-                        $Profile.Text = ('Working Profile: ' + $SaveAsProfText.Text)
-
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
-
-                        [Void](MKDIR $TempDir)
-
-                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
-
-                        $SavedProfiles.Items.Clear()
-                        [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                        $SavedProfiles.SelectedItem = $SaveAsProfText.Text
-
-                        $SaveAsProfText.Text = ''
-                    }
-                })
-                $SaveProfile.Parent = $TabPageProfiles
-
-                $SaveAsProfText = [GUI.TB]::New(165, 25, 10, 190, '')
-                $SaveAsProfText.Parent = $TabPageProfiles
-
-                $DelProfLabel = [GUI.L]::New(170, 20, 10, 240, 'Delete Profile:')
-                $DelProfLabel.Parent = $TabPageProfiles
-
-                $DelProfile = [GUI.B]::New(75, 20, 186, 259, 'DELETE')
-                $DelProfile.Add_Click({
-                    If($Profile.Text -eq ('Working Profile: ' + $DelProfText.Text)){
-                        $Profile.Text = ('Working Profile: None/Prev Text Vals')
-                        $SavedProfiles.SelectedItem = $Null
-
-                        $Form.Text = ('Pickle')
-                    }
-
-                    (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -Recurse -Force
-                    $SavedProfiles.Items.Clear()
-                    [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-
-                    $DelProfText.Text = ''
-                })
-                $DelProfile.Parent = $TabPageProfiles
-
-                $DelProfText = [GUI.TB]::New(165, 25, 10, 260, '')
-                $DelProfText.Parent = $TabPageProfiles
-            $TabPageProfiles.Parent = $TabControllerAdvanced
-
             $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0, 'Settings')
                 $DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
                 $DelayLabel.Parent = $TabPageConfig
@@ -1894,26 +1892,22 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageDebug.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
-$TabController.Add_SelectedIndexChanged({
-    If($This.SelectedTab -ne $TabPageAdvanced){
-        $TabPageHelper.Parent = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
-        
-        $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedIndex = 0
-
-        $TempTextBox = $This.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
-
-        $TempTextBox.Focus()
-        #$TempTextBox.SelectionStart = $TempTextBox.Text.Length
-    }
-})
 $TabController.Parent = $Form
 
-$GO = [GUI.B]::New(200, 25, 25, 415, 'Run Main')
+$GO = [GUI.B]::New(200, 25, 25, 415, 'Run')
 $GO.Add_Click({If(!$WhatIfCheck.Checked){GO}Else{GO -WhatIf}})
 $GO.Parent = $Form
 
 $GOSel = [GUI.B]::New(125, 25, 230, 415, 'Run Selection')
-$GOSel.Add_Click({If(!$WhatIfCheck.Checked){GO -Selection}Else{GO -Selection -WhatIf}})
+$GOSel.Add_Click({
+    
+
+    If(!$WhatIfCheck.Checked){
+        GO -Selection
+    }Else{
+        GO -Selection -WhatIf
+    }
+})
 $GOSel.Parent = $Form
 
 $WhatIfCheck = [GUI.ChB]::New(75,27,365,415,'WhatIf?')
@@ -2043,10 +2037,12 @@ Try{
 }
 
 If($CommandLine){
-    If($CLICMD){
+    If($CLICMD -AND !$Macro){
         GO -InlineCommand $CLICMD
-    }Else{
+    }ElseIf($Macro -AND !$CLICMD){
         GO
+    }Else{
+        [System.Console]::WriteLine('INVALID ARGS!')
     }
 }Else{
     $Form.Show()
@@ -2097,7 +2093,7 @@ If(!$CommandLine){
 
         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-        $ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
+        #$ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
         $SaveAsProfText.Text = ''
     }Else{
