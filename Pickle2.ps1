@@ -483,7 +483,7 @@ Function Interpret{
                 }
             }
 
-            [System.Console]::WriteLine($Tab+'Res:'+$PHOut)
+            [System.Console]::WriteLine($Tab+'Out:'+$PHOut)
 
             $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
             [System.Console]::WriteLine($X)
@@ -814,11 +814,52 @@ Function Actions{
             }ElseIf($X -match '^{[LRM]?MOUSE'){
                 If(!$WhatIf){
                     If($X -match ','){
-                        If($X -match '\+' -OR $X -match '-'){
+                        $PHX = $X
+                        $PHMoveType = 'NONE'
+                        If($PHX -match ' -LINEAR '){
+                            $PHX = ($PHX -replace '-LINEAR ')
+                            $PHMoveType = 'LINEAR'
+                        }ElseIf($PHX -match ' -SINE '){
+                            $PHX = ($PHX -replace '-SINE ')
+                            $PHMoveType = 'SINE'
+                        }
+
+                        $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''}).Split(',')[-2,-1]
+                        
+                        If(($PHX -match '\+') -OR ($PHX -match '-\d+') -OR ($PHMoveType -notmatch 'NONE')){
                             $Coords = [Cons.Curs]::GPos()
-                            $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos(([Int]$_.Split(',')[0] + [Int]$Coords.X), ([Int]$_.Split(',')[-1] + [Int]$Coords.Y))}
+                            $MoveCoords[0] = [Int]($MoveCoords[0])+$Coords.X
+                            $MoveCoords[1] = [Int]($MoveCoords[1])+$Coords.Y
+                        }
+
+                        If($PHMoveType -notmatch 'NONE'){
+                            $Right = $True
+                            $DistX = ($MoveCoords[0]-$Coords.X)
+                            If($DistX -lt 0){$DistX = ($Coords.X-$MoveCoords[0]);$Right = $False}
+                            $DistX = [Math]::Pow($DistX,2)
+
+                            $Down = $True
+                            $DistY = ($MoveCoords[1]-$Coords.Y)
+                            If($DistY -lt 0){$DistY = ($Coords.Y-$MoveCoords[1]);$Down = $False}
+                            $DistY = [Math]::Pow($DistY,2)
+                            
+                            $Dist = [math]::Sqrt(($DistX+$DistY))
+                            $Dist = [Math]::Round($Dist)
+
+                            Switch($PHMoveType){
+                                'LINEAR' {
+                                    0..$Dist | %{
+                                        $PHTMPCoords = [Cons.Curs]::GPos()
+                                        If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+1)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-1)}
+                                        If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+1)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-1)}
+                                        [Cons.Curs]::SPos($PHTMPCoords.X,$PHTMPCoords.Y)
+                                        Sleep -Milliseconds 10
+                                    }
+                                }
+                                'SINE'   {}
+                            }
                         }Else{
-                            $X -replace '{MOUSE ' -replace '}' | %{[Cons.Curs]::SPos($_.Split(',')[0], $_.Split(',')[-1])}
+                            [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
                         }
                     }ElseIf($X -match ' '){
                         0..([Int](($X -replace '}').Split(' ')[-1])) | %{
@@ -985,7 +1026,7 @@ Function Actions{
             ElseIf($X -match '{CONSOLE .*?}'){
                 [System.Console]::WriteLine(($X -replace '^{CONSOLE ' -replace '}$'))
             }
-            ElseIf($X -notmatch '{GOTO '){
+            Else{
                 If($Escaped){
                     [System.Console]::WriteLine($Tab+'This line was escaped. Above may appear as commands,')
                     [System.Console]::WriteLine($Tab+'but has been converted to keystrokes...')
