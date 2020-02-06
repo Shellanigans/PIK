@@ -271,11 +271,14 @@ Function Interpret{
             $DepthOverflow -lt 500 -AND `
             (($X -match '{VAR ') -OR `
             ($X -match '{LEN ') -OR `
+            ($X -match '{ABS ') -OR `
             ($X -match '{POW ') -OR `
             ($X -match '{SIN ') -OR `
             ($X -match '{COS ') -OR `
             ($X -match '{TAN ') -OR `
+            ($X -match '{RND ') -OR `
             ($X -match '{FLR ') -OR `
+            ($X -match '{SQT ') -OR `
             ($X -match '{CEI ') -OR `
             ($X -match '{MOD ') -OR `
             ($X -match '{EVAL ') -OR `
@@ -318,57 +321,59 @@ Function Interpret{
             $X = (($VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
     
-        $PHSplitX | ?{$_ -match 'GETPROC \S+'} | %{
-            $PH = ($_ -replace 'GETPROC ')
+        $PHSplitX | ?{($_ -match 'GETPROC ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETWIND ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETWINDTEXT ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETFOCUS( -ID)?')} | %{
+            $PHProc = $_
+            $PHSel = $PHProc.Split(' ')[0].Replace('{','')
 
-            If($_ -match ' -ID '){
-                $PH = ($PH -replace '-ID ')
-                $PH = ((PS -Id $PH) | %{$_.ProcessName})
-            }Else{
-                $PH = ((PS $PH) | %{$_.Id}) -join ';'
-            }
-
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-        }
-
-        $PHSplitX | ?{$_ -match 'GETWIND \S+'} | %{    
-            If($_ -match ' -ID '){
-                $PHHandle = ((PS -Id ($_ -replace 'GETWIND -ID ')).MainWindowHandle | ?{[Int]$_})
-            }Else{
-                $PHHandle = ((PS ($_ -replace 'GETWIND ')).MainWindowHandle | ?{[Int]$_})
-            }
-
-            $PHRect = [GUI.Rect]::E
-            [Void]([Cons.WindowDisp]::GetWindowRect($PHHandle,[Ref]$PHRect))
-            $X = ($X.Replace(('{'+$_+'}'),([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match 'GETWINDTEXT \S+'} | %{    
-            If($_ -match ' -ID '){
-                $PHHandle = ((PS -Id ($_ -replace 'GETWINDTEXT -ID ')).MainWindowHandle | ?{[Int]$_})
-            }Else{
-                $PHHandle = ((PS ($_ -replace 'GETWINDTEXT ')).MainWindowHandle | ?{[Int]$_})
-            }
-
-            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHHandle)
-            $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
-            [Void]([Cons.WindowDisp]::GetWindowText($PHHandle, $PHString, $PHString.Capacity))
-            $X = ($X.Replace(('{'+$_+'}'),$PHString.ToString()))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match 'GETFOCUS'} | %{
-            $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
-            
-            If($_ -match ' -ID'){
-                $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Id})
-            }Else{
-                $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle} | %{$_.Name})
+            If($_ -notmatch 'GETFOCUS'){
+                $PHProc = $PHProc.Split(' ')[-1]
             }
             
-            $X = ($X.Replace(('{'+$_+'}'),($PHProcInfo)))
-            [System.Console]::WriteLine($X)
+            $PHID = $False
+            If($_ -match ' -ID '){
+                $PHID = $True
+                $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
+            }ElseIf($_ -notmatch 'GETFOCUS'){
+                $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
+            }
+            
+
+            $PHOut = ''
+            If($PHProc.Count -ge 1){
+                $PHProc | %{
+                    $PHTMPProc = $_
+                    Switch($PHSel){
+                        'GETPROC'     {If($PHID){$PHOut = $PHTMPProc.Name}Else{$PHOut+=($PHTMPProc.Id+';')}}
+                        'GETWINDTEXT' {
+                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProc.MainWindowHandle)
+                            $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
+                            [Void]([Cons.WindowDisp]::GetWindowText($PHTMPProc.MainWindowHandle, $PHString, $PHString.Capacity))
+                            $PHOut+=($PHString.ToString()+';')
+                        }
+                        'GETWIND'     {
+                            $PHRect = [GUI.Rect]::E
+                            [Void]([Cons.WindowDisp]::GetWindowRect($PHTMPProc.MainWindowHandle,[Ref]$PHRect))
+                            $PHOut+=(([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)+';')
+                        }
+                        default{
+                            If($PHTMPProc -match 'GETFOCUS'){
+                                $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
+                                $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle})
+
+                                If($PHProc -match '-ID'){
+                                    $PHOut = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Id
+                                }Else{
+                                    $PHOut = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Name
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            $PHOut = $PHOut.ToString().Trim(';')
+            If(!$PHProc -OR !$PHOut){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
+            $X = ($X.Replace(('{'+$_+'}'),$PHOut.Trim(';')))
         }
 
         $PHSplitX | ?{$_ -match 'READIN \S+'} | %{
@@ -382,67 +387,36 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
-        $PHSplitX | ?{$_ -match '^LEN \S+'} | %{
+        $PHSplitX | ?{
+            ($_ -match '^LEN \S+') -OR `
+            ($_ -match '^ABS \S+') -OR `
+            ($_ -match '^SIN \S+') -OR `
+            ($_ -match '^COS \S+') -OR `
+            ($_ -match '^TAN \S+') -OR `
+            ($_ -match '^RND \S+') -OR `
+            ($_ -match '^FLR \S+') -OR `
+            ($_ -match '^CEI \S+') -OR `
+            ($_ -match '^SQT \S+') -OR `
+            ($_ -match '^MOD \S+') -OR `
+            ($_ -match '^POW \S+')
+        } | %{
             $PH = $_.Substring(4)
+            
+            Switch($_.Split(' ')[0]){
+                'LEN'{$PH = $PH.Length}
+                'ABS'{$PH = [Math]::Abs([Double]$PH)}
+                'SIN'{$PH = [Math]::Sin([Double]$PH)}
+                'COS'{$PH = [Math]::Cos([Double]$PH)}
+                'TAN'{$PH = [Math]::Tan([Double]$PH)}
+                'RND'{$PH = [Math]::Round([Double]$PH)}
+                'FLR'{$PH = [Math]::Floor([Double]$PH)}
+                'CEI'{$PH = [Math]::Ceiling([Double]$PH)}
+                'SQT'{$PH = [Math]::Sqrt([Double]$PH)}
+                'MOD'{$PH = $PH.Split(',');$PH = [Double]$PH[0] % [Double]$PH[1]}
+                'POW'{$PH = $PH.Split(',');$PH = [Math]::Pow([Double]$PH[0],[Double]$PH[1])}
+            }
+            
             $PH = $PH.Length
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^POW \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = $PH.Split(',')
-            $PH = [Math]::Pow([Double]$PH[0],[Double]$PH[1])
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^SIN \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = [Math]::Sin([Double]$PH)
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^COS \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = [Math]::Cos([Double]$PH)
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^TAN \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = [Math]::Tan([Double]$PH)
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^FLR \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = [Math]::Floor([Double]$PH)
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^CEI \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = [Math]::Ceiling([Double]$PH)
-    
-            $X = ($X.Replace(('{'+$_+'}'),$PH))
-            [System.Console]::WriteLine($X)
-        }
-
-        $PHSplitX | ?{$_ -match '^MOD \S+'} | %{
-            $PH = $_.Substring(4)
-            $PH = $PH.Split(',')
-            $PH = [Double]$PH[0] % [Double]$PH[1]
     
             $X = ($X.Replace(('{'+$_+'}'),$PH))
             [System.Console]::WriteLine($X)
@@ -508,25 +482,15 @@ Function Interpret{
             [System.Console]::WriteLine($X)
         }
 
-        $PHSplitX | ?{$_ -match '^VAR\+\+ \S+'} | %{
+        $PHSplitX | ?{($_ -match '^VAR\+\+ \S+') -OR ($_ -match '^VAR-- \S+')} | %{
             $PH = $_.Split(' ')[1]
             If($VarsHash.ContainsKey($PH)){
                 Try{
-                    $VarsHash.$PH = ([Double]$VarsHash.$PH + 1)
-                }Catch{
-                    [System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')
-                }
-            }Else{
-                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
-            }
-            $X = ''
-        }
-
-        $PHSplitX | ?{$_ -match '^VAR-- \S+'} | %{
-            $PH = $_.Split(' ')[1]
-            If($VarsHash.ContainsKey($PH)){
-                Try{
-                    $VarsHash.$PH = ([Double]$VarsHash.$PH - 1)
+                    If($_ -match '\+\+'){
+                        $VarsHash.$PH = ([Double]$VarsHash.$PH + 1)
+                    }ElseIf($_ -match '--'){
+                        $VarsHash.$PH = ([Double]$VarsHash.$PH - 1)
+                    }
                 }Catch{
                     [System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')
                 }
@@ -929,20 +893,15 @@ Function Actions{
                     }
                 }
             }ElseIf(($X -match '{FOCUS ') -OR ($X -match '{SETWIND ') -OR ($X -match '{MIN ') -OR ($X -match '{MAX ') -OR ($X -match '{HIDE ') -OR ($X -match '{SHOW ') -OR ($X -match '{SETWINDTEXT ')){
-                $Id = $False
-                
-                If($X -match ' -ID '){
-                    $PHProc = ($X.Split() | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
-                    $Id = $True
-                }Else{
-                    $PHProc = ($X.Split() | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
-                }
+                $PHProc = $X
                 
                 If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
 
-                If($Id){
+                If($X -match ' -ID '){
+                    $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
                     $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }Else{
+                    $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
                     $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }
 
@@ -950,7 +909,7 @@ Function Actions{
                     If(!$WhatIf){
                         $PHProc | %{
                             $PHTMPProc = $_
-                            Switch($X.Split()[0].Replace('{','')){
+                            Switch($X.Split(' ')[0].Replace('{','')){
                                 'FOCUS'       {[Cons.App]::Act($PHTMPProc.MainWindowTitle)}
                                 'MIN'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,6)}
                                 'MAX'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,3)}
@@ -969,7 +928,7 @@ Function Actions{
                     }Else{
                         $PHProc | %{
                             $PHTMPProc = $_
-                            Switch($X.Split()[0].Replace('{','')){
+                            Switch($X.Split(' ')[0].Replace('{','')){
                                 'FOCUS'       {[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
                                 'MIN'         {[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
                                 'MAX'         {[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}
