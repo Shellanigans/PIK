@@ -816,20 +816,27 @@ Function Actions{
                     If($X -match ','){
                         $PHX = $X
                         $PHMoveType = 'NONE'
-                        If($PHX -match ' -LINEAR '){
-                            $PHX = ($PHX -replace '-LINEAR ')
+                        If($PHX -match ' -LINEAR'){
+                            $PHX = ($PHX -replace '-LINEAR')
                             $PHMoveType = 'LINEAR'
-                        }ElseIf($PHX -match ' -SINE '){
-                            $PHX = ($PHX -replace '-SINE ')
+                        }ElseIf($PHX -match ' -SINE'){
+                            $PHX = ($PHX -replace '-SINE')
                             $PHMoveType = 'SINE'
                         }
 
-                        $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''}).Split(',')[-2,-1]
+                        $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
                         
                         If(($PHX -match '\+') -OR ($PHX -match '-\d+') -OR ($PHMoveType -notmatch 'NONE')){
                             $Coords = [Cons.Curs]::GPos()
+                            $PHTMPCoords = $Coords
                             $MoveCoords[0] = [Int]($MoveCoords[0])+$Coords.X
                             $MoveCoords[1] = [Int]($MoveCoords[1])+$Coords.Y
+                        }
+
+                        If($X -match '\(.*\)'){
+                            $PHDelay = [Int]($X -replace '^.*?\(' -replace '\).*$')
+                        }Else{
+                            $PHDelay = 0
                         }
 
                         If($PHMoveType -notmatch 'NONE'){
@@ -849,11 +856,10 @@ Function Actions{
                             Switch($PHMoveType){
                                 'LINEAR' {
                                     0..$Dist | %{
-                                        $PHTMPCoords = [Cons.Curs]::GPos()
                                         If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+1)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-1)}
                                         If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+1)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-1)}
                                         [Cons.Curs]::SPos($PHTMPCoords.X,$PHTMPCoords.Y)
-                                        Sleep -Milliseconds 10
+                                        [System.Threading.Thread]::Sleep($PHDelay)
                                     }
                                 }
                                 'SINE'   {}
