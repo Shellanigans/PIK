@@ -929,95 +929,66 @@ Function Actions{
                         }
                     }
                 }
-            }ElseIf($X -match '{FOCUS'){
-                If(!$WhatIf){
-                    If($X -match ' -ID '){
-                        Try{[Cons.App]::Act((PS -Id ($X -replace '{FOCUS -ID ' -replace '}')).MainWindowTitle)}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
-                    }Else{
-                        Try{[Cons.App]::Act($X -replace '{FOCUS ' -replace '}')}Catch{[System.Console]::WriteLine($Tab+'Process not found!')}
-                    }
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))
-                }
-            }ElseIf($X -match '{SETWIND '){
+            }ElseIf(($X -match '{FOCUS ') -OR ($X -match '{SETWIND ') -OR ($X -match '{MIN ') -OR ($X -match '{MAX ') -OR ($X -match '{HIDE ') -OR ($X -match '{SHOW ') -OR ($X -match '{SETWINDTEXT ')){
+                $Id = $False
+                
                 If($X -match ' -ID '){
-                    $PHHandle = ((PS -Id ($X -replace '{SETWIND -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                    $PHCoords = (($X -replace '{SETWIND -ID ' -replace '}$').Split(',') | Select -Skip 1)
+                    $PHProc = ($X.Split() | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    $Id = $True
                 }Else{
-                    $PHHandle = ((PS ($X -replace '{SETWIND ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                    $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+                    $PHProc = ($X.Split() | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
                 }
-            
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::MoveWindow($PHHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
+                
+                If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
+
+                If($Id){
+                    $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
-                }
-            }ElseIf($X -match '{MIN '){
-                If($X -match ' -ID '){
-                    $PHHandle = ((PS -Id ($X -replace '{MIN -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }Else{
-                    $PHHandle = ((PS ($X -replace '{MIN ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }
-            
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::ShowWindow($PHHandle,6)
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))
-                }
-            }ElseIf($X -match '{MAX '){
-                If($X -match ' -ID '){
-                    $PHHandle = ((PS -Id ($X -replace '{MAX -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }Else{
-                    $PHHandle = ((PS ($X -replace '{MAX ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }
-            
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::ShowWindow($PHHandle,3)
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))
-                }
-            }ElseIf($X -match '{HIDE '){
-                If($X -match ' -ID '){
-                    $PHHandle = ((PS -Id ($X -replace '{HIDE -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }Else{
-                    $PHHandle = ((PS ($X -replace '{HIDE ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }
-            
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::ShowWindow($PHHandle,0)
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))
-                }
-            }
-            ElseIf($X -match '{SHOW '){
-                If($X -match ' -ID '){
-                    $PHHandle = ((PS -Id ($X -replace '{SHOW -ID ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }Else{
-                    $PHHandle = ((PS ($X -replace '{SHOW ' -replace '}$').Split(',')[0]).MainWindowHandle | ?{[Int]$_})
-                }
-            
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::ShowWindow($PHHandle,9)
-                }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))
-                }
-            }
-            ElseIf($X -match '{SETWINDTEXT '){
-                If($X -match ' -ID '){
-                    $PHIdentifier = ($X -replace '{SETWINDTEXT -ID ' -replace '}$').Split(',')[0]
-                    $PHHandle = (((PS -Id $PHIdentifier).MainWindowHandle) | ?{[Int]$_})
-                    $PHWindText = ($X -replace ('{SETWINDTEXT -ID '+$PHIdentifier+',') -replace '}$')
-                }Else{
-                    $PHIdentifier = ($X -replace '{SETWINDTEXT ' -replace '}$').Split(',')[0]
-                    $PHHandle = ((PS $PHIdentifier).MainWindowHandle | ?{[Int]$_})
-                    $PHWindText = ($X -replace ('{SETWINDTEXT '+$PHIdentifier+',') -replace '}$')
+                    $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }
 
-                If(!$WhatIf){
-                    [Cons.WindowDisp]::SetWindowText($PHHandle,$PHWindText)
+                If($PHProc){
+                    If(!$WhatIf){
+                        $PHProc | %{
+                            $PHTMPProc = $_
+                            Switch($X.Split()[0].Replace('{','')){
+                                'FOCUS'       {[Cons.App]::Act($PHTMPProc.MainWindowTitle)}
+                                'MIN'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,6)}
+                                'MAX'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,3)}
+                                'HIDE'        {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,0)}
+                                'SHOW'        {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,9)}
+                                'SETWIND'     {
+                                    $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+                                    [Cons.WindowDisp]::MoveWindow($PHTMPProc.MainWindowHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
+                                }
+                                'SETWINDTEXT' {
+                                    $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
+                                    [Cons.WindowDisp]::SetWindowText($PHTMPProc.MainWindowHandle,$PHWindText)
+                                }
+                            }
+                        }
+                    }Else{
+                        $PHProc | %{
+                            $PHTMPProc = $_
+                            Switch($X.Split()[0].Replace('{','')){
+                                'FOCUS'       {[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
+                                'MIN'         {[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
+                                'MAX'         {[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}
+                                'HIDE'        {[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}
+                                'SHOW'        {[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))}
+                                'SETWIND'     {
+                                    $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+                                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
+                                }
+                                'SETWINDTEXT' {
+                                    $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
+                                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID').Split(',')[0]+' TO '+$PHWindText)
+                                }
+                            }
+                        }
+                    }
                 }Else{
-                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+$PHIdentifier+' TO '+$PHWindText)
+                    [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')
                 }
             }
             ElseIf($X -match '{CONSOLE .*?}'){
