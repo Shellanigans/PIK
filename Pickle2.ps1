@@ -761,10 +761,9 @@ Function Actions{
                 $X = ''
             }
 
-            #If($X -match '^{POWER .*}$'){
-            #    If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
-            #}Else
-            If($X -match '{PAUSE'){
+            If($X -match '^{POWER .*}$'){
+                If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
+            }ElseIf($X -match '{PAUSE'){
                 If($CommandLine -OR ($X -match '{PAUSE -C}')){
                     [System.Console]::WriteLine('Press any key to continue...')
                     [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
@@ -1082,8 +1081,6 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
 
     $Script:Refocus = $False
     $Script:IfEl = $True
-
-    #$Vars = [String[]]@()
 
     $VarsHash = @{}
     $FuncHash = @{}
@@ -1607,7 +1604,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                 $MouseCoordsBox.Parent = $TabPageHelper
 
-                $MouseManualLabel = [GUI.L]::New(100, 10, 10, 60, 'Manual Mouse:')
+                $MouseManualLabel = [GUI.L]::New(100, 10, 10, 60, 'Manual Move:')
                 $MouseManualLabel.Parent = $TabPageHelper
 
                 $XCoord = [GUI.NUD]::New(50, 25, 10, 75)
@@ -1706,7 +1703,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
         })
         $LoadProfile.Parent = $TabPageProfiles
 
-        $BlankProfile = [GUI.B]::New(75, 25, 186, 85, 'BLANK')
+        $BlankProfile = [GUI.B]::New(75, 25, 186, 85, 'NEW')
         $BlankProfile.Add_Click({
             $Profile.Text = 'Working Profile: None/Prev Text Vals'
                     
@@ -1715,7 +1712,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $Commands.Text = ''
             $FunctionsBox.Text = ''
 
-            $Form.Text = ('Pickle')
+            $Form.Text = 'Pickle'
         })
         $BlankProfile.Parent = $TabPageProfiles
 
@@ -2027,7 +2024,6 @@ If($CommandLine){
 
     $Form.Visible = $False
 
-    #[Void]$Form.ShowDialog()
     [System.Windows.Forms.Application]::Run($Form)
 }
 
@@ -2064,7 +2060,6 @@ If(!$CommandLine){
 
         $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
         $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-        #$ScratchBox.Text | Out-File ($TempDir+'\Scratch.txt') -Width 10000 -Force
 
         $SaveAsProfText.Text = ''
     }Else{
@@ -2089,7 +2084,6 @@ If($(Try{[Void][PSObject]::New()}Catch{$True})){
         $FlipFlop = $True
     }{
         If($FlipFLop){$_}
-
         $FlipFlop = !$FlipFlop
     } | %{
         If($_ -match '::New\('){
