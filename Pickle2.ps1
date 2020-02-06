@@ -426,12 +426,12 @@ Function Interpret{
             ($_.SubString(5) -replace ' ') | %{
                 #Preparse
                 $PHOut = ($_ -replace '\+-','-')
-                [System.Console]::WriteLine($Tab+$PHOut)
+                [System.Console]::WriteLine($Tab+'Pre:'+$PHOut)
                 $PHOut
             } | %{
                 #Division
                 $PHOut = $_
-                [System.Console]::WriteLine($Tab+$PHOut)
+                [System.Console]::WriteLine($Tab+'Div:'+$PHOut)
                 While($PHOut -match '/'){
                     (($_ -replace '-','+-' -replace '\*','+*' -replace '/\+','/').Split('+') | ?{$_ -match '/' -AND $_ -ne ''}) | Select -Unique | %{
                         $PHArr =  $_.Split('/')
@@ -445,7 +445,7 @@ Function Interpret{
             } | %{
                 #Multiplication
                 $PHOut = $_ -replace '\*\+','*'
-                [System.Console]::WriteLine($Tab+$PHOut)
+                [System.Console]::WriteLine($Tab+'Mul:'+$PHOut)
                 While($PHOut -match '\*'){
                     (($_ -replace '-','+-' -replace '\*\+','*').Split('+') | ?{$_ -match '\*' -AND $_ -ne ''}) | Select -Unique | %{
                         $PHArr =  $_.Split('*')
@@ -459,14 +459,14 @@ Function Interpret{
             }  | %{
                 #Subtraction
                 $PHOut = $_
-                [System.Console]::WriteLine($Tab+$PHOut)
+                [System.Console]::WriteLine($Tab+'Sub:'+$PHOut)
                 $PHOut = $PHOut -replace '-','+-'
                 While($PHOut -match '\+\+'){$PHOut = $PHOut.Replace('++','+')}
                 $PHOut
             }  | %{
                 #Addition
                 $PHOut = $_
-                [System.Console]::WriteLine($Tab+$PHOut)
+                [System.Console]::WriteLine($Tab+'Add:'+$PHOut)
                 $PHTotal = 0
                 While($PHOut -match '\+'){
                     ($_.Split('+') | ?{$_ -ne ''}) | %{
@@ -476,7 +476,7 @@ Function Interpret{
                 }
             }
 
-            [System.Console]::WriteLine($Tab+$PHOut)
+            [System.Console]::WriteLine($Tab+'Res:'+$PHOut)
 
             $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
             [System.Console]::WriteLine($X)
