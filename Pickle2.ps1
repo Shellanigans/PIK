@@ -332,18 +332,25 @@ Function Interpret{
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
+                If(($Script:HiddenWindows.Keys -join '')){
+                    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_'+$LastHiddenTime+'$')})
+                }
                 $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
             }ElseIf($_ -notmatch 'GETFOCUS'){
+                If(($Script:HiddenWindows.Keys -join '')){
+                    $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProc+'_')}) | %{$Script:HiddenWindows.$_})
+                }
                 $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
             }
-            
+            If($PHHidden){$PHProc+=$PHHidden}
 
             $PHOut = ''
             If($PHProc.Count -ge 1){
                 $PHProc | %{
                     $PHTMPProc = $_
                     Switch($PHSel){
-                        'GETPROC'     {If($PHID){$PHOut = $PHTMPProc.Name}Else{$PHOut+=($PHTMPProc.Id+';')}}
+                        'GETPROC'     {If($PHID){$PHOut = $PHTMPProc.Name}Else{$PHOut+=([String]$PHTMPProc.Id+';')}}
                         'GETWINDTEXT' {
                             $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProc.MainWindowHandle)
                             $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
@@ -361,9 +368,9 @@ Function Interpret{
                                 $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle})
 
                                 If($PHProc -match '-ID'){
-                                    $PHOut = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Id
+                                    $PHOut = [String](PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Id
                                 }Else{
-                                    $PHOut = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Name
+                                    $PHOut = [String](PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Name
                                 }
                             }
                         }
@@ -894,27 +901,41 @@ Function Actions{
                 }
             }ElseIf(($X -match '{FOCUS ') -OR ($X -match '{SETWIND ') -OR ($X -match '{MIN ') -OR ($X -match '{MAX ') -OR ($X -match '{HIDE ') -OR ($X -match '{SHOW ') -OR ($X -match '{SETWINDTEXT ')){
                 $PHProc = $X
-                
                 If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
-
+                
                 If($X -match ' -ID '){
                     $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    If(($Script:HiddenWindows.Keys -join '')){
+                        $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                        $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_'+$LastHiddenTime+'$')})
+                    }
                     $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }Else{
                     $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
+                    If(($Script:HiddenWindows.Keys -join '')){
+                        $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProc+'_')}) | %{$Script:HiddenWindows.$_})
+                    }
                     $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
                 }
+
+                If($PHHidden){$PHProc+=$PHHidden}
 
                 If($PHProc){
                     If(!$WhatIf){
                         $PHProc | %{
                             $PHTMPProc = $_
-                            Switch($X.Split(' ')[0].Replace('{','')){
+                            $PHAction = $X.Split(' ')[0].Replace('{','')
+                            Switch($PHAction){
                                 'FOCUS'       {[Cons.App]::Act($PHTMPProc.MainWindowTitle)}
                                 'MIN'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,6)}
                                 'MAX'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,3)}
-                                'HIDE'        {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,0)}
-                                'SHOW'        {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,9)}
+                                'SHOW'        {
+                                    [Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,9)
+                                }
+                                'HIDE'        {
+                                    [Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,0)
+                                    $Script:HiddenWindows.Add(($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProc)
+                                }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
                                     [Cons.WindowDisp]::MoveWindow($PHTMPProc.MainWindowHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
@@ -922,6 +943,18 @@ Function Actions{
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
                                     [Cons.WindowDisp]::SetWindowText($PHTMPProc.MainWindowHandle,$PHWindText)
+                                }
+                            }
+
+                            If(($PHAction -match 'MIN') -OR ($PHAction -match 'MAX') -OR ($PHAction -match 'SHOW')){
+                                $PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$_.Name+'_'+$_.Id+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                                If($PHKey){
+                                    $PHKey = ($_.Name+'_'+$_.Id+'_'+$PHKey)
+                                    Try{
+                                        $Script:HiddenWindows.Remove($PHKey)
+                                    }Catch{
+                                        [System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY, THIS MAY NOT BE IMPORTANT')
+                                    }
                                 }
                             }
                         }
@@ -932,15 +965,15 @@ Function Actions{
                                 'FOCUS'       {[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
                                 'MIN'         {[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
                                 'MAX'         {[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}
-                                'HIDE'        {[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}
                                 'SHOW'        {[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))}
+                                'HIDE'        {[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
+                                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID').Split(',')[0]+' TO '+$PHWindText)
+                                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+' TO '+$PHWindText)
                                 }
                             }
                         }
@@ -1043,6 +1076,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
 
     $VarsHash = @{}
     $FuncHash = @{}
+    #$Script:HiddenWindows = @{}
     $UndoHash.KeyList | %{
         If($_ -notmatch 'MOUSE'){
             [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
@@ -1219,24 +1253,7 @@ Function Handle-RMenuClick($MainObj){
             'Goto Top'{$PHObj.SelectionStart = 0}
             'Goto Bot'{$PHObj.SelectionStart = ($PHObj.Text.Length - 1)}
             'Find/Replace'{
-                $RightClickMenu.Visible = $False
                 $FindForm.Visible = $True
-                    $FLabel = [GUI.L]::New(18,20,6,28,'F:')
-                    $FLabel.Parent = $FindForm
-                    $Finder = [GUI.RTB]::New(200,20,25,25,'')
-                    $Finder.AcceptsTab = $True
-                    $Finder.Parent = $FindForm
-                    $RLabel = [GUI.L]::New(18,20,6,53,'R:')
-                    $RLabel.Parent = $FindForm
-                    $Replacer = [GUI.RTB]::New(200,20,25,50,'')
-                    $Replacer.AcceptsTab = $True
-                    $Replacer.Parent = $FindForm
-                    $FRGO = [GUI.B]::New(90,25,25,75,'Replace All')
-                        $FRGO.Add_Click({$Commands.Text = ((($Commands.Text.Split($NL) | ?{$_ -ne ''}) | %{$_ -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text.Replace('(NEWLINE)',$NL))}) -join $NL)})
-                    $FRGO.Parent = $FindForm
-                    $FRClose = [GUI.B]::New(90,25,135,75,'Close')
-                        $FRClose.Add_Click({$This.Parent.Visible = $False})
-                    $FRClose.Parent = $FindForm
                 $FindForm.BringToFront()
                 $Form.Refresh()
             }
@@ -1433,6 +1450,7 @@ $Script:IfEl = $True
 $UndoHash = @{KeyList=[String[]]@()}
 $VarsHash = @{}
 $FuncHash = @{}
+$Script:HiddenWindows = @{}
 $SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})
 
 $ClickHelperParent = [HashTable]::Synchronized(@{})
@@ -1827,8 +1845,6 @@ $GO.Parent = $Form
 
 $GOSel = [GUI.B]::New(125, 25, 230, 415, 'Run Selection')
 $GOSel.Add_Click({
-    
-
     If(!$WhatIfCheck.Checked){
         GO -Selection
     }Else{
@@ -1865,14 +1881,14 @@ $Form.Add_SizeChanged({
 
 $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
     $RClickMenuArr = (('Copy','Paste','Select All','Select Line','Highlight Syntax','Undo','Redo','WhatIf Selection','WhatIf','Goto Top','Goto Bottom','Find/Replace','Run Selection','Run') | %{$Index = 0}{
-        $PH = [GUI.B]::New(125,20,5,(5+(20*$Index)),$_)
+        $PH = [GUI.B]::New(125,20,0,(20*$Index),$_)
         $PH.Add_Click({Handle-RMenuClick $This})
         $PH.Add_MouseLeave({Handle-RMenuExit $This})
         $PH.Parent = $RightClickMenu
         $PH
         $Index++
     })
-$RightClickMenu.Size = [GUI.SP]::SI(135,(10+($Index*20)))
+$RightClickMenu.Size = [GUI.SP]::SI(127,(2+($Index*20)))
 
 $RightClickMenu.Visible = $False
 $RightClickMenu.BorderStyle = 'FixedSingle'
@@ -1882,6 +1898,24 @@ $RightClickMenu.Parent = $Form
 $FindForm = [GUI.P]::New(250,110,(($Form.Width - 250) / 2),(($Form.Height - 90) / 2))
 $FindForm.BorderStyle = 'FixedSingle'
 $FindForm.Visible = $False
+    $FRTitle = [GUI.L]::New(300,18,25,7,'Find and Replace (RegEx):')
+    $FRTitle.Parent = $FindForm
+    $FLabel = [GUI.L]::New(18,20,6,28,'F:')
+    $FLabel.Parent = $FindForm
+    $Finder = [GUI.RTB]::New(200,20,25,25,'')
+    $Finder.AcceptsTab = $True
+    $Finder.Parent = $FindForm
+    $RLabel = [GUI.L]::New(18,20,6,53,'R:')
+    $RLabel.Parent = $FindForm
+    $Replacer = [GUI.RTB]::New(200,20,25,50,'')
+    $Replacer.AcceptsTab = $True
+    $Replacer.Parent = $FindForm
+    $FRGO = [GUI.B]::New(90,25,25,75,'Replace All')
+        $FRGO.Add_Click({$Commands.Text = ((($Commands.Text.Split($NL) | ?{$_ -ne ''}) | %{$_ -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text.Replace('(NEWLINE)',$NL))}) -join $NL)})
+    $FRGO.Parent = $FindForm
+    $FRClose = [GUI.B]::New(90,25,135,75,'Close')
+        $FRClose.Add_Click({$This.Parent.Visible = $False})
+    $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
 
 $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
