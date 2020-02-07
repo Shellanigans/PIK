@@ -321,14 +321,20 @@ Function Interpret{
             $X = (($VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
     
-        $PHSplitX | ?{($_ -match 'GETPROC ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETWIND ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETWINDTEXT ((?!-ID )\S+|-ID \S+)') -OR ($_ -match 'GETFOCUS( -ID)?')} | %{
+        $PHSplitX | ?{
+                ($_ -match 'GETPROC ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
+                ($_ -match 'GETWIND ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
+                ($_ -match 'GETWINDTEXT ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
+                ($_ -match 'GETFOCUS( -ID| -HAND)?')} | %{
             $PHProc = $_
             $PHSel = $PHProc.Split(' ')[0].Replace('{','')
+
+            $TrueHand = $False
 
             If($_ -notmatch 'GETFOCUS'){
                 $PHProc = $PHProc.Split(' ')[-1]
             }
-            
+
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
@@ -337,6 +343,31 @@ Function Interpret{
                     $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_'+$LastHiddenTime+'$')})
                 }
                 $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
+            }ElseIf($_ -match ' -HAND '){
+                $PHProcHand = $PHProc
+                #If(($Script:HiddenWindows.Keys -join '')){
+                #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
+                #}
+                $PHProc = (PS | ?{[String]($_.MainWindowHandle) -eq $PHProcHand})
+
+                If($PHProc){
+                    $PHHidden = ''
+                }Else{
+                    $TrueHand = $True
+                    $PHProcHand = [IntPtr][Int]$PHProcHand
+                    Try{
+                        $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
+                        $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
+                        [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
+                        If(!$PHString){
+                            $PHProc = ''
+                            $PHHidden = ''
+                        }Else{
+                            $PHHidden = $PHProcHand
+                        }
+                    }Catch{$PHProc = ''; $PHHidden = ''}
+                }
             }ElseIf($_ -notmatch 'GETFOCUS'){
                 If(($Script:HiddenWindows.Keys -join '')){
                     $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProc+'_')}) | %{$Script:HiddenWindows.$_})
@@ -348,18 +379,35 @@ Function Interpret{
             $PHOut = ''
             If($PHProc.Count -ge 1){
                 $PHProc | %{
-                    $PHTMPProc = $_
+                    If($TrueHand){
+                        $PHTMPProcHand = $_
+                    }Else{
+                        $PHTMPProc = $_
+                        $PHTMPProcHand = $_.MainWindowHandle
+                    }
+
+                    $PHTMPProcHand = [IntPtr][Int]$PHTMPProcHand
                     Switch($PHSel){
-                        'GETPROC'     {If($PHID){$PHOut = $PHTMPProc.Name}Else{$PHOut+=([String]$PHTMPProc.Id+';')}}
+                        'GETPROC'     {
+                            If(!$TrueHand){
+                                If($PHID){
+                                    $PHOut = $PHTMPProc.Name
+                                }Else{
+                                    $PHOut+=([String]$PHTMPProc.Id+';')
+                                }
+                            }Else{
+                                [System.Console]::WriteLine($Tab+'COULD NOT PULL PROC, HANDLE IS VALID')
+                            }
+                        }
                         'GETWINDTEXT' {
-                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProc.MainWindowHandle)
+                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProcHand)
                             $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
-                            [Void]([Cons.WindowDisp]::GetWindowText($PHTMPProc.MainWindowHandle, $PHString, $PHString.Capacity))
+                            [Void]([Cons.WindowDisp]::GetWindowText($PHTMPProcHand, $PHString, $PHString.Capacity))
                             $PHOut+=($PHString.ToString()+';')
                         }
                         'GETWIND'     {
                             $PHRect = [GUI.Rect]::E
-                            [Void]([Cons.WindowDisp]::GetWindowRect($PHTMPProc.MainWindowHandle,[Ref]$PHRect))
+                            [Void]([Cons.WindowDisp]::GetWindowRect($PHTMPProcHand,[Ref]$PHRect))
                             $PHOut+=(([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)+';')
                         }
                         default{
@@ -991,19 +1039,40 @@ Function Actions{
                 $PHProc = $X
                 If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
                 
-                $Hand = $False
+                $TrueHand = $False
 
                 If($X -match ' -ID '){
                     $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
                     If(($Script:HiddenWindows.Keys -join '')){
                         $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                        $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_'+$LastHiddenTime+'$')})
+                        $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_.*?_'+$LastHiddenTime+'$')})
                     }
                     $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
                     If($PHProc){$PHHidden = ''}
                 }ElseIf($X -match ' -HAND '){
-                    $Hand = $True
-                    $PHProc = [IntPtr][Int]($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    $PHProcHand = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    #If(($Script:HiddenWindows.Keys -join '')){
+                    #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                    #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
+                    #}
+                    $PHProc = (PS | ?{[String]$_.MainWindowHandle -match $PHProcHand})
+                    If($PHProc){
+                        $PHHidden = ''
+                    }Else{
+                        $TrueHand = $True
+                        Try{
+                            $PHProcHand = [IntPtr][Int]$PHProcHand
+                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
+                            $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
+                            [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
+                            If(!$PHString){
+                                $PHProc = ''
+                                $PHHidden = ''
+                            }Else{
+                                $PHHidden = $PHProcHand
+                            }
+                        }Catch{$PHProc = ''; $PHHidden = ''}
+                    }
                 }Else{
                     $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
                     If(($Script:HiddenWindows.Keys -join '')){
@@ -1017,33 +1086,46 @@ Function Actions{
                 If($PHProc){
                     If(!$WhatIf){
                         $PHProc | %{
-                            $PHTMPProc = $_
+                            If($TrueHand){
+                                $PHTMPProcHand = $_
+                            }Else{
+                                $PHTMPProc = $_
+                                $PHTMPProcTitle = $_.MainWindowTitle
+                                $PHTMPProcHand = $_.MainWindowHandle
+                            }
+
+                            $PHTMPProcHand = [IntPtr][Int]$PHTMPProcHand
+
                             $PHAction = $X.Split(' ')[0].Replace('{','')
                             Switch($PHAction){
-                                'FOCUS'       {[Cons.App]::Act($PHTMPProc.MainWindowTitle)}
-                                'MIN'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,6)}
-                                'MAX'         {[Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,3)}
-                                'SHOW'        {
-                                    [Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,9)
-                                }
+                                'FOCUS'       {If($TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}}
+                                'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
+                                'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
+                                'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
                                 'HIDE'        {
-                                    [Cons.WindowDisp]::ShowWindow($PHTMPProc.MainWindowHandle,0)
-                                    $Script:HiddenWindows.Add(($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProc)
+                                    [Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,0)
+                                    If($TrueHand){
+                                        #$Script:HiddenWindows.Add(('UNK_UNK_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProcHand)
+                                    }Else{
+                                        $Script:HiddenWindows.Add(($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProc)
+                                    }
                                 }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                    [Cons.WindowDisp]::MoveWindow($PHTMPProc.MainWindowHandle,[Int]$PHCoords[0],[Int]$PHCoords[1],[Int]$PHCoords[2],[Int]$PHCoords[3],$True)
+                                    [Void][Cons.WindowDisp]::MoveWindow($PHTMPProcHand,[Int]$PHCoords[0],[Int]$PHCoords[1],([Int]$PHCoords[2]-[Int]$PHCoords[0]),([Int]$PHCoords[3]-[Int]$PHCoords[1]),$True)
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                    [Cons.WindowDisp]::SetWindowText($PHTMPProc.MainWindowHandle,$PHWindText)
+                                    [Void][Cons.WindowDisp]::SetWindowText($PHTMPProcHand,$PHWindText)
                                 }
                             }
 
                             If(($PHAction -match 'MIN') -OR ($PHAction -match 'MAX') -OR ($PHAction -match 'SHOW')){
-                                $PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$_.Name+'_'+$_.Id+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                                $PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                                #If(!$PHKey){$PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)}
+
                                 If($PHKey){
-                                    $PHKey = ($_.Name+'_'+$_.Id+'_'+$PHKey)
+                                    #$PHKey = ($_.Name+'_'+$_.Id+'_'+$PHTMPProcHand+'_'+$PHKey)
                                     Try{
                                         $Script:HiddenWindows.Remove($PHKey)
                                     }Catch{
@@ -1054,7 +1136,7 @@ Function Actions{
                         }
                     }Else{
                         $PHProc | %{
-                            $PHTMPProc = $_
+                            #$PHTMPProc = $_
                             Switch($X.Split(' ')[0].Replace('{','')){
                                 'FOCUS'       {[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
                                 'MIN'         {[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
@@ -1075,11 +1157,9 @@ Function Actions{
                 }Else{
                     [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')
                 }
-            }
-            ElseIf($X -match '{CONSOLE .*?}'){
+            }ElseIf($X -match '{CONSOLE .*?}'){
                 [System.Console]::WriteLine(($X -replace '^{CONSOLE ' -replace '}$'))
-            }
-            Else{
+            }Else{
                 If($Escaped){
                     [System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')
                     [System.Console]::WriteLine($Tab+'BUT HAS BEEN CONVERTED TO KEYSTROKES!')
@@ -1715,6 +1795,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $GetProcInfo = [GUI.B]::New(110, 25, 10, 125, 'Get Proc Inf')
                 $GetProcInfo.Add_Click({
+                    $ProcInfoBox.Text = 'PROCESS INFO:'
+                    $ProcInfoBox.Text+=($NL+'-------------')
+
                     $InitialText = $This.Text
                     $This.Text = '3s'
                     $Form.Refresh()
@@ -1727,8 +1810,6 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     [System.Threading.Thread]::Sleep(1000)
                     $This.Text = $InitialText
 
-                    $ProcInfoBox.Text = ''
-
                     $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
                     $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle})
 
@@ -1739,14 +1820,14 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $PHRect = [GUI.Rect]::E
                     [Void]([Cons.WindowDisp]::GetWindowRect($PHFocussedHandle,[Ref]$PHRect))
 
-                    $ProcInfoBox.Text+=('ProcName:       '+$PHProcInfo.Name)
+                    $ProcInfoBox.Text+=($NL+'ProcName:       '+$PHProcInfo.Name)
                     $ProcInfoBox.Text+=($NL+'ProcId:         '+$PHProcInfo.Id)
                     $ProcInfoBox.Text+=($NL+'WindowText:     '+$PHString)
                     $ProcInfoBox.Text+=($NL+'FocussedHandle: '+$PHFocussedHandle)
-                    $ProcInfoBox.Text+=($NL+'WindowTopLeft:  '+[String]$PHRect.X+','+[String]$PHRect.Y)
-                    $ProcInfoBox.Text+=($NL+'WindowBotRight: '+[String]($PHRect.X+$PHRect.Width)+','+[String]($PHRect.Y+$PHRect.Height))
-                    $ProcInfoBox.Text+=($NL+'WindowWidth:    '+[String]$PHRect.Width)
-                    $ProcInfoBox.Text+=($NL+'WindowHeight:   '+[String]$PHRect.Height)
+                    $ProcInfoBox.Text+=($NL+'WindowTopLeft:  '+$PHRect.X+','+$PHRect.Y)
+                    $ProcInfoBox.Text+=($NL+'WindowBotRight: '+$PHRect.Width+','+$PHRect.Height)
+                    $ProcInfoBox.Text+=($NL+'WindowWidth:    '+[String]($PHRect.Width-$PHRect.X))
+                    $ProcInfoBox.Text+=($NL+'WindowHeight:   '+[String]($PHRect.Height-$PHRect.Y))
                     $ProcInfoBox.Text+=(($NL*2)+'Misc Proc Info:')
                     $ProcInfoBox.Text+=($NL+'---------------')
                     $ProcInfoBox.Text+=($PHProcInfo | Select * | Out-String)
@@ -1758,6 +1839,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $ProcInfoBox.ScrollBars = 'Both'
                 $ProcInfoBox.WordWrap = $False
                 $ProcInfoBox.ReadOnly = $True
+                $ProcInfoBox.Text = 'PROCESS INFO:'
+                $ProcInfoBox.Text+=($NL+'-------------')
                 $ProcInfoBox.Parent = $TabPageHelper
 
                 $SingleCMD = [GUI.RTB]::New(260, 20, 10, 285, '')
@@ -2005,15 +2088,17 @@ $Form.Add_SizeChanged({
     $SingleCMD.Size             = [GUI.SP]::SI(($TabController.Width-145),20)
     
     $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-125),($TabController.Height-115))
+
+    $Help.Location              = [GUI.SP]::PO(10,($TabController.Height-85))
+    $Help.Size                  = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),25)
+
+    $ProcInfoBox.Size           = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),($TabController.Height-280))
     
     $GO.Location                = [GUI.SP]::PO(25,(([Int]$This.Height)-85))
     $GO.Size                    = [GUI.SP]::SI((([Int]$This.Width/2)-35),25)
     
     $GOSel.Location             = [GUI.SP]::PO(($GO.Width+30),(([Int]$This.Height)-85))
     $GOSel.Size                 = [GUI.SP]::SI(($GO.Width-75),25)
-    
-    $Help.Location              = [GUI.SP]::PO(10,($TabController.Height-85))
-    $Help.Size                  = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),25)
     
     $WhatIfCheck.Location       = [GUI.SP]::PO(($This.Width-105),(([Int]$This.Height)-85))
     
