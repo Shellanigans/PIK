@@ -291,6 +291,7 @@ Function Interpret{
             ($X -match '{GETWIND ') -OR `
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
+            ($X -match '{GETSCREEN') -OR `
             ($X -match '{READIN '))
         ){
         $PHSplitX = $X.Split('{}')
@@ -314,6 +315,11 @@ Function Interpret{
         
         $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
             $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
+            [System.Console]::WriteLine($X)
+        }
+
+        $PHSplitX | ?{$_ -match 'GETSCREEN'} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(([System.Windows.Forms.Screen]::AllScreens | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
             [System.Console]::WriteLine($X)
         }
 
@@ -1158,7 +1164,7 @@ Function Actions{
                     [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')
                 }
             }ElseIf($X -match '{CONSOLE .*?}'){
-                [System.Console]::WriteLine(($X -replace '^{CONSOLE ' -replace '}$'))
+                [System.Console]::WriteLine($Tab+($X -replace '^{CONSOLE ' -replace '}$'))
             }Else{
                 If($Escaped){
                     [System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')
