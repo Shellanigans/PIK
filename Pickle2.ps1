@@ -463,6 +463,8 @@ Function Interpret{
             ($_ -match '^POW \S+')
         } | %{
             $PH = $_.Substring(4)
+
+            If(($_.Split(' ')[0] -notmatch 'LEN') -AND ($PH -match 'E-')){$PH = 0}
             
             Switch($_.Split(' ')[0]){
                 'LEN'{$PH = $PH.Length}
@@ -477,14 +479,12 @@ Function Interpret{
                 'MOD'{$PH = $PH.Split(',');$PH = [Double]$PH[0] % [Double]$PH[1]}
                 'POW'{$PH = $PH.Split(',');$PH = [Math]::Pow([Double]$PH[0],[Double]$PH[1])}
             }
-            
-            $PH = $PH.Length
     
             $X = ($X.Replace(('{'+$_+'}'),$PH))
             [System.Console]::WriteLine($X)
         }
 
-        $PHSplitX | ?{$_ -match '^EVAL \S+'} | %{
+        $PHSplitX | ?{$_ -match '^EVAL \S+.*\d$'} | %{
             ($_.SubString(5) -replace ' ') | %{
                 #Preparse
                 $PHOut = ($_ -replace '\+-','-')
@@ -495,7 +495,7 @@ Function Interpret{
                 $PHOut = $_
                 [System.Console]::WriteLine($Tab+'Div:'+$PHOut)
                 While($PHOut -match '/'){
-                    (($_ -replace '-','+-' -replace '\*','+*' -replace '/\+','/').Split('+') | ?{$_ -match '/' -AND $_ -ne ''}) | Select -Unique | %{
+                    (($_ -replace '-','+-' -replace '\*','+*' -replace '/\+','/').Split('+*') | ?{$_ -match '/' -AND $_ -ne ''}) | Select -Unique | %{
                         $PHArr =  $_.Split('/')
                         $PHTotal = [Double]$PHArr[0]
                         $PHArr | Select -Skip 1 | %{$PHTotal = $PHTotal / [Double]$_}
@@ -1334,14 +1334,18 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                     }
             } | %{
                 If(!$SyncHash.Stop){
-                    If(!$WhatIf){
-                        If(!$PHGOTO){
-                            $PHGOTO = (Actions $_)
-                        }ElseIf(($_ -match '^:::'+$PHGOTO)){
-                            $PHGOTO = ''
+                    Try{
+                        If(!$WhatIf){
+                            If(!$PHGOTO){
+                                $PHGOTO = (Actions $_)
+                            }ElseIf(($_ -match '^:::'+$PHGOTO)){
+                                $PHGOTO = ''
+                            }
+                        }Else{
+                            $PHGOTO = (Actions $_ -WhatIf)
                         }
-                    }Else{
-                        $PHGOTO = (Actions $_ -WhatIf)
+                    }Catch{
+                        [System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())
                     }
                 }
             }
@@ -1507,7 +1511,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType){
         $XCoord.Value = $PH.X
         $YCoord.Value = $PH.Y
 
-        $MainObj.SelectionLength = 0
+        #$MainObj.SelectionLength = 0
         $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+$NL)
     }ElseIf($KeyCode -eq 'F6'){
         $MainObj.SelectionLength = 0
