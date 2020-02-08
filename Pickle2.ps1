@@ -1717,6 +1717,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
     $TabPageComm = [GUI.TP]::New(0, 0, 0, 0,'Main')
         $TabControllerComm = [GUI.TC]::New(0, 0, 0, 0)
         $TabControllerComm.Dock = 'Fill'
+        $TabControllerComm.Add_SelectedIndexChanged({
+            Switch($This.SelectedTab.Text){
+                'Commands'  {$Commands.Focus()}
+                'Functions' {$FunctionsBox.Focus()}
+            }
+        })
             $TabPageCommMain = [GUI.TP]::New(0, 0, 0, 0, 'Commands')
                 $Commands = [GUI.RTB]::New(0, 0, 0, 0, '')
                 $Commands.Dock = 'Fill'
@@ -1989,7 +1995,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
                 $LoadProfile.Add_Click({
-                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 2){
+                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 1){
                         $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
@@ -2348,7 +2354,7 @@ If(!$CommandLine){
     $Config.ShowConsCheck = $ShowCons.Checked
     $Config.OnTopCheck    = $OnTop.Checked
 
-    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals' -AND $Profile.Text){
         $Config.PrevProfile = ($Profile.Text -replace '^Working Profile: ')
     
         $Form.Text = ($Form.Text -replace '\*$')
