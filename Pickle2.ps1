@@ -1249,7 +1249,7 @@ Function Actions{
 
 Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     [System.Console]::WriteLine($NL+'Initializing:')
-    [System.Console]::WriteLine('------------------------------'+$NL)
+    [System.Console]::WriteLine('-------------------------')
 
     $Script:Refocus = $False
     $Script:IfEl = $True
@@ -1273,7 +1273,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
 
     If($FunctionsBox.Text -replace '\s*' -AND !$InlineCommand){
         [System.Console]::WriteLine($Tab+'Parsing Functions:')
-        [System.Console]::WriteLine($Tab+'-------------------'+$NL)
+        [System.Console]::WriteLine($Tab+'-------------------------')
 
         $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
             $FunctionStart = $False
@@ -1299,7 +1299,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
         }
     }
 
-    [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------')
+    [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------------')
     
     $Results = (Measure-Command {
         $PHGOTO = ''
@@ -1332,17 +1332,50 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                     }Else{
                         [System.Console]::WriteLine($Tab+$_)
                     }
-            } | %{
+            } | %{$InlineFunction = $False}{
                 If(!$SyncHash.Stop){
                     Try{
-                        If(!$WhatIf){
-                            If(!$PHGOTO){
-                                $PHGOTO = (Actions $_)
-                            }ElseIf(($_ -match '^:::'+$PHGOTO)){
-                                $PHGOTO = ''
+                        $Line = $_
+
+                        If(!$PHGOTO){
+                            If($Line -match '{FUNCTION NAME '){
+                                $InlineFunction = $True
+                                $NewFuncName = ($Line.Replace('{FUNCTION NAME ','') -replace '}$').Trim(' ')
+                                $NewFuncName,$FuncEsc = (Interpret $NewFuncName)
+                                If(!$FuncEsc){
+                                    $Line = ''
+                                    $NewFuncBody = ''
+                                }Else{
+                                    $InlineFunction = $False
+                                }
                             }
-                        }Else{
-                            $PHGOTO = (Actions $_ -WhatIf)
+                            If($InlineFunction){
+                                If($Line -notmatch '^{FUNCTION END}'){
+                                    $NewFuncBody+=($Line+$NL)
+                                }Else{
+                                    $InlineFunction = $False
+                                    Try{
+                                        $FuncHash.Remove($NewFuncName)
+                                    }Catch{
+                                        [System.Console]::WriteLine($Tab+'NO FUNCTION WITH THE NAME '+$NewFuncName+' FOUND, THIS MAY BE INTENDED BEHAVIOR')
+                                    }
+                                    Try{
+                                        $FuncHash.Add($NewFuncName,$NewFuncBody)
+                                        
+                                        [System.Console]::WriteLine($Tab+'Parsing New Function:')
+                                        [System.Console]::WriteLine($Tab+'-------------------------')
+                                        [System.Console]::WriteLine(($Tab*2) + $NewFuncName + $NL + ($Tab*2) + '-------------------------' + $NL + (($FuncHash.$NewFuncName.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
+                                    }Catch{}
+                                }
+                            }Else{
+                                If(!$WhatIf){
+                                    $PHGOTO = (Actions $Line)
+                                }Else{
+                                    $PHGOTO = (Actions $Line -WhatIf)
+                                }
+                            }
+                        }ElseIf(($_ -match '^:::'+$PHGOTO)){
+                            $PHGOTO = ''
                         }
                     }Catch{
                         [System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())
@@ -1377,7 +1410,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
         }
     })
 
-    [System.Console]::WriteLine('Stats'+$NL+'-------------------')
+    [System.Console]::WriteLine('Stats'+$NL+'-------------------------')
     [System.Console]::WriteLine((($Results | Select Hours,Minutes,Seconds,Milliseconds,Ticks | Out-String) -replace '^\s*'))
 }
 
