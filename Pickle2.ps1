@@ -1851,18 +1851,22 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $ScreenInfoLabel = [GUI.L]::New(100, 10, 10, 10, 'Display Info:')
                         $ScreenInfoLabel.Parent = $TabHelperSubSystem
 
-                        $ScreenInfoBox = [GUI.RTB]::New(225, 95, 10, 25, '')
+                        $ScreenInfoBox = [GUI.RTB]::New(250, 95, 10, 25, '')
                         $ScreenInfoBox.Multiline = $True
                         $ScreenInfoBox.ScrollBars = 'Both'
                         $ScreenInfoBox.WordWrap = $False
                         $ScreenInfoBox.ReadOnly = $True
-                        $ScreenInfoBox.Text = (([System.Windows.Forms.Screen]::AllScreens | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join $NL).TrimEnd($NL)
+                        $ScreenInfoBox.Text = (([System.Windows.Forms.Screen]::AllScreens | %{$DispCount = 1}{
+                            $PH = $_.Bounds
+                            'DISPLAY '+$DispCount+':'+$NL+'----------------'+$NL+'TOP LEFT     (x,y) : '+$PH.X+','+$PH.Y+$NL+'WIDTH/HEIGHT (w,h) : '+$PH.Width+','+$PH.Height+$NL+$NL
+                            $DispCount++
+                        }) -join $NL).TrimEnd($NL)
                         $ScreenInfoBox.Parent = $TabHelperSubSystem
 
                         $ProcInfoLabel = [GUI.L]::New(100,15,10,136,'Process Info:')
                         $ProcInfoLabel.Parent = $TabHelperSubSystem
 
-                        $GetProcInfo = [GUI.B]::New(120, 20, 115, 131, 'Get Proc Inf')
+                        $GetProcInfo = [GUI.B]::New(135, 20, 125, 132, 'Get Proc Inf')
                         $GetProcInfo.Add_MouseDown({If($_.Button.ToString() -eq 'Left'){$This.Text = 'Click on Proc'}ElseIf($_.Button.ToString() -eq 'Right'){$ProcInfoBox.Text = ''}})
                         $GetProcInfo.Add_LostFocus({
                             If($This.Text -ne 'Get Proc Inf'){
@@ -1893,7 +1897,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $GetProcInfo.Parent = $TabHelperSubSystem
 
-                        $ProcInfoBox = [GUI.RTB]::New(363, 160, 10, 155, '')
+                        $ProcInfoBox = [GUI.RTB]::New(360, 160, 10, 155, '')
                         $ProcInfoBox.Multiline = $True
                         $ProcInfoBox.ScrollBars = 'Both'
                         $ProcInfoBox.WordWrap = $False
@@ -1927,11 +1931,16 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $ClearCons.Add_Click({Cls})
                         $ClearCons.Parent = $TabPageDebug
 
-                        $SingleCMD = [GUI.RTB]::New(260, 20, 10, 285, '')
+                        $PseudoConsole = [GUI.RTB]::New(360, 165, 10, 110, '')
+                        $PseudoConsole.ReadOnly = $True
+                        $PseudoConsole.ScrollBars = 'Both'
+                        $pseudoConsole.Parent = $TabPageDebug
+
+                        $SingleCMD = [GUI.RTB]::New(260, 20, 10, 300, '')
                         $SingleCMD.AcceptsTab = $True
                         $SingleCMD.Parent = $TabPageDebug
 
-                        $SingleGO = [GUI.B]::New(93, 20, 280, 285, 'Run Line')
+                        $SingleGO = [GUI.B]::New(90, 20, 280, 300, 'Run Line')
                         $SingleGO.Add_Click({
                             If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){GO -InlineCommand $SingleCMD.Text}Else{GO -InlineCommand $SingleCMD.Text -WhatIf}
                         })
@@ -2144,10 +2153,12 @@ $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-100))
     $TabControllerAdvanced.Size = [GUI.SP]::SI((([Int]$TabController.Width)-30),(([Int]$TabController.Height)-50))
     
-    $SingleCMD.Location         = [GUI.SP]::PO(10,($TabController.Height-115))
+    $PseudoConsole.Size         = [GUI.SP]::SI(($TabController.Width-45),($TabController.Height-235))
+
+    $SingleCMD.Location         = [GUI.SP]::PO(10,($TabController.Height-100))
     $SingleCMD.Size             = [GUI.SP]::SI(($TabController.Width-145),20)
     
-    $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-125),($TabController.Height-115))
+    $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-125),($TabController.Height-100))
 
     $Help.Location              = [GUI.SP]::PO(($This.Width-40),0)
     #$Help.Size                  = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),25)
