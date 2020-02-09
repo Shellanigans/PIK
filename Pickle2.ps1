@@ -307,20 +307,20 @@ Function Interpret{
             }Else{
                 $X = ''
                 $PHFound = $False
-                PseudoCons -Output ($Tab+$PH+' WAS NOT FOUND!')
+                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
             }
 
-            If($PHFound){PseudoCons -Output ($Tab + 'INTERPRETED VALUE: ' + $X)}
+            If($PHFound){[System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)}
         }
         
         $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
             $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }
 
         $PHSplitX | ?{$_ -match 'GETSCREEN'} | %{
             $X = ($X.Replace(('{'+$_+'}'),(([System.Windows.Forms.Screen]::AllScreens | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }
 
         $PHSplitX | ?{$_ -match 'FINDVAR \S+'} | %{
@@ -402,7 +402,7 @@ Function Interpret{
                                     $PHOut+=([String]$PHTMPProc.Id+';')
                                 }
                             }Else{
-                                PseudoCons -Output ($Tab+'COULD NOT PULL PROC, HANDLE IS VALID')
+                                [System.Console]::WriteLine($Tab+'COULD NOT PULL PROC, HANDLE IS VALID')
                             }
                         }
                         'GETWINDTEXT' {
@@ -434,7 +434,7 @@ Function Interpret{
             }
             
             $PHOut = $PHOut.ToString().Trim(';')
-            If(!$PHProc -OR !$PHOut){PseudoCons -Output ($Tab+'PROCESS NOT FOUND!')}
+            If(!$PHProc -OR !$PHOut){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
             $X = ($X.Replace(('{'+$_+'}'),$PHOut.Trim(';')))
         }
 
@@ -446,7 +446,7 @@ Function Interpret{
             }
 
             $X = ($X.Replace(('{'+$_+'}'),($PH)))
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }
 
         $PHSplitX | ?{
@@ -481,19 +481,19 @@ Function Interpret{
             }
     
             $X = ($X.Replace(('{'+$_+'}'),$PH))
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }
 
         $PHSplitX | ?{$_ -match '^EVAL \S+.*\d$'} | %{
             ($_.SubString(5) -replace ' ') | %{
                 #Preparse
                 $PHOut = ($_ -replace '\+-','-')
-                PseudoCons -Output ($Tab+'Pre:'+$PHOut)
+                [System.Console]::WriteLine($Tab+'Pre:'+$PHOut)
                 $PHOut
             } | %{
                 #Division
                 $PHOut = $_
-                PseudoCons -Output ($Tab+'Div:'+$PHOut)
+                [System.Console]::WriteLine($Tab+'Div:'+$PHOut)
                 While($PHOut -match '/'){
                     (($_ -replace '-','+-' -replace '\*','+*' -replace '/\+','/').Split('+*') | ?{$_ -match '/' -AND $_ -ne ''}) | Select -Unique | %{
                         $PHArr =  $_.Split('/')
@@ -507,7 +507,7 @@ Function Interpret{
             } | %{
                 #Multiplication
                 $PHOut = $_ -replace '\*\+','*'
-                PseudoCons -Output ($Tab+'Mul:'+$PHOut)
+                [System.Console]::WriteLine($Tab+'Mul:'+$PHOut)
                 While($PHOut -match '\*'){
                     (($_ -replace '-','+-' -replace '\*\+','*').Split('+') | ?{$_ -match '\*' -AND $_ -ne ''}) | Select -Unique | %{
                         $PHArr =  $_.Split('*')
@@ -521,14 +521,14 @@ Function Interpret{
             }  | %{
                 #Subtraction
                 $PHOut = $_
-                PseudoCons -Output ($Tab+'Sub:'+$PHOut)
+                [System.Console]::WriteLine($Tab+'Sub:'+$PHOut)
                 $PHOut = $PHOut -replace '-','+-'
                 While($PHOut -match '\+\+'){$PHOut = $PHOut.Replace('++','+')}
                 $PHOut
             }  | %{
                 #Addition
                 $PHOut = $_
-                PseudoCons -Output ($Tab+'Add:'+$PHOut)
+                [System.Console]::WriteLine($Tab+'Add:'+$PHOut)
                 $PHTotal = 0
                 While($PHOut -match '\+'){
                     ($_.Split('+') | ?{$_ -ne ''}) | %{
@@ -538,10 +538,10 @@ Function Interpret{
                 }
             }
 
-            PseudoCons -Output ($Tab+'Out:'+$PHOut)
+            [System.Console]::WriteLine($Tab+'Out:'+$PHOut)
 
             $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }
 
         $PHSplitX | ?{($_ -match '^VAR\+\+ \S+') -OR ($_ -match '^VAR-- \S+')} | %{
@@ -554,10 +554,10 @@ Function Interpret{
                         $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - 1)
                     }
                 }Catch{
-                    PseudoCons -Output ($Tab+$PH+' BAD DATA TYPE!')
+                    [System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')
                 }
             }Else{
-                PseudoCons -Output ($Tab+$PH+' WAS NOT FOUND!')
+                [System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')
             }
             $X = ''
         }
@@ -639,14 +639,14 @@ Function Interpret{
             }
             
             $X = $X.Replace(('{'+$_+'}'),$Output)
-            If($Output){PseudoCons -Output ($X)}
+            If($Output){[System.Console]::WriteLine($X)}
         }
 
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$'){
-               PseudoCons -Output ($Tab+'THE NAME '+$PHName+' IS INVALID, _ESCAPED IS A RESERVED SUFFIX. THIS LINE WILL BE IGNORED...')
+               [System.Console]::WriteLine($Tab+'THE NAME '+$PHName+' IS INVALID, _ESCAPED IS A RESERVED SUFFIX. THIS LINE WILL BE IGNORED...')
                 $X = ''
             }Else{
                 $PHValue = $PH.Replace(($PHName+'='),'')
@@ -656,10 +656,10 @@ Function Interpret{
                     $PHValue = $PHValue.Split('}')[0..$PHCount] -join '}'
                     $X = $X.Replace(('{VAR '+$PHName+'='+$PHValue+'}'),'')
 
-                    PseudoCons -Output ($Tab+'ABOVE VAR CONTAINS BRACES "{}" AND NO VALID VARS TO SUBSTITUTE.')
-                    PseudoCons -Output ($Tab+'PLEASE CONSIDER CHANGING LOGIC TO USE DIFFERENT DELIMITERS.')
-                    PseudoCons -Output ($Tab+'THIS WILL BE PARSED AS RAW TEXT AND NOT AS COMMANDS.')
-                    PseudoCons -Output ($Tab+'IF YOU NEED TO ALIAS COMMANDS, USE A FUNCTION INSTEAD.')
+                    [System.Console]::WriteLine($Tab+'ABOVE VAR CONTAINS BRACES "{}" AND NO VALID VARS TO SUBSTITUTE.')
+                    [System.Console]::WriteLine($Tab+'PLEASE CONSIDER CHANGING LOGIC TO USE DIFFERENT DELIMITERS.')
+                    [System.Console]::WriteLine($Tab+'THIS WILL BE PARSED AS RAW TEXT AND NOT AS COMMANDS.')
+                    [System.Console]::WriteLine($Tab+'IF YOU NEED TO ALIAS COMMANDS, USE A FUNCTION INSTEAD.')
 
                     $PHName+='_ESCAPED'
                 }Else{
@@ -684,7 +684,7 @@ Function Interpret{
         $DepthOverflow++
     }
 
-    If($DepthOverflow -ge 500){PseudoCons -Output ($Tab+'OVERFLOW DEPTH REACHED! POSSIBLE INFINITE LOOP!')}
+    If($DepthOverflow -ge 500){[System.Console]::WriteLine($Tab+'OVERFLOW DEPTH REACHED! POSSIBLE INFINITE LOOP!')}
 
     Return $X,$Esc
 }
@@ -694,9 +694,9 @@ Function Actions{
 
     If(!$SyncHash.Stop -AND ($X -notmatch '^:::')){
         If($Script:IfEl){
-            PseudoCons -Output ($X)
+            [System.Console]::WriteLine($X)
         }Else{
-            PseudoCons -Output ($Tab+$X)
+            [System.Console]::WriteLine($Tab+$X)
         }
 
         $GOTOLabel = ''
@@ -710,8 +710,8 @@ Function Actions{
         }
 
         If($X -match '{IF \(.*?\)}'){
-            PseudoCons -Output ($NL + 'BEGIN IF')
-            PseudoCons -Output ('--------')
+            [System.Console]::WriteLine($NL + 'BEGIN IF')
+            [System.Console]::WriteLine('--------')
             
             $Script:IfEl = $False
             
@@ -729,13 +729,13 @@ Function Actions{
                 $Op1 = ($X -replace '-.*','').Trim(' ')
                 $Op2 = ($X -replace ('.*-'+$Comparator),'').Trim(' ')
                 
-                PseudoCons -Output ('OPERAND1: ' + $Op1)
+                [System.Console]::WriteLine('OPERAND1: ' + $Op1)
                 $Op1,$PHEsc1 = (Interpret $Op1)
 
-                PseudoCons -Output ('OPERAND2: ' + $Op2)
+                [System.Console]::WriteLine('OPERAND2: ' + $Op2)
                 $Op2,$PHEsc2 = (Interpret $Op2)
 
-                PseudoCons -Output ('COMPARATOR: ' + $Comparator)
+                [System.Console]::WriteLine('COMPARATOR: ' + $Comparator)
             }Else{
                 $Op1,$PHEsc1 = (Interpret $X)
                 $Comparator = $Op1
@@ -747,10 +747,10 @@ Function Actions{
                     'MATCH'    {If($Op1 -match $Op2)                       {$Script:IfEl = $True}}
                     'EQ'       {If($Op1 -eq $Op2)                          {$Script:IfEl = $True}}
                     'LIKE'     {If($Op1 -like $Op2)                        {$Script:IfEl = $True}}
-                    'LT'       {Try{If([Double]$Op1 -lt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{PseudoCons -Output ($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
-                    'LE'       {Try{If([Double]$Op1 -le [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{PseudoCons -Output ($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
-                    'GT'       {Try{If([Double]$Op1 -gt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{PseudoCons -Output ($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
-                    'GE'       {Try{If([Double]$Op1 -ge [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{PseudoCons -Output ($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'LT'       {Try{If([Double]$Op1 -lt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'LE'       {Try{If([Double]$Op1 -le [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'GT'       {Try{If([Double]$Op1 -gt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
+                    'GE'       {Try{If([Double]$Op1 -ge [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}
                     'NOTMATCH' {If($Op1 -notmatch $Op2)                    {$Script:IfEl = $True}}
                     'NE'       {If($Op1 -ne $Op2)                          {$Script:IfEl = $True}}
                     'NOTLIKE'  {If($Op1 -notlike $Op2)                     {$Script:IfEl = $True}}
@@ -763,14 +763,14 @@ Function Actions{
                 }
 
                 If($Comparator -eq 'TRUE' -OR $Comparator -eq 'FALSE'){
-                    PseudoCons -Output ($Tab + 'IF STATEMENT: {IF (' + $Comparator + ')}')
+                    [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $Comparator + ')}')
                 }Else{
-                    PseudoCons -Output ($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
+                    [System.Console]::WriteLine($Tab + 'IF STATEMENT: {IF (' + $OP1 + ' -' + $Comparator + ' ' + $OP2 + ')}')
                 }
-                PseudoCons -Output ($Tab + 'EVALUATION: ' + $Script:IfEl.ToString().ToUpper() + $NL)
+                [System.Console]::WriteLine($Tab + 'EVALUATION: ' + $Script:IfEl.ToString().ToUpper() + $NL)
             }
             Else{
-                PseudoCons -Output ('IF STATEMENT FAILED! CHECK PARAMS! AN ARGUMENT WAS ESCAPED FOR SOME REASON!')
+                [System.Console]::WriteLine('IF STATEMENT FAILED! CHECK PARAMS! AN ARGUMENT WAS ESCAPED FOR SOME REASON!')
             }
 
             $X = ''
@@ -792,10 +792,10 @@ Function Actions{
             }
 
             If($X -match '^{POWER .*}$'){
-                If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{PseudoCons -Output ($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
+                If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
             }ElseIf($X -match '{PAUSE'){
                 If($CommandLine -OR ($X -match '{PAUSE -C}')){
-                    PseudoCons -Output ('PRESS ANY KEY TO CONTINUE...')
+                    [System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')
                     [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
                 }Else{
                     [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
@@ -826,11 +826,11 @@ Function Actions{
                         $PHFileContent | Out-File $PHFileName -Append -Force
                     }
                 }Else{
-                    PseudoCons -Output ($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)
+                    [System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)
                 }
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
-                    If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{PseudoCons -Output ($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}
+                    If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}
                     $X = ($X -replace ('{'+$_+'}'))
                 }
             }ElseIf($X -match '{WAIT ?(M )?\d*}'){
@@ -844,14 +844,14 @@ Function Actions{
                     }
 
                     If(!$SyncHash.Stop -AND ($PH % 3000)){
-                        PseudoCons -Output ($Tab+'WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
+                        [System.Console]::WriteLine($Tab+'WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
                         [System.Threading.Thread]::Sleep($PH % 3000)
                     }
                 
                     $MaxWait = [Int]([Math]::Floor($PH / 3000))
                     $PH = ($PH - ($PH % 3000))
                     For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
-                        PseudoCons -Output ($Tab+'WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
+                        [System.Console]::WriteLine($Tab+'WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
                         [System.Threading.Thread]::Sleep(3000)
                     }
                 }
@@ -868,7 +868,7 @@ Function Actions{
                         [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
                     }
                 }Else{
-                    PseudoCons -Output (($Tab+'WHATIF: '+$(If($Rel){'RELEASE'}ELSE{'HOLD'})+' '+($X.Split()[-1] -replace '}')))
+                    [System.Console]::WriteLine(($Tab+'WHATIF: '+$(If($Rel){'RELEASE'}ELSE{'HOLD'})+' '+($X.Split()[-1] -replace '}')))
                 }
             }ElseIf($X -match '^{[LRM]?MOUSE'){
                 If(!$WhatIf){
@@ -975,9 +975,9 @@ Function Actions{
                     }
                 }Else{
                     If($X -match ','){
-                        PseudoCons -Output ($Tab+'WHATIF: MOVE MOUSE TO '+($X -replace '{MOUSE ' -replace '}'))
+                        [System.Console]::WriteLine($Tab+'WHATIF: MOVE MOUSE TO '+($X -replace '{MOUSE ' -replace '}'))
                     }Else{
-                        PseudoCons -Output ($Tab+'WHATIF: CLICK '+($X -replace '{MOUSE ' -replace '}'))
+                        [System.Console]::WriteLine($Tab+'WHATIF: CLICK '+($X -replace '{MOUSE ' -replace '}'))
                     }
                 }
             }ElseIf($X -match 'WINDOWS}'){
@@ -988,7 +988,7 @@ Function Actions{
                         '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
                     }
                 }Else{
-                    PseudoCons -Output ($Tab+'WHATIF: PRESS WINDOWS KEY')
+                    [System.Console]::WriteLine($Tab+'WHATIF: PRESS WINDOWS KEY')
                 }
             }ElseIf($X -match '^{RESTART}$'){
                 $SyncHash.Restart = $True
@@ -1020,7 +1020,7 @@ Function Actions{
                     $Graphics.Dispose()
                     $BMP.Dispose()
                 }Else{
-                    PseudoCons -Output ($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') TO BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
+                    [System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') TO BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
                 }
             }ElseIf($Script:FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
                 $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
@@ -1030,7 +1030,7 @@ Function Actions{
                         If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                         If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{PseudoCons -Output ($Tab+$_)}
+                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{[System.Console]::WriteLine($Tab+$_)}
                     } | %{
                         If(!$SyncHash.Stop){
                             If(!$WhatIf){
@@ -1135,7 +1135,7 @@ Function Actions{
                                     Try{
                                         $Script:HiddenWindows.Remove($PHKey)
                                     }Catch{
-                                        PseudoCons -Output ($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')
+                                        [System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')
                                     }
                                 }
                             }
@@ -1144,31 +1144,31 @@ Function Actions{
                         $PHProc | %{
                             #$PHTMPProc = $_
                             Switch($X.Split(' ')[0].Replace('{','')){
-                                'FOCUS'       {PseudoCons -Output ($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
-                                'MIN'         {PseudoCons -Output ($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
-                                'MAX'         {PseudoCons -Output ($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}
-                                'SHOW'        {PseudoCons -Output ($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))}
-                                'HIDE'        {PseudoCons -Output ($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}
+                                'FOCUS'       {[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}
+                                'MIN'         {[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}
+                                'MAX'         {[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}
+                                'SHOW'        {[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))}
+                                'HIDE'        {[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                    PseudoCons -Output ($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
+                                    [System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                    PseudoCons -Output ($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+' TO '+$PHWindText)
+                                    [System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+' TO '+$PHWindText)
                                 }
                             }
                         }
                     }
                 }Else{
-                    PseudoCons -Output ($Tab+'PROCESS NOT FOUND!')
+                    [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')
                 }
             }ElseIf($X -match '{CONSOLE .*?}'){
-                PseudoCons -Output ($Tab+($X -replace '^{CONSOLE ' -replace '}$'))
+                [System.Console]::WriteLine($Tab+($X -replace '^{CONSOLE ' -replace '}$'))
             }Else{
                 If($Escaped){
-                    PseudoCons -Output ($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')
-                    PseudoCons -Output ($Tab+'BUT HAS BEEN CONVERTED TO KEYSTROKES!')
+                    [System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')
+                    [System.Console]::WriteLine($Tab+'BUT HAS BEEN CONVERTED TO KEYSTROKES!')
                     $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
                     $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
                     $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
@@ -1191,7 +1191,7 @@ Function Actions{
                         If(!$WhatIf){
                             [Cons.Send]::Keys([String]$PHX)
                         }Else{
-                            PseudoCons -Output ($Tab+'WHATIF: SEND KEYS '+$PHX)
+                            [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$PHX)
                         }
                     
                         If($DelayCheck.Checked){
@@ -1207,26 +1207,26 @@ Function Actions{
                         If(!$WhatIf){
                             [Cons.Send]::Keys([String]$X)
                         }Else{
-                            PseudoCons -Output ($Tab+'WHATIF: SEND KEYS '+$X)
+                            [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)
                         }
                     }
                     Catch{
                         If(!$Escaped){
-                            PseudoCons -Output ($Tab+'POTENTIAL UNCLOSED OR BAD BRACES, POSSIBLE NON-VALID COMMAND. RE-ATTEMPTING AS KEYSTROKES...')
+                            [System.Console]::WriteLine($Tab+'POTENTIAL UNCLOSED OR BAD BRACES, POSSIBLE NON-VALID COMMAND. RE-ATTEMPTING AS KEYSTROKES...')
                             $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
                             $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
                             $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
-                            PseudoCons -Output ($X)
+                            [System.Console]::WriteLine($X)
                         }
                     
                         Try{
                             If(!$WhatIf){
                                 [Cons.Send]::Keys([String]$X)
                             }Else{
-                                PseudoCons -Output ($Tab+'WHATIF: SEND KEYS '+$X)
+                                [System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)
                             }
                         }Catch{
-                            PseudoCons -Output ($Tab+'FAILED!')    
+                            [System.Console]::WriteLine($Tab+'FAILED!')    
                         }
                     }
                 }
@@ -1248,8 +1248,8 @@ Function Actions{
 }
 
 Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
-    PseudoCons -Output ($NL+'Initializing:')
-    PseudoCons -Output ('-------------------------')
+    [System.Console]::WriteLine($NL+'Initializing:')
+    [System.Console]::WriteLine('-------------------------')
 
     $Script:Refocus = $False
     $Script:IfEl = $True
@@ -1272,8 +1272,8 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     $Form.Refresh()
 
     If($FunctionsBox.Text -replace '\s*' -AND !$InlineCommand){
-        PseudoCons -Output ($Tab+'Parsing Functions:')
-        PseudoCons -Output ($Tab+'-------------------------')
+        [System.Console]::WriteLine($Tab+'Parsing Functions:')
+        [System.Console]::WriteLine($Tab+'-------------------------')
 
         $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
             $FunctionStart = $False
@@ -1295,11 +1295,11 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
         }
 
         $Script:FuncHash.Keys | Sort | %{
-            PseudoCons -Output (($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
+            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
         }
     }
 
-    PseudoCons -Output ('Starting Macro!'+$NL+'-------------------------')
+    [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------------')
     
     $Results = (Measure-Command {
         $PHGOTO = ''
@@ -1330,7 +1330,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                     If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
                         $_
                     }Else{
-                        PseudoCons -Output ($Tab+$_)
+                        [System.Console]::WriteLine($Tab+$_)
                     }
             } | %{$InlineFunction = $False}{
                 If(!$SyncHash.Stop){
@@ -1357,14 +1357,14 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                                     Try{
                                         $Script:FuncHash.Remove($NewFuncName)
                                     }Catch{
-                                        PseudoCons -Output ($Tab+'NO FUNCTION WITH THE NAME '+$NewFuncName+' FOUND, THIS MAY BE INTENDED BEHAVIOR')
+                                        [System.Console]::WriteLine($Tab+'NO FUNCTION WITH THE NAME '+$NewFuncName+' FOUND, THIS MAY BE INTENDED BEHAVIOR')
                                     }
                                     Try{
                                         $Script:FuncHash.Add($NewFuncName,$NewFuncBody)
                                         
-                                        PseudoCons -Output ($Tab+'Parsing New Function:')
-                                        PseudoCons -Output ($Tab+'-------------------------')
-                                        PseudoCons -Output (($Tab*2) + $NewFuncName + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$NewFuncName.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
+                                        [System.Console]::WriteLine($Tab+'Parsing New Function:')
+                                        [System.Console]::WriteLine($Tab+'-------------------------')
+                                        [System.Console]::WriteLine(($Tab*2) + $NewFuncName + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$NewFuncName.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
                                     }Catch{}
                                 }
                             }Else{
@@ -1378,7 +1378,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
                             $PHGOTO = ''
                         }
                     }Catch{
-                        PseudoCons -Output ($Tab+'UNHANDLED ERROR: '+$_.ToString())
+                        [System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())
                     }
                 }
             }
@@ -1399,7 +1399,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
 
             [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
 
-            PseudoCons -Output ('Complete!'+$NL)
+            [System.Console]::WriteLine('Complete!'+$NL)
 
             $Form.Refresh()
 
@@ -1410,8 +1410,8 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
         }
     })
 
-    PseudoCons -Output ('Stats'+$NL+'-------------------------')
-    PseudoCons -Output ((($Results | Select Hours,Minutes,Seconds,Milliseconds,Ticks | Out-String) -replace '^\s*'))
+    [System.Console]::WriteLine('Stats'+$NL+'-------------------------')
+    [System.Console]::WriteLine((($Results | Select Hours,Minutes,Seconds,Milliseconds,Ticks | Out-String) -replace '^\s*'))
 }
 
 ############################################################################################################################################################################################################################################################################################################
@@ -1423,11 +1423,6 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
              #     #  #     #   #  
               #####    #####   ### 
 ############################################################################################################################################################################################################################################################################################################
-Function PseudoCons($Output){
-    [System.Console]::WriteLine($Output)
-    $PseudoConsole.Text+=($Output+$NL)
-}
-
 Function Handle-RMenuExit($MainObj){
     $PHObj = $MainObj
     
@@ -1915,9 +1910,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GetFuncts = [GUI.B]::New(135, 25, 10, 10, 'Display Functions')
                         $GetFuncts.Add_Click({
                             $Script:FuncHash.Keys | Sort | %{
-                                PseudoCons -Output ($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)
+                                [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)
 
-                                PseudoCons -Output ($NL * 3)
+                                [System.Console]::WriteLine($NL * 3)
                             }
                         })
                         $GetFuncts.Parent = $TabPageDebug
@@ -1925,22 +1920,22 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GetVars = [GUI.B]::New(135, 25, 10, 35, 'Display Variables')
                         $GetVars.Add_Click({
                             $Script:VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
-                                PseudoCons -Output ($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)
+                                [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)
 
-                                PseudoCons -Output ($NL * 3)
+                                [System.Console]::WriteLine($NL * 3)
                             }
                         })
                         $GetVars.Parent = $TabPageDebug
 
                         $ClearCons = [GUI.B]::New(135, 25, 10, 60, 'Clear Console')
-                        $ClearCons.Add_Click({Cls})
+                        $ClearCons.Add_Click({Cls; $PseudoConsole.Text = ''})
                         $ClearCons.Parent = $TabPageDebug
 
                         $PseudoConsole = [GUI.RTB]::New(360, 165, 10, 110, '')
                         $PseudoConsole.ReadOnly = $True
                         $PseudoConsole.ScrollBars = 'Both'
-                        $PseudoConsole.ForeColor = [System.Drawing.Color]::FromArgb(0xFFF5F5F5)
-                        $PseudoConsole.BackColor = [System.Drawing.Color]::FromArgb(0xFF012456)
+                        #$PseudoConsole.ForeColor = [System.Drawing.Color]::FromArgb(0xFFF5F5F5)
+                        #$PseudoConsole.BackColor = [System.Drawing.Color]::FromArgb(0xFF012456)
                         $pseudoConsole.Parent = $TabPageDebug
 
                         $SingleCMD = [GUI.RTB]::New(260, 20, 10, 300, '')
@@ -2283,7 +2278,7 @@ Try{
                 $Form.Text = ('Pickle - ' + $Macro)
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($Macro)
             }Else{
-                PseudoCons -Output ('No macro by that name!')
+                [System.Console]::WriteLine('No macro by that name!')
             }
 
             $CommandLine = $True
@@ -2305,7 +2300,7 @@ Try{
         $Form.Size = [GUI.SP]::SI($LoadedConfig.SavedSize.Split(',')[0],$LoadedConfig.SavedSize.Split(',')[1])
     }
 }Catch{
-    PseudoCons -Output ('NO CONFIG FILE FOUND, OR FILE COULD NOT BE LOADED!'+$NL)
+    [System.Console]::WriteLine('NO CONFIG FILE FOUND, OR FILE COULD NOT BE LOADED!'+$NL)
 }
 
 If($CommandLine){
@@ -2314,7 +2309,7 @@ If($CommandLine){
     }ElseIf($Macro -AND !$CLICMD){
         GO
     }Else{
-        PseudoCons -Output ('INVALID ARGS!')
+        [System.Console]::WriteLine('INVALID ARGS!')
     }
 }Else{
     $Form.Show()
