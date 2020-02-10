@@ -1252,6 +1252,12 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
     [System.Console]::WriteLine('-------------------------')
 
     $Script:Refocus = $False
+    $Script:IfEl = $True
+
+    $Script:VarsHash = @{}
+    $Script:FuncHash = @{}
+    #$Script:HiddenWindows = @{}
+    $UndoHash.KeyList | %{
         If($_ -notmatch 'MOUSE'){
             [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
         }Else{
@@ -1267,12 +1273,6 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
 
     If($FunctionsBox.Text -replace '\s*' -AND !$InlineCommand){
         [System.Console]::WriteLine($Tab+'Parsing Functions:')
-    $Script:IfEl = $True
-
-    $Script:VarsHash = @{}
-    $Script:FuncHash = @{}
-    #$Script:HiddenWindows = @{}
-    $UndoHash.KeyList | %{
         [System.Console]::WriteLine($Tab+'-------------------------')
 
         $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
@@ -2278,7 +2278,7 @@ Try{
                 $Form.Text = ('Pickle - ' + $Macro)
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($Macro)
             }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine('No macro by that name!')}
+                [System.Console]::WriteLine('No macro by that name!')
             }
 
             $CommandLine = $True
@@ -2300,7 +2300,7 @@ Try{
         $Form.Size = [GUI.SP]::SI($LoadedConfig.SavedSize.Split(',')[0],$LoadedConfig.SavedSize.Split(',')[1])
     }
 }Catch{
-    If($ShowCons.Checked){[System.Console]::WriteLine('NO CONFIG FILE FOUND, OR FILE COULD NOT BE LOADED!'+$NL)}
+    [System.Console]::WriteLine('NO CONFIG FILE FOUND, OR FILE COULD NOT BE LOADED!'+$NL)
 }
 
 If($CommandLine){
@@ -2309,7 +2309,7 @@ If($CommandLine){
     }ElseIf($Macro -AND !$CLICMD){
         GO
     }Else{
-        If($ShowCons.Checked){[System.Console]::WriteLine('INVALID ARGS!')}
+        [System.Console]::WriteLine('INVALID ARGS!')
     }
 }Else{
     $Form.Show()
