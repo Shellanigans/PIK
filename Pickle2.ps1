@@ -1515,9 +1515,6 @@ Function Handle-MousePosGet{
     }Else{
         $PixColorBox.ForeColor = [System.Drawing.Color]::White
     }
-
-    $Graphics.Dispose()
-    $BMP.Dispose()
 }
 
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt){
@@ -1815,7 +1812,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $XCoord = [GUI.NUD]::New(50, 25, 10, 75)
                         $XCoord.Maximum = 99999
                         $XCoord.Minimum = -99999
-                        $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value)})
+                        $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value);Handle-MousePosGet})
                         $XCoord.Add_KeyUp({
                             If($_.KeyCode -eq 'Return'){
                                 [Cons.Curs]::SPos($This.Value,$YCoord.Value)
@@ -1828,7 +1825,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $YCoord = [GUI.NUD]::New(50, 25, 70, 75)
                         $YCoord.Maximum = 99999
                         $YCoord.Minimum = -99999
-                        $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value)})
+                        $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value);Handle-MousePosGet})
                         $YCoord.Add_KeyUp({
                             If($_.KeyCode -eq 'Return'){
                                 [Cons.Curs]::SPos($XCoord.Value,$This.Value)
@@ -2375,6 +2372,9 @@ If(!$CommandLine){
         $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
     }
 }
+
+$Graphics.Dispose()
+$BMP.Dispose()
 
 If($Host.Name -match 'Console'){Exit}
 }
