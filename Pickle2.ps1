@@ -1105,7 +1105,7 @@ Function Actions{
 
                             $PHAction = $X.Split(' ')[0].Replace('{','')
                             Switch($PHAction){
-                                'FOCUS'       {If($TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}}
+                                'FOCUS'       {If(!$TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}}
                                 'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
                                 'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
                                 'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
