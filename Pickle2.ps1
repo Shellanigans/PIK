@@ -1080,11 +1080,12 @@ Function Actions{
                         }Catch{$PHProc = ''; $PHHidden = ''}
                     }
                 }Else{
-                    $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
+                    $PHProcTMPName = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
                     If(($Script:HiddenWindows.Keys -join '')){
-                        $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProc+'_')}) | %{$Script:HiddenWindows.$_})
+                        $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
-                    $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
+                    $PHProc = (PS $PHProcTMPName | ?{$_.MainWindowHandle -ne 0})
+                    If(!$PHProc){$PHProc = (PS | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
 
                 If($PHHidden){$PHProc+=$PHHidden}
