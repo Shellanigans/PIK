@@ -328,19 +328,20 @@ Function Interpret{
         }
     
         $PHSplitX | ?{
-                ($_ -match 'GETPROC ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
-                ($_ -match 'GETWIND ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
-                ($_ -match 'GETWINDTEXT ((?!-(ID|HAND) )\d+|-ID \S+|-HAND \d+)') -OR `
+                ($_ -match 'GETPROC ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
+                ($_ -match 'GETWIND ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
+                ($_ -match 'GETWINDTEXT ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
                 ($_ -match 'GETFOCUS( -ID| -HAND)?')} | %{
             $PHProc = $_
-            $PHSel = $PHProc.Split(' ')[0].Replace('{','')
+            $PHSel = $PHProc.Split(' ')[0]
 
             $TrueHand = $False
 
             If($_ -notmatch 'GETFOCUS'){
                 $PHProc = $PHProc.Split(' ')[-1]
             }
-
+                            Write-Host $PHProc
+                Write-Host (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
@@ -399,10 +400,10 @@ Function Interpret{
                                 If($PHID){
                                     $PHOut = $PHTMPProc.Name
                                 }Else{
-                                    $PHOut+=([String]$PHTMPProc.Id+';')
+                                    $PHOut+=([String]$PHTMPProc.Id+','+$PHTMPProcHand+';')
                                 }
                             }Else{
-                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT PULL PROC, HANDLE IS VALID')}
+                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT PULL PROC, HANDLE IS VALID THOUGH')}
                             }
                         }
                         'GETWINDTEXT' {
@@ -2372,9 +2373,6 @@ If(!$CommandLine){
         $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
     }
 }
-
-$Graphics.Dispose()
-$BMP.Dispose()
 
 If($Host.Name -match 'Console'){Exit}
 }
