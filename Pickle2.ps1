@@ -14,7 +14,7 @@ Remove-Variable * -Exclude Macro,CLICMD -EA SilentlyContinue
 
 $MainBlock = {
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition @'
-using System; 
+using System;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
@@ -1793,7 +1793,25 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageHelper = [GUI.TP]::new(0, 0, 0, 0, 'Info')
                 $TabHelperSub = [GUI.TC]::New(0, 0, 0, 0)
                 $TabHelperSub.Dock = 'Fill'
-                    $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pixel')
+                $TabHelperSub.SizeMode = 'Fixed'
+                $TabHelperSub.DrawMode = 'OwnerDrawFixed'
+                $TabHelperSub.Add_DrawItem({
+                    $PHText = $This.TabPages[$_.Index].Text
+                    
+                    $PHRect = $This.GetTabRect($_.Index)
+                    $PHRect = [System.Drawing.RectangleF]::New($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)
+
+                    $PHBrush = [System.Drawing.SolidBrush]::New('Black')
+
+                    $PHStrForm = [System.Drawing.StringFormat]::New()
+                    $PHStrForm.Alignment = [System.Drawing.StringAlignment]::Center
+                    $PHStrForm.LineAlignment = [System.Drawing.StringAlignment]::Center
+
+                    $_.Graphics.DrawString($PHText, $This.Font, $PHBrush, $PHRect, $PHStrForm)
+                })
+                $TabHelperSub.ItemSize = [GUI.SP]::SI(25,75)
+                $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
+                    $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pix')
                         $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
@@ -1905,7 +1923,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $ProcInfoBox.Parent = $TabHelperSubSystem
                     $TabHelperSubSystem.Parent = $TabHelperSub
 
-                    $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0, 'Debugging')
+                    $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0, 'Debug')
                         $GetFuncts = [GUI.B]::New(135, 25, 10, 10, 'Display Functions')
                         $GetFuncts.Add_Click({
                             $Script:FuncHash.Keys | Sort | %{
@@ -1955,6 +1973,24 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
     $TabPageAdvanced = [GUI.TP]::New(0, 0, 0, 0,'File')
         $TabControllerAdvanced = [GUI.TC]::New(0, 0, 10, 10)
         $TabControllerAdvanced.Dock = 'Fill'
+        $TabControllerAdvanced.SizeMode = 'Fixed'
+        $TabControllerAdvanced.DrawMode = 'OwnerDrawFixed'
+        $TabControllerAdvanced.Add_DrawItem({
+            $PHText = $This.TabPages[$_.Index].Text
+                    
+            $PHRect = $This.GetTabRect($_.Index)
+            $PHRect = [System.Drawing.RectangleF]::New($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)
+
+            $PHBrush = [System.Drawing.SolidBrush]::New('Black')
+
+            $PHStrForm = [System.Drawing.StringFormat]::New()
+            $PHStrForm.Alignment = [System.Drawing.StringAlignment]::Center
+            $PHStrForm.LineAlignment = [System.Drawing.StringAlignment]::Center
+
+            $_.Graphics.DrawString($PHText, $This.Font, $PHBrush, $PHRect, $PHStrForm)
+        })
+        $TabControllerAdvanced.ItemSize = [GUI.SP]::SI(25,75)
+        $TabControllerAdvanced.Alignment = [System.Windows.Forms.TabAlignment]::Left
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Save/Load')
                 $Profile = [GUI.L]::New(250, 20, 10, 10, 'Working Profile: None/Prev Text Vals')
                 $Profile.Parent = $TabPageProfiles
@@ -2378,12 +2414,7 @@ If($Host.Name -match 'Console'){Exit}
 }
 
 If($(Try{[Void][PSObject]::New()}Catch{$True})){
-    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | %{
-        $FlipFlop = $True
-    }{
-        If($FlipFLop){$_}
-        $FlipFlop = !$FlipFlop
-    } | %{
+    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne ''} | %{
         If($_ -match '::New\('){
             (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
         }Else{
