@@ -1001,7 +1001,7 @@ Function Actions{
                 }Else{
                     $Script:VarsHash.Remove(($X.Substring(0, $X.Length - 1) -replace '^{CLEARVAR '))
                 }
-            }ElseIf($X -match '^{KILL}$'){
+            }ElseIf($X -match '^{QUIT}$'){
                 $SyncHash.Stop = $True
             }ElseIf($X -match '^{SCRNSHT '){
                 $PH = ($X -replace '{SCRNSHT ')
@@ -1526,8 +1526,20 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '\\#> '
     }ElseIf($KeyCode -eq 'F3'){
-        $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '\\# '
+        $PrevStart = $MainObj.SelectionStart
+        $PrevLength = $MainObj.SelectionLength
+        
+        $MainObj.SelectionStart = $MainObj.GetFirstCharIndexOfCurrentLine()
+        $MainObj.SelectionLength = 4
+        If($MainObj.SelectedText -eq '\\# '){
+            $MainObj.SelectedText = ''
+        }Else{
+            $MainObj.SelectionLength = 0
+            $MainObj.SelectedText = '\\# '
+        }
+        
+        $MainObj.SelectionStart = $PrevStart
+        $MainObj.SelectionLength = $PrevLength
     }ElseIf($KeyCode -eq 'F4'){
         Switch($BoxType){
             'Commands'{
