@@ -963,35 +963,6 @@ Function Actions{
                 }Else{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)}
                 }
-            }ElseIf($X -match '{FINDIMG '){
-                $X.Split('{}') | ?{$_ -match 'FINDIMG \S+'} | %{
-                    $PHCoords = ($_.Split(',')[0,1,2,3] | %{[Int]$_})
-
-                    $PHIndex = 0
-                    $PHFile = ($_.Split(',') | ?{$_ -match '\.bmp'})
-                    If($_ -match '\.bmp,[0-9]+'){
-                        $PHIndex = ($_.Split(',')[-1] -replace '\D')
-                    }
-
-                    $Bounds = [GUI.Rect]::R($PHCoords[0],$PHCoords[1],$PHCoords[2],$PHCoords[3])
-
-                    $BMP1 = [System.Drawing.Bitmap]::New($Bounds1.Width, $Bounds1.Height)
-            
-                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP1)
-                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
-
-                    $BMP2 = [System.Drawing.Bitmap]::FromFile($PHFile)
-
-                    $PHOut = [Img.Find]::GetSubPositions($BMP1,$BMP2)[$PHIndex]
-                    If(!$WhatIf){
-
-                    }Else{
-                        If($ShowCons.Checked){
-                            #[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))
-                        }
-                    }
-                    $X = ($X -replace ('{'+$_+'}'))
-                }
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
                     If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}}
@@ -1051,10 +1022,11 @@ Function Actions{
                         }
 
                         $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
-                        
-                        If(($PHX -match '\+') -OR ($PHX -match '-\d+') -OR ($PHMoveType -notmatch 'NONE')){
-                            $Coords = [Cons.Curs]::GPos()
-                            $PHTMPCoords = $Coords
+
+                        $Coords = [Cons.Curs]::GPos()
+                        $PHTMPCoords = $Coords
+                            
+                        If(($PHX -match '\+') -OR ($PHX -match '-\d+')){
                             $MoveCoords[0] = [Int]($MoveCoords[0])+$Coords.X
                             $MoveCoords[1] = [Int]($MoveCoords[1])+$Coords.Y
                         }
@@ -1074,54 +1046,64 @@ Function Actions{
 
                         If($PHMoveType -notmatch 'NONE'){
                             $Right = $True
-                            $DistX = ($MoveCoords[0]-$Coords.X)
-                            If($DistX -lt 0){$DistX = ($Coords.X-$MoveCoords[0]);$Right = $False}
-                            $DistX = [Math]::Pow($DistX,2)
-
                             $Down = $True
-                            $DistY = ($MoveCoords[1]-$Coords.Y)
-                            If($DistY -lt 0){$DistY = ($Coords.Y-$MoveCoords[1]);$Down = $False}
-                            $DistY = [Math]::Pow($DistY,2)
-                            
-                            $Dist = [math]::Sqrt(($DistX+$DistY))
-                            $Dist = [Math]::Round($Dist)
 
-                            Switch($PHMoveType){
-                                'LINEAR' {
-                                    0..$Dist | %{
-                                        If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+1)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-1)}
-                                        If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+1)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-1)}
-                                        [Cons.Curs]::SPos($PHTMPCoords.X,$PHTMPCoords.Y)
-                                        If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                            $DistX = ($MoveCoords[0]-$Coords.X)
+                            $DistY = ($MoveCoords[1]-$Coords.Y)
+
+                            If($DistX -lt 0){$DistX = ($Coords.X-$MoveCoords[0]);$Right = $False}
+                            If($DistY -lt 0){$DistY = ($Coords.Y-$MoveCoords[1]);$Down = $False}
+                            
+                            $Dist = [Math]::Sqrt(([Math]::Pow($DistX,2)+[Math]::Pow($DistY,2)))
+                            $Dist = [Math]::Round($Dist)
+                            $Random = [System.Random]::New()
+                            
+                            $RemainderX = 0
+                            $RemainderY = 0
+                            For($i = 0; $i -lt $Dist -AND !$SyncHash.Stop; $i+=[Math]::Sqrt([Math]::Pow($OffsetX,2)+[Math]::Pow($OffsetY,2))){
+                                Switch($PHMoveType){
+                                    'LINEAR'{
+                                        $OffsetX = $Dist/$DistY + $RemainderX
+                                        $OffsetY = $Dist/$DistX + $RemainderY
                                     }
-                                    [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
-                                }
-                                'SINE'   {
-                                    $Offset = 0
-                                    For($i = 0; $i -lt $Dist; $i+=[Math]::Sqrt(2)*$Offset){
-                                        $Offset = ($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)
-                                        
-                                        If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+$Offset)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-$Offset)}
-                                        If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+$Offset)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-$Offset)}
-                                        [Cons.Curs]::SPos($PHTMPCoords.X,$PHTMPCoords.Y)
-                                        If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                                    'SINE'{
+                                        $OffsetX = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistY
+                                        $OffsetY = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistX
                                     }
-                                    [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
-                                }
-                                'RANDOM' {
-                                    $Random = [System.Random]::New()
-                                    
-                                    $Offset = 0
-                                    For($i = 0; $i -lt $Dist; $i+=[Math]::Sqrt(2)*$Offset){
-                                        $Offset = $Random.Next(1,($Weight+1))
-                                        
-                                        If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+$Offset)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-$Offset)}
-                                        If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+$Offset)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-$Offset)}
-                                        [Cons.Curs]::SPos($PHTMPCoords.X,$PHTMPCoords.Y)
-                                        If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                                    'RANDOM'{
+                                        $OffsetX = $Dist*$Random.Next(1,($Weight+1))/$DistY
+                                        $OffsetY = $Dist*$Random.Next(1,($Weight+1))/$DistX
                                     }
-                                    [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
                                 }
+                                If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+$OffsetX)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-$OffsetX)}
+                                If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+$OffsetY)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-$OffsetY)}
+                                
+                                $j = $Coords.X
+                                $k = $Coords.Y
+                                While($j -ne $PHTMPCoords.X){
+                                    [Cons.Curs]::SPos($j,$k)
+                                    If($j -lt $PHTMPCoords.X){$j++}Else{$j--}
+                                }
+                                While($k -ne $PHTMPCoords.Y){
+                                    [Cons.Curs]::SPos($j,$k)
+                                    If($k -lt $PHTMPCoords.Y){$k++}Else{$k--}
+                                }
+
+                                $RemainderX = $OffsetX - [Math]::Round($OffsetX)
+                                $RemainderY = $OffsetY - [Math]::Round($OffsetY)
+                                If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                            }
+
+                            If(!$SyncHash.Stop){
+                                While($j -ne $MoveCoords[0]){
+                                    [Cons.Curs]::SPos($j,$k)
+                                    If($j -lt $MoveCoords[0]){$j++}Else{$j--}
+                                }
+                                While($k -ne $MoveCoords[1]){
+                                    [Cons.Curs]::SPos($j,$k)
+                                    If($k -lt $MoveCoords[1]){$k++}Else{$k--}
+                                }
+                                If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
                             }
                         }Else{
                             [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
@@ -1725,6 +1707,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'F6'){
         $MainObj.SelectionLength = 0
         $MainObj.SelectedText = '{WAIT M 100}'
+    }ElseIf($KeyCode -eq 'F9'){
+        GO -SelectionRun
     }ElseIf($KeyCode -eq 'F10'){
         $TempSelectionIndex = $MainObj.SelectionStart
         $TempSelectionLength = $MainObj.SelectionLength
@@ -1787,7 +1771,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $SaveAsProfText.Text = ''
         }
     }ElseIf($KeyCode -eq 'F12'){
-        $GO.PerformClick()
+        GO
     }ElseIf($KeyCode -eq 'TAB'){
         If($MainObj.SelectionLength -gt 0){
             $Start = $MainObj.GetLineFromCharIndex($MainObj.SelectionStart)
