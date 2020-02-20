@@ -72,6 +72,106 @@ namespace Cons{
     }
 }
 
+namespace Img{
+    public class Find{
+        public static System.Collections.Generic.List<DR.Point> GetSubPositions(DR.Bitmap main, DR.Bitmap sub) {
+            System.Collections.Generic.List<DR.Point> possiblepos = new System.Collections.Generic.List<DR.Point>();
+
+            int mainwidth = main.Width;
+            int mainheight = main.Height;
+
+            int subwidth = sub.Width;
+            int subheight = sub.Height;
+
+            int movewidth = mainwidth - subwidth;
+            int moveheight = mainheight - subheight;
+
+            DR.Imaging.BitmapData bmMainData = main.LockBits(new DR.Rectangle(0, 0, mainwidth, mainheight), DR.Imaging.ImageLockMode.ReadWrite, DR.Imaging.PixelFormat.Format32bppArgb);
+            DR.Imaging.BitmapData bmSubData = sub.LockBits(new DR.Rectangle(0, 0, subwidth, subheight), DR.Imaging.ImageLockMode.ReadWrite, DR.Imaging.PixelFormat.Format32bppArgb);
+
+            int bytesMain = Math.Abs(bmMainData.Stride) * mainheight;
+            int strideMain = bmMainData.Stride;
+            System.IntPtr Scan0Main = bmMainData.Scan0;
+            byte[] dataMain = new byte[bytesMain];
+            System.Runtime.InteropServices.Marshal.Copy(Scan0Main, dataMain, 0, bytesMain);
+
+            int bytesSub = Math.Abs(bmSubData.Stride) * subheight;
+            int strideSub = bmSubData.Stride;
+            System.IntPtr Scan0Sub = bmSubData.Scan0;
+            byte[] dataSub = new byte[bytesSub];
+            System.Runtime.InteropServices.Marshal.Copy(Scan0Sub, dataSub, 0, bytesSub);
+
+            for (int y = 0; y < moveheight; ++y) {
+                for (int x = 0; x < movewidth; ++x) {
+                    MyColor curcolor = GetColor(x, y, strideMain, dataMain);
+
+                    foreach (var item in possiblepos.ToArray()) {
+                        int xsub = x - item.X;
+                        int ysub = y - item.Y;
+                        if (xsub >= subwidth || ysub >= subheight || xsub < 0)
+                            continue;
+
+                        MyColor subcolor = GetColor(xsub, ysub, strideSub, dataSub);
+
+                        if (!curcolor.Equals(subcolor)) {
+                            possiblepos.Remove(item);
+                        }
+                    }
+
+                    if (curcolor.Equals(GetColor(0, 0, strideSub, dataSub)))
+                        possiblepos.Add(new DR.Point(x, y));
+                }
+            }
+
+            System.Runtime.InteropServices.Marshal.Copy(dataSub, 0, Scan0Sub, bytesSub);
+            sub.UnlockBits(bmSubData);
+
+            System.Runtime.InteropServices.Marshal.Copy(dataMain, 0, Scan0Main, bytesMain);
+            main.UnlockBits(bmMainData);
+
+            return possiblepos;
+        }
+
+        private static MyColor GetColor(DR.Point point, int stride, byte[] data) {
+            return GetColor(point.X, point.Y, stride, data);
+        }
+
+        private static MyColor GetColor(int x, int y, int stride, byte[] data) {
+            int pos = y * stride + x * 4;
+            byte a = data[pos + 3];
+            byte r = data[pos + 2];
+            byte g = data[pos + 1];
+            byte b = data[pos + 0];
+            return MyColor.FromARGB(a, r, g, b);
+        }
+
+        struct MyColor {
+            byte A;
+            byte R;
+            byte G;
+            byte B;
+
+            public static MyColor FromARGB(byte a, byte r, byte g, byte b) {
+                MyColor mc = new MyColor();
+                mc.A = a;
+                mc.R = r;
+                mc.G = g;
+                mc.B = b;
+                return mc;
+            }
+
+            public override bool Equals(object obj) {
+                if (!(obj is MyColor))
+                    return false;
+                MyColor color = (MyColor)obj;
+                if(color.A == this.A && color.R == this.R && color.G == this.G && color.B == this.B)
+                    return true;
+                return false;
+            }
+        }
+    }
+}
+
 namespace GUI{
     public class SP{
         public static DR.Point PO (int sx, int sy) {return (new DR.Point(sx, sy));}
@@ -252,6 +352,7 @@ public class Parser{
 }
 '@
 
+
 ############################################################################################################################################################################################################################################################################################################
              #######                                                           
              #        #    #  #    #   ####   #####  #   ####   #    #   ####  
@@ -288,6 +389,7 @@ Function Interpret{
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
             ($X -match '{GETPROC ') -OR `
+            ($X -match '{FINDIMG ') -OR `
             ($X -match '{GETWIND ') -OR `
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
@@ -563,6 +665,38 @@ Function Interpret{
             $X = ''
         }
 
+        $PHSplitX | ?{$_ -match 'FINDIMG \S+'} | %{
+            $PHCoords = ($_ -replace '^FINDIMG ')
+            $PHCoords = ($PHCoords.Split(',')[0,1,2,3] | %{[Int]$_})
+
+            $PHIndex = 0
+            $PHFile = ($_.Split(',') | ?{$_ -match '\.bmp'})
+            If($_ -match '\.bmp,[0-9]+'){
+                $PHIndex = ($_.Split(',')[-1] -replace '\D')
+            }
+
+            $Bounds = [GUI.Rect]::R($PHCoords[0],$PHCoords[1],$PHCoords[2],$PHCoords[3])
+
+            $BMP1 = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+            $Graphics = [System.Drawing.Graphics]::FromImage($BMP1)
+            $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
+
+            $BMP2 = [System.Drawing.Bitmap]::FromFile($PHFile)
+
+            $PHOut = [Img.Find]::GetSubPositions($BMP1,$BMP2)[$PHIndex]
+            If($PHOut -ne $Null){
+                $PHOut = ([String]$PHOut.X + ',' + $PHOut.Y)
+
+                If($ShowCons.Checked){
+                    [System.Console]::WriteLine($Tab+'IMAGE FOUND WITH INDEX ' + $PHIndex + ' AT COORDINATES ' + $PHOut)
+                }
+            }Else{
+                [System.Console]::WriteLine($Tab+'IMAGE NOT FOUND!')
+            }
+            $X = ($X.Replace(('{'+$_+'}'),$PHOut))
+        }
+
         $PHSplitX | ?{$_ -match '^MANIP \S+'} | %{
             $PH = ($_.Substring(6))
 
@@ -828,6 +962,35 @@ Function Actions{
                     }
                 }Else{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)}
+                }
+            }ElseIf($X -match '{FINDIMG '){
+                $X.Split('{}') | ?{$_ -match 'FINDIMG \S+'} | %{
+                    $PHCoords = ($_.Split(',')[0,1,2,3] | %{[Int]$_})
+
+                    $PHIndex = 0
+                    $PHFile = ($_.Split(',') | ?{$_ -match '\.bmp'})
+                    If($_ -match '\.bmp,[0-9]+'){
+                        $PHIndex = ($_.Split(',')[-1] -replace '\D')
+                    }
+
+                    $Bounds = [GUI.Rect]::R($PHCoords[0],$PHCoords[1],$PHCoords[2],$PHCoords[3])
+
+                    $BMP1 = [System.Drawing.Bitmap]::New($Bounds1.Width, $Bounds1.Height)
+            
+                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP1)
+                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
+
+                    $BMP2 = [System.Drawing.Bitmap]::FromFile($PHFile)
+
+                    $PHOut = [Img.Find]::GetSubPositions($BMP1,$BMP2)[$PHIndex]
+                    If(!$WhatIf){
+
+                    }Else{
+                        If($ShowCons.Checked){
+                            #[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))
+                        }
+                    }
+                    $X = ($X -replace ('{'+$_+'}'))
                 }
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
