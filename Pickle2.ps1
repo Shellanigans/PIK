@@ -1095,13 +1095,13 @@ Function Actions{
                             }
 
                             If(!$SyncHash.Stop){
-                                While($j -ne $MoveCoords[0]){
+                                While($j -ne [Math]::Round($MoveCoords[0]) -AND !$SyncHash.Stop){
                                     [Cons.Curs]::SPos($j,$k)
-                                    If($j -lt $MoveCoords[0]){$j++}Else{$j--}
+                                    If($j -lt [Math]::Round($MoveCoords[0])){$j++}Else{$j--}
                                 }
-                                While($k -ne $MoveCoords[1]){
+                                While($k -ne [Math]::Round($MoveCoords[1])){
                                     [Cons.Curs]::SPos($j,$k)
-                                    If($k -lt $MoveCoords[1]){$k++}Else{$k--}
+                                    If($k -lt [Math]::Round($MoveCoords[1]) -AND !$SyncHash.Stop){$k++}Else{$k--}
                                 }
                                 If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
                             }
@@ -2021,6 +2021,36 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $PixColorBox.Multiline = $True
                         $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                         $PixColorBox.Parent = $TabHelperSubMouse
+
+                        $LeftMouseBox = [GUI.B]::New(135,25,10,110,'Left Mouse Click')
+                        $LeftMouseBox.Add_KeyDown({
+                            If($_.KeyCode -eq 'Space'){
+                                [Cons.MouseEvnt]::mouse_event(2, 0, 0, 0, 0)
+                                [Cons.MouseEvnt]::mouse_event(4, 0, 0, 0, 0)
+                            }
+                            $_.SuppressKeyPress = $True
+                        })
+                        $LeftMouseBox.Parent = $TabHelperSubMouse
+
+                        $MiddleMouseBox = [GUI.B]::New(135,25,10,135,'Middle Mouse Click')
+                        $MiddleMouseBox.Add_KeyDown({
+                            If($_.KeyCode -eq 'Space'){
+                                [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
+                                [Cons.MouseEvnt]::mouse_event(64, 0, 0, 0, 0)
+                            }
+                            $_.SuppressKeyPress = $True
+                        })
+                        $MiddleMouseBox.Parent = $TabHelperSubMouse
+
+                        $RightMouseBox = [GUI.B]::New(135,25,10,160,'Right Mouse Click')
+                        $RightMouseBox.Add_KeyDown({
+                            If($_.KeyCode -eq 'Space'){
+                                [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
+                                [Cons.MouseEvnt]::mouse_event(16, 0, 0, 0, 0)
+                            }
+                            $_.SuppressKeyPress = $True
+                        })
+                        $RightMouseBox.Parent = $TabHelperSubMouse
                     $TabHelperSubMouse.Parent = $TabHelperSub
 
                     $TabHelperSubSystem = [GUI.TP]::new(0, 0, 0, 0, 'Sys/Proc')
