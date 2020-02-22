@@ -384,7 +384,9 @@ Function Interpret{
             ($X -match '{MOD ') -OR `
             ($X -match '{EVAL ') -OR `
             ($X -match '{VAR\+\+ ') -OR `
+            ($X -match '{VAR\+= ') -OR `
             ($X -match '{VAR-- ') -OR `
+            ($X -match '{VAR-= ') -OR `
             ($X -match '{MANIP ') -OR `
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
@@ -647,14 +649,18 @@ Function Interpret{
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
-        $PHSplitX | ?{($_ -match '^VAR\+\+ \S+') -OR ($_ -match '^VAR-- \S+')} | %{
-            $PH = $_.Split(' ')[1]
+        $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S+\+=\d*') -OR ($_ -match '^VAR \S+-=\d*')} | %{
+            $PH = ((($_ -replace '\+=',' ' -replace '-=',' ').Split(' ') | ?{$_ -ne ''})[1])
             If($Script:VarsHash.ContainsKey($PH)){
                 Try{
                     If($_ -match '\+\+'){
                         $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + 1)
+                    }ElseIf($_ -match '\+='){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + ($_.Split('=')[-1]))
                     }ElseIf($_ -match '--'){
                         $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - 1)
+                    }ElseIf($_ -match '-='){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - ($_.Split('=')[-1]))
                     }
                 }Catch{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')}
