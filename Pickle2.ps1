@@ -1664,8 +1664,10 @@ Function Handle-MousePosGet{
 
     If($PHLum -gt 130){
         $PixColorBox.ForeColor = [System.Drawing.Color]::Black
+        $CenterDot.BackColor = [System.Drawing.Color]::Black
     }Else{
         $PixColorBox.ForeColor = [System.Drawing.Color]::White
+        $CenterDot.BackColor = [System.Drawing.Color]::White
     }
 
     $Bounds = [GUI.Rect]::R($PH.X-7,$PH.Y-7,14,14)
@@ -1676,7 +1678,6 @@ Function Handle-MousePosGet{
     $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
 
     $ZoomPanel.BackgroundImage = $BMP
-    #$GraphicFixPanel.BringToFront()
 }
 
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt){
