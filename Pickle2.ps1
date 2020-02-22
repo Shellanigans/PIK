@@ -1638,14 +1638,14 @@ Function Handle-RMenuClick($MainObj){
 Function Handle-MousePosGet{
     $PH = [Cons.Curs]::GPos()
 
+    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
+    
     $XCoord.Value = $PH.X
     $YCoord.Value = $PH.Y
 
-    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
-    
     $MouseCoordsBox.Text = $Position
 
-    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,($PH.X+1),($PH.Y+1))
+    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,1,1)
 
     $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
             
@@ -1667,6 +1667,16 @@ Function Handle-MousePosGet{
     }Else{
         $PixColorBox.ForeColor = [System.Drawing.Color]::White
     }
+
+    $Bounds = [GUI.Rect]::R($PH.X-7,$PH.Y-7,14,14)
+
+    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+
+    $ZoomPanel.BackgroundImage = $BMP
+    #$GraphicFixPanel.BringToFront()
 }
 
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt){
@@ -2038,7 +2048,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $LeftMouseBox.Parent = $TabHelperSubMouse
 
-                        $MiddleMouseBox = [GUI.B]::New(135,25,10,135,'Middle Mouse Click')
+                        $MiddleMouseBox = [GUI.B]::New(135,25,10,152,'Middle Mouse Click')
                         $MiddleMouseBox.Add_KeyDown({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
@@ -2048,7 +2058,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $MiddleMouseBox.Parent = $TabHelperSubMouse
 
-                        $RightMouseBox = [GUI.B]::New(135,25,10,160,'Right Mouse Click')
+                        $RightMouseBox = [GUI.B]::New(135,25,10,194,'Right Mouse Click')
                         $RightMouseBox.Add_KeyDown({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
@@ -2057,6 +2067,20 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $_.SuppressKeyPress = $True
                         })
                         $RightMouseBox.Parent = $TabHelperSubMouse
+
+                        $ZoomPanel = [GUI.GB]::New(115,115,155,105,'')
+                        $ZoomPanel.BackgroundImageLayout = [System.Windows.Forms.ImageLayout]::Zoom
+                        $ZoomPanel.Parent = $TabHelperSubMouse
+
+                        $GraphicFixPanel = [GUI.P]::New(115,5,155,105)
+                        $GraphicFixPanel.BackColor = $Form.BackColor
+                        $GraphicFixPanel.Parent = $TabHelperSubMouse
+                        $GraphicFixPanel.BringToFront()
+                        
+                        $CenterDot = [GUI.P]::New(7,7,209,160)
+                        $CenterDot.BackColor = [System.Drawing.Color]::Black
+                        $CenterDot.Parent = $TabHelperSubMouse
+                        $CenterDot.BringToFront()
                     $TabHelperSubMouse.Parent = $TabHelperSub
 
                     $TabHelperSubSystem = [GUI.TP]::new(0, 0, 0, 0, 'Sys/Proc')
