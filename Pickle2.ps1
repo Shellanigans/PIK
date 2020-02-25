@@ -387,6 +387,7 @@ Function Interpret{
             ($X -match '{VAR\+= ') -OR `
             ($X -match '{VAR-- ') -OR `
             ($X -match '{VAR-= ') -OR `
+            ($X -match '{PWD') -OR `
             ($X -match '{MANIP ') -OR `
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
