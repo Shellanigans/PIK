@@ -2049,7 +2049,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $PixColorBox.Parent = $TabHelperSubMouse
 
                         $LeftMouseBox = [GUI.B]::New(135,25,10,110,'Left Mouse Click')
-                        $LeftMouseBox.Add_KeyDown({
+                        $LeftMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(2, 0, 0, 0, 0)
                                 [Cons.MouseEvnt]::mouse_event(4, 0, 0, 0, 0)
@@ -2059,7 +2059,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $LeftMouseBox.Parent = $TabHelperSubMouse
 
                         $MiddleMouseBox = [GUI.B]::New(135,25,10,152,'Middle Mouse Click')
-                        $MiddleMouseBox.Add_KeyDown({
+                        $MiddleMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
                                 [Cons.MouseEvnt]::mouse_event(64, 0, 0, 0, 0)
@@ -2069,7 +2069,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $MiddleMouseBox.Parent = $TabHelperSubMouse
 
                         $RightMouseBox = [GUI.B]::New(135,25,10,194,'Right Mouse Click')
-                        $RightMouseBox.Add_KeyDown({
+                        $RightMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
                                 [Cons.MouseEvnt]::mouse_event(16, 0, 0, 0, 0)
