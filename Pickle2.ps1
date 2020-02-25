@@ -1325,8 +1325,12 @@ Function Actions{
                 }Else{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
                 }
-            }ElseIf($X -match '{CONSOLE .*?}'){
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+($X -replace '^{CONSOLE ' -replace '}$'))}
+            }ElseIf($X -match '{ECHO .*?}'){
+                If($X -match '{ECHO -GUI \S+'){
+                    [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO -GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
+                }Else{
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+($X -replace '^{ECHO ' -replace '}$'))}
+                }
             }Else{
                 If($Escaped){
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')}
