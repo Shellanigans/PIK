@@ -427,6 +427,11 @@ Function Interpret{
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        $PHSplitX | ?{$_ -match '^PWD$'} | %{
+            $X = ($X.Replace(('{'+$_+'}'),$PWD))
+            If($ShowCons.Checked){[System.Console]::WriteLine($X)}
+        }
+
         $PHSplitX | ?{$_ -match 'FINDVAR \S+'} | %{
             $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
@@ -1154,6 +1159,9 @@ Function Actions{
                 }
             }ElseIf($X -match '^{QUIT}$'){
                 $SyncHash.Stop = $True
+            }ElseIf($X -match '^{CD '){
+                CD ($X -replace '{CD ' -replace '}$')
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'CHANGING DIRECTORY TO '+($X -replace '{CD ' -replace '}$'))}
             }ElseIf($X -match '^{SCRNSHT '){
                 $PH = ($X -replace '{SCRNSHT ')
                 $PH = $PH.Substring(0,($PH.Length - 1))
