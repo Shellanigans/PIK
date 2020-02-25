@@ -429,7 +429,7 @@ Function Interpret{
         }
 
         $PHSplitX | ?{$_ -match '^PWD$'} | %{
-            $X = ($X.Replace(('{'+$_+'}'),$PWD))
+            $X = ($X.Replace(('{'+$_+'}'),(PWD).Path))
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
