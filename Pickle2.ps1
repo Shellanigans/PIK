@@ -2337,6 +2337,15 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $OpenFolder.Parent = $TabPageProfiles
             $TabPageProfiles.Parent = $TabControllerAdvanced
 
+            $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
+                $ServerStart = [GUI.B]::New(100, 100, 100, 100, 'Start')
+                $ServerStart.Parent = $TabPageServer
+
+                $ServerPort = [GUI.TB]::New(200,200,200,200,'42069')
+                $ServerPort.Add_TextChanged({$This.Text = ($This.Text -replace '\D')})
+                $ServerPort.Parent = $TabPageServer
+            $TabPageServer.Parent = $TabControllerAdvanced
+
             $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0, 'Config')
                 $DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
                 $DelayLabel.Parent = $TabPageConfig
