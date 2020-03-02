@@ -1413,7 +1413,7 @@ Function Actions{
     Return $GOTOLabel
 }
 
-Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
+Function GO ([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand){
     [System.Console]::WriteLine($NL+'Initializing:')
     [System.Console]::WriteLine('-------------------------')
 
@@ -1559,7 +1559,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$WhatIf,[String]$InlineCommand){
         }
         $SyncHash.Stop = $False
 
-        If(!$CommandLine){    
+        If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
             $FunctionsBox.ReadOnly = $False
 
@@ -2339,6 +2339,31 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
             $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
                 $ServerStart = [GUI.B]::New(100, 100, 100, 100, 'Start')
+                $ServerStart.Add_Click({
+                    $Listener = New-Object System.Net.Sockets.TcpListener ('0.0.0.0',[Int]$ServerPort.Text)
+                    $Listener.Start()
+                    While(!$SyncHash.Stop){
+                        $Client = $Listener.AcceptTCPClient()
+                        $Listener.Stop()
+
+                        $Stream = $Client.GetStream()
+
+                        $Buff = New-Object Byte[] 1024
+                        $CMDsIn = ''
+                        $Count = 0
+                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}$')) -AND ($Count -lt 1000)){
+                            While($Stream.DataAvailable){
+                                $Stream.Read($Buff, 0, 1024)
+                                $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
+                            }
+                            [System.Threading.Thread]::Sleep(500)
+                            $Count++
+                        }
+
+                        GO -InlineCommand ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}') -Server
+                        $Listener.Start()
+                    }
+                })
                 $ServerStart.Parent = $TabPageServer
 
                 $ServerPort = [GUI.TB]::New(200,200,200,200,'42069')
