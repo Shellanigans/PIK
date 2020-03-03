@@ -2380,7 +2380,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=('$SyncHash.Kill = $True'+$NL)
                         $Temp+=('Exit'+$NL)
                         $Temp+=('}'+$NL)
-                        $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility catching it
+                        $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility
                         $Temp+=('::New()}Catch{$True})){'+$NL)
                         $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
                         $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
@@ -2455,7 +2455,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageProfiles.Parent = $TabControllerAdvanced
 
             $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
-                $ServerStart = [GUI.B]::New(100, 100, 100, 100, 'Start')
+                $ServerStart = [GUI.B]::New(100, 20, 25, 25, 'Start')
                 $ServerStart.Add_Click({
                     $Listener = New-Object System.Net.Sockets.TcpListener ('0.0.0.0',[Int]$ServerPort.Text)
                     $Listener.Start()
@@ -2483,7 +2483,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ServerStart.Parent = $TabPageServer
 
-                $ServerPort = [GUI.TB]::New(200,200,200,200,'42069')
+                $ServerPort = [GUI.TB]::New(75,25,135,26,'42069')
                 $ServerPort.Add_TextChanged({$This.Text = ($This.Text -replace '\D')})
                 $ServerPort.Parent = $TabPageServer
             $TabPageServer.Parent = $TabControllerAdvanced
