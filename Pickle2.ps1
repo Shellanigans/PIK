@@ -1439,7 +1439,7 @@ Function GO{
     $FunctionsBox.ReadOnly  = $True
 
     $Form.Refresh()
-    #Any lines with #Ignore are there for regex purposes when exporting scripts
+    #Any lines with #Ignore are there for regex purposes when exporting scripts and the below if statement is split for the regex as well
     If(
         $FunctionsBox.Text -replace '\s*' -AND `
         !$InlineCommand
