@@ -2298,7 +2298,21 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $DialogO.RestoreDirectory = $True
  
                     If($DialogO.ShowDialog() -eq 'OK'){
-                        $Commands.Text = (GC $DialogO.FileName | Out-String)
+                        $PH = ((GC $DialogO.FileName | Out-String).Split($NL) | ?{$_ -ne ''} | %{$Started = $False}{
+                            If($_ -match 'GO -InlineCommand \$ScriptedCMDs'){
+                                $Started = $False
+                            }
+                            
+                            If($Started){$_}
+
+                            If($_ -match '\$ScriptedCMDs = @'){
+                                $Started = $True
+                            }
+                        })
+
+                        $PH[-1] = ''
+
+                        $Commands.Text = ($PH -join $NL)
                         $FunctionsBox.Text = ''
                     }
                 })
