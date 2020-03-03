@@ -105,7 +105,7 @@ namespace Img{
                 for (int x = 0; x < movewidth; ++x) {
                     MyColor curcolor = GetColor(x, y, strideMain, dataMain);
 
-                    foreach (DR.Point item in possiblepos.ToArray()) {
+                    foreach (var item in possiblepos.ToArray()) {
                         int xsub = x - item.X;
                         int ysub = y - item.Y;
                         if (xsub >= subwidth || ysub >= subheight || xsub < 0)
@@ -2002,7 +2002,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
                     $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pix')
                         $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
+                        $GetMouseCoords.Add_MouseDown({$This.Text = 'Click and Drag'})
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
+                        $GetMouseCoords.Add_MouseUp({$This.Text = 'Get Mouse Inf'})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
 
                         $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
