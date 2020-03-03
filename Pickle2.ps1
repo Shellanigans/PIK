@@ -450,8 +450,7 @@ Function Interpret{
             If($_ -notmatch 'GETFOCUS'){
                 $PHProc = $PHProc.Split(' ')[-1]
             }
-                            Write-Host $PHProc
-                Write-Host (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
+
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
@@ -2340,7 +2339,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageProfiles.Parent = $TabControllerAdvanced
 
             $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
-                $ServerStart = [GUI.B]::New(100, 100, 100, 100, 'Start')
+                $ServerStart = [GUI.B]::New(75, 20, 25, 25, 'Start')
                 $ServerStart.Add_Click({
                     $Listener = New-Object System.Net.Sockets.TcpListener ('0.0.0.0',[Int]$ServerPort.Text)
                     $Listener.Start()
@@ -2368,7 +2367,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ServerStart.Parent = $TabPageServer
 
-                $ServerPort = [GUI.TB]::New(200,200,200,200,'42069')
+                $ServerPort = [GUI.TB]::New(75,25,110,26,'42069')
                 $ServerPort.Add_TextChanged({$This.Text = ($This.Text -replace '\D')})
                 $ServerPort.Parent = $TabPageServer
             $TabPageServer.Parent = $TabControllerAdvanced
