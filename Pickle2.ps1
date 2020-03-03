@@ -1439,7 +1439,7 @@ Function GO{
     $FunctionsBox.ReadOnly  = $True
 
     $Form.Refresh()
-
+    #Any lines with #Ignore are there for regex purposes when exporting scripts
     If(
         $FunctionsBox.Text -replace '\s*' -AND `
         !$InlineCommand
@@ -2288,15 +2288,32 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $BlankProfile.Parent = $TabPageProfiles
 
+                $ImportProfile = [GUI.B]::New(100,25,10,125,'IMPORT')
+                $ImportProfile.Add_Click({
+                    $DialogO = [System.Windows.Forms.OpenFileDialog]::New()
+                    $DialogO.InitialDirectory = (PWD).Path
+                    $DialogO.Filter = 'ps1 files (*.ps1)|*.ps1'
+                    $DialogO.MultiSelect = $False
+                    $DialogO.ShowHelp = $True
+                    $DialogO.RestoreDirectory = $True
+ 
+                    If($DialogO.ShowDialog() -eq 'OK'){
+                        $Commands.Text = (GC $DialogO.FileName | Out-String)
+                        $FunctionsBox.Text = ''
+                    }
+                })
+                $ImportProfile.Parent = $TabPageProfiles
+
                 $ExportProfile = [GUI.B]::New(100,25,162,125,'EXPORT')
                 $ExportProfile.Add_Click({
-                    $Dialog = [System.Windows.Forms.SaveFileDialog]::New()
-                    $Dialog.InitialDirectory = (PWD).Path
-                    $Dialog.Filter = 'ps1 files (*.ps1)|*.ps1'
-                    $Dialog.RestoreDirectory = $True
+                    $DialogS = [System.Windows.Forms.SaveFileDialog]::New()
+                    $DialogS.InitialDirectory = (PWD).Path
+                    $DialogS.Filter = 'ps1 files (*.ps1)|*.ps1'
+                    $DialogS.ShowHelp = $True
+                    $DialogS.RestoreDirectory = $True
  
-                    If($Dialog.ShowDialog() -eq 'OK'){
-                        $SavePath = $Dialog.FileName
+                    If($DialogS.ShowDialog() -eq 'OK'){
+                        $SavePath = $DialogS.FileName
 
                         $Temp = ('$MainBlock = {'+$NL)
                         $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
@@ -2363,7 +2380,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=('$SyncHash.Kill = $True'+$NL)
                         $Temp+=('Exit'+$NL)
                         $Temp+=('}'+$NL)
-                        $Temp+=('If($(Try{[Void][PSObject]')
+                        $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility catching it
                         $Temp+=('::New()}Catch{$True})){'+$NL)
                         $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
                         $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
