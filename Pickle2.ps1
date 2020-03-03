@@ -13,7 +13,7 @@ Param([String]$Macro = $Null,[String]$CLICMD = '')
 Remove-Variable * -Exclude Macro,CLICMD -EA SilentlyContinue
 
 $MainBlock = {
-Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition @'
+$CSharpDef = @'
 using System;
 using System.IO;
 using System.Text;
@@ -352,6 +352,7 @@ public class Parser{
 }
 '@
 
+Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef
 
 ############################################################################################################################################################################################################################################################################################################
              #######                                                           
@@ -450,7 +451,8 @@ Function Interpret{
             If($_ -notmatch 'GETFOCUS'){
                 $PHProc = $PHProc.Split(' ')[-1]
             }
-
+                            Write-Host $PHProc
+                Write-Host (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
@@ -1412,7 +1414,9 @@ Function Actions{
     Return $GOTOLabel
 }
 
-Function GO ([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand){
+Function GO{
+    Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand)
+    
     [System.Console]::WriteLine($NL+'Initializing:')
     [System.Console]::WriteLine('-------------------------')
 
@@ -1436,32 +1440,35 @@ Function GO ([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$Inli
 
     $Form.Refresh()
 
-    If($FunctionsBox.Text -replace '\s*' -AND !$InlineCommand){
-        [System.Console]::WriteLine($Tab+'Parsing Functions:')
-        [System.Console]::WriteLine($Tab+'-------------------------')
+    If(
+        $FunctionsBox.Text -replace '\s*' -AND `
+        !$InlineCommand
+    ){
+        [System.Console]::WriteLine($Tab+'Parsing Functions:')                                   #Ignore
+        [System.Console]::WriteLine($Tab+'-------------------------')                            #Ignore
 
-        $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{
-            $FunctionStart = $False
+        $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{ #Ignore
+            $FunctionStart = $False                                                              #Ignore
 
-            $FunctionText = @()
-        }{
-            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}
-            If($FunctionStart){
-                If($_ -match '^{FUNCTION NAME '){
-                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')
-                }ElseIf($_ -match '^{FUNCTION END}'){
-                    $FunctionStart = $False
-                    $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))
-                    $FunctionText = @()
-                }Else{
-                    $FunctionText+=$_
-                }
-            }
-        }
+            $FunctionText = @()                                                                  #Ignore
+        }{                                                                                       #Ignore
+            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}        #Ignore
+            If($FunctionStart){                                                                  #Ignore
+                If($_ -match '^{FUNCTION NAME '){                                                #Ignore
+                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')             #Ignore
+                }ElseIf($_ -match '^{FUNCTION END}'){                                            #Ignore
+                    $FunctionStart = $False                                                      #Ignore
+                    $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))                    #Ignore
+                    $FunctionText = @()                                                          #Ignore
+                }Else{                                                                           #Ignore
+                    $FunctionText+=$_                                                            #Ignore
+                }                                                                                #Ignore
+            }                                                                                    #Ignore
+        }                                                                                        #Ignore
 
-        $Script:FuncHash.Keys | Sort | %{
-            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
-        }
+        $Script:FuncHash.Keys | Sort | %{                                                        #Ignore
+            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)#Ignore
+        }                                                                                        #Ignore
     }
 
     [System.Console]::WriteLine('Starting Macro!'+$NL+'-------------------------')
@@ -1482,6 +1489,7 @@ Function GO ([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$Inli
                     {
                         'Commands'{$Commands}
                         'Functions'{$FunctionsBox}
+                        default{''}
                     }) | %{$PHText = $_.SelectedText}
                 }Else{
                     $PHText = $Commands.Text
@@ -1489,14 +1497,14 @@ Function GO ([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$Inli
             }
 
             ($PHText -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
-                    If($_ -match '^\s*?<\\\\#'){$Commented = $True}
-                    If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+                If($_ -match '^\s*?<\\\\#'){$Commented = $True}
+                If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
-                        $_
-                    }Else{
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
-                    }
+                If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
+                    $_
+                }Else{
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
+                }
             } | %{$InlineFunction = $False}{
                 If(!$SyncHash.Stop){
                     Try{
@@ -2001,9 +2009,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
                     $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pix')
                         $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
-                        $GetMouseCoords.Add_MouseDown({$This.Text = 'Click and Drag'})
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
-                        $GetMouseCoords.Add_MouseUp({$This.Text = 'Get Mouse Inf'})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
 
                         $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
@@ -2282,6 +2288,99 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $BlankProfile.Parent = $TabPageProfiles
 
+                $ExportProfile = [GUI.B]::New(100,25,162,125,'EXPORT')
+                $ExportProfile.Add_Click({
+                    $Dialog = [System.Windows.Forms.SaveFileDialog]::New()
+                    $Dialog.InitialDirectory = (PWD).Path
+                    $Dialog.Filter = 'ps1 files (*.ps1)|*.ps1'
+                    $Dialog.RestoreDirectory = $True
+ 
+                    If($Dialog.ShowDialog() -eq 'OK'){
+                        $SavePath = $Dialog.FileName
+
+                        $Temp = ('$MainBlock = {'+$NL)
+                        $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
+                        $Temp+=($CSharpDef+$NL)
+                        $Temp+=("'"+[Char]64+$NL)
+                        $Temp+=('Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef'+$NL)
+                        $Temp+=('Function Interpret{'+$NL)
+                        $Temp+=(((GCI Function:Interpret).Definition)+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('Function Actions{'+$NL)
+                        $Temp+=((GCI Function:Actions).Definition)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('Function GO{'+$NL)
+                        $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{$_ -ne '' -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('If($Host.Name -match '+"'"+'Console'+"'"+'){'+$NL)
+                        $Temp+=('    [Console]::Title = '+"'"+'Pickle'+"'"+$NL)
+                        $Temp+=('    [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)'+$NL)
+                        $Temp+=('    [Void][Cons.WindowDisp]::Visual()'+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('$Tab = ([String][Char][Int]9)'+$NL)
+                        $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
+                        $Temp+=('$Script:Refocus = $False'+$NL)
+                        $Temp+=('$Script:IfEl = $True'+$NL)
+                        $Temp+=('$UndoHash = @{KeyList=[String[]]@()}'+$NL)
+                        $Temp+=('$Script:VarsHash = @{}'+$NL)
+                        $Temp+=('$Script:FuncHash = @{}'+$NL)
+                        $Temp+=('$Script:HiddenWindows = @{}'+$NL)
+                        $Temp+=('$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})'+$NL)
+                        $Temp+=('$ClickHelperParent = [HashTable]::Synchronized(@{})'+$NL)
+                        $Temp+=('$AutoChange = $False'+$NL)
+                        $Temp+=('$Pow = [Powershell]::Create()'+$NL)
+                        $Temp+=('$Run = [RunspaceFactory]::CreateRunspace()'+$NL)
+                        $Temp+=('$Run.Open()'+$NL)
+                        $Temp+=('$Pow.Runspace = $Run'+$NL)
+                        $Temp+=('$Pow.AddScript({'+$NL)
+                        $Temp+=('    Param($SyncHash)'+$NL)
+                        $Temp+=('    Add-Type -Name Win32 -Namespace API -MemberDefinition '+"'"+$NL)
+                        $Temp+=('    [DllImport("user32.dll")]'+$NL)
+                        $Temp+=('    public static extern short GetAsyncKeyState(int virtualKeyCode);'+$NL)
+                        $Temp+=('    '+"'"+' -ErrorAction SilentlyContinue'+$NL)
+                        $Temp+=('    While(!$SyncHash.Kill){'+$NL)
+                        $Temp+=('        [System.Threading.Thread]::Sleep(50)'+$NL)
+                        $Temp+=('        If([API.Win32]::GetAsyncKeyState(145)){'+$NL)
+                        $Temp+=('            $SyncHash.Stop = $True'+$NL)
+                        $Temp+=('            $SyncHash.Restart = $False'+$NL)
+                        $Temp+=('        }'+$NL)
+                        $Temp+=('    }'+$NL)
+                        $Temp+=('}) | Out-Null'+$NL)
+                        $Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
+                        $Temp+=('$Pow.BeginInvoke() | Out-Null'+$NL)
+                        $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
+                        $Temp+=($FunctionsBox.Text+$NL)
+                        $Temp+=($Commands.Text+$NL)
+                        $Temp+=("'"+[Char]64+$NL)
+                        $Temp+=('GO -InlineCommand $ScriptedCMDs'+$NL)
+                        $Temp+=('$UndoHash.KeyList | %{'+$NL)
+                        $Temp+=('    If($_ -notmatch '+"'"+'MOUSE'+"'"+'){'+$NL)
+                        $Temp+=('        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '+"'"+'&H2'+"'"+', 0)'+$NL)
+                        $Temp+=('    }Else{'+$NL)
+                        $Temp+=('        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('+"'"+'MOUSE'+"'"+','+"'"+''+"'"+').Replace('+"'"+'L'+"'"+',4).Replace('+"'"+'R'+"'"+',16).Replace('+"'"+'M'+"'"+',64))), 0, 0, 0, 0)'+$NL)
+                        $Temp+=('    }'+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('$SyncHash.Kill = $True'+$NL)
+                        $Temp+=('Exit'+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('If($(Try{[Void][PSObject]')
+                        $Temp+=('::New()}Catch{$True})){'+$NL)
+                        $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
+                        $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
+                        $Temp+=('            (($_.Split('+"'"+'['+"'"+')[0]+'+"'"+'(New-Object '+"'"+'+$_.Split('+"'"+'['+"'"+')[-1]+'+"'"+')'+"'"+') -replace '+"'"+']::New'+"'"+','+"'"+' -ArgumentList '+"'"+').Replace('+"'"+' -ArgumentList ()'+"'"+','+"'"+''+"'"+')'+$NL)
+                        $Temp+=('        }Else{'+$NL)
+                        $Temp+=('            $_'+$NL)
+                        $Temp+=('        }'+$NL)
+                        $Temp+=('    }) -join [System.Environment]::NewLine'+$NL)
+                        $Temp+=('}'+$NL)
+                        $Temp+=('$MainBlock = [ScriptBlock]::Create($MainBlock)'+$NL)
+                        $Temp+=('$MainBlock.Invoke($Macro)'+$NL)
+
+                        $Temp | Out-File $SavePath -Width 10000 -Encoding UTF8
+                    }
+                })
+                $ExportProfile.Parent = $TabPageProfiles
+
                 $SaveNewProfLabel = [GUI.L]::New(170, 20, 10, 170, 'Save Current Profile As:')
                 $SaveNewProfLabel.Parent = $TabPageProfiles
 
@@ -2339,7 +2438,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageProfiles.Parent = $TabControllerAdvanced
 
             $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
-                $ServerStart = [GUI.B]::New(75, 20, 25, 25, 'Start')
+                $ServerStart = [GUI.B]::New(100, 100, 100, 100, 'Start')
                 $ServerStart.Add_Click({
                     $Listener = New-Object System.Net.Sockets.TcpListener ('0.0.0.0',[Int]$ServerPort.Text)
                     $Listener.Start()
@@ -2367,7 +2466,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ServerStart.Parent = $TabPageServer
 
-                $ServerPort = [GUI.TB]::New(75,25,110,26,'42069')
+                $ServerPort = [GUI.TB]::New(200,200,200,200,'42069')
                 $ServerPort.Add_TextChanged({$This.Text = ($This.Text -replace '\D')})
                 $ServerPort.Parent = $TabPageServer
             $TabPageServer.Parent = $TabControllerAdvanced
@@ -2685,7 +2784,7 @@ If($Host.Name -match 'Console'){Exit}
 
 If($(Try{[Void][PSObject]::New()}Catch{$True})){
     $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne ''} | %{
-        If($_ -match '::New\('){
+        If($_ -match ']::New\('){
             (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
         }Else{
             $_
