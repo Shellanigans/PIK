@@ -384,10 +384,10 @@ Function Interpret{
             ($X -match '{CEI ') -OR `
             ($X -match '{MOD ') -OR `
             ($X -match '{EVAL ') -OR `
-            ($X -match '{VAR\+\+ ') -OR `
-            ($X -match '{VAR\+= ') -OR `
-            ($X -match '{VAR-- ') -OR `
-            ($X -match '{VAR-= ') -OR `
+            ($X -match '{VAR \S*\+\+}') -OR `
+            ($X -match '{VAR \S*\+=') -OR `
+            ($X -match '{VAR \S*--}') -OR `
+            ($X -match '{VAR \S*-=') -OR `
             ($X -match '{PWD') -OR `
             ($X -match '{MANIP ') -OR `
             ($X -match '{GETCON ') -OR `
@@ -1417,8 +1417,9 @@ Function Actions{
 Function GO{
     Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand)
     
-    [System.Console]::WriteLine($NL+'Initializing:')
-    [System.Console]::WriteLine('-------------------------')
+    #Any lines with #Ignore are there for regex purposes when exporting scripts
+    [System.Console]::WriteLine($NL+'Initializing:')                                             #Ignore
+    [System.Console]::WriteLine('-------------------------')                                     #Ignore
 
     $Script:Refocus = $False
     $Script:IfEl = $True
@@ -1439,7 +1440,7 @@ Function GO{
     $FunctionsBox.ReadOnly  = $True
 
     $Form.Refresh()
-    #Any lines with #Ignore are there for regex purposes when exporting scripts and the below if statement is split for the regex as well
+    #The below if statement is split for the regex as well
     If(
         $FunctionsBox.Text -replace '\s*' -AND `
         !$InlineCommand
@@ -2343,11 +2344,6 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=('Function GO{'+$NL)
                         $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{$_ -ne '' -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
                         $Temp+=('}'+$NL)
-                        $Temp+=('If($Host.Name -match '+"'"+'Console'+"'"+'){'+$NL)
-                        $Temp+=('    [Console]::Title = '+"'"+'Pickle'+"'"+$NL)
-                        $Temp+=('    [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)'+$NL)
-                        $Temp+=('    [Void][Cons.WindowDisp]::Visual()'+$NL)
-                        $Temp+=('}'+$NL)
                         $Temp+=('$Tab = ([String][Char][Int]9)'+$NL)
                         $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
                         $Temp+=('$Script:Refocus = $False'+$NL)
@@ -2379,6 +2375,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=('}) | Out-Null'+$NL)
                         $Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
                         $Temp+=('$Pow.BeginInvoke() | Out-Null'+$NL)
+                        $Temp+=('$ShowCons = @{Checked=$True}'+$NL)
                         $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
                         $Temp+=($FunctionsBox.Text+$NL)
                         $Temp+=($Commands.Text+$NL)
@@ -2392,7 +2389,6 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=('    }'+$NL)
                         $Temp+=('}'+$NL)
                         $Temp+=('$SyncHash.Kill = $True'+$NL)
-                        $Temp+=('Exit'+$NL)
                         $Temp+=('}'+$NL)
                         $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility
                         $Temp+=('::New()}Catch{$True})){'+$NL)
