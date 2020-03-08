@@ -2478,7 +2478,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Buff = New-Object Byte[] 1024
                         $CMDsIn = ''
                         $Count = 0
-                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}$')) -AND ($Count -lt 1000)){
+                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Count -lt 1000)){
                             While($Stream.DataAvailable){
                                 $Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
