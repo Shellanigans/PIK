@@ -1892,7 +1892,7 @@ $Pow.Runspace = $Run
 $Pow.AddScript({
     Param($SyncHash)
 
-    Add-Type -Name Win32 -Namespace API -MemberDefinition '
+    Add-Type -Name Win32 -Namespace API -IgnoreWarnings -MemberDefinition '
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int virtualKeyCode);
     ' -ErrorAction SilentlyContinue
