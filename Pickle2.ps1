@@ -2467,7 +2467,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
                 $ServerStart = [GUI.B]::New(100, 20, 25, 25, 'Start')
                 $ServerStart.Add_Click({
-                    $Listener = [System.Net.Sockets.TcpListener]::New('0.0.0.0',[Int]$ServerPort.Text)
+                    $PHPort = [Int]$ServerPort.Text
+                    $Listener = [System.Net.Sockets.TcpListener]::New('0.0.0.0',$PHPort)
                     $Listener.Start()
                     While(!$SyncHash.Stop){
                         $Client = $Listener.AcceptTCPClient()
