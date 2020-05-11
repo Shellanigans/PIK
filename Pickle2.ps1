@@ -442,7 +442,8 @@ Function Interpret{
                 ($_ -match 'GETPROC ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
                 ($_ -match 'GETWIND ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
                 ($_ -match 'GETWINDTEXT ((?!-(ID|HAND) )\S+|-ID \d+|-HAND \d+)') -OR `
-                ($_ -match 'GETFOCUS( -ID| -HAND)?')} | %{
+                ($_ -match 'GETFOCUS( -ID| -HAND)?')
+        } | %{
             $PHProc = $_
             $PHSel = $PHProc.Split(' ')[0]
 
@@ -451,8 +452,7 @@ Function Interpret{
             If($_ -notmatch 'GETFOCUS'){
                 $PHProc = $PHProc.Split(' ')[-1]
             }
-                            Write-Host $PHProc
-                Write-Host (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
+
             $PHID = $False
             If($_ -match ' -ID '){
                 $PHID = $True
@@ -657,7 +657,7 @@ Function Interpret{
         }
 
         $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S+\+=\d*') -OR ($_ -match '^VAR \S+-=\d*')} | %{
-            $PH = ((($_ -replace '\+=',' ' -replace '-=',' ').Split(' ') | ?{$_ -ne ''})[1])
+            $PH = ((($_ -replace '\+=',' ' -replace '-=',' ' -replace '\+\+',' ' -replace '--',' ').Split(' ') | ?{$_ -ne ''})[1])
             If($Script:VarsHash.ContainsKey($PH)){
                 Try{
                     If($_ -match '\+\+'){
@@ -1273,11 +1273,12 @@ Function Actions{
                                 'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
                                 'HIDE'        {
                                     [Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,0)
-                                    If($TrueHand){
-                                        #$Script:HiddenWindows.Add(('UNK_UNK_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProcHand)
-                                    }Else{
+                                    If(!$TrueHand){
                                         $Script:HiddenWindows.Add(($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProc)
                                     }
+                                    #Else{
+                                        #$Script:HiddenWindows.Add(('UNK_UNK_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProcHand)
+                                    #}
                                 }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
@@ -1552,7 +1553,7 @@ Function GO{
                             $PHGOTO = ''
                         }
                     }Catch{
-                        [System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())}
                     }
                 }
             }
@@ -1644,7 +1645,7 @@ Function Handle-RMenuClick($MainObj){
             'WhatIf Selection' {GO -SelectionRun -WhatIf}
             'WhatIf'           {GO -WhatIf}
             'Goto Top'         {$PHObj.SelectionStart = 0}
-            'Goto Bottom'         {$PHObj.SelectionStart = $PHObj.Text.Length}
+            'Goto Bottom'      {$PHObj.SelectionStart = $PHObj.Text.Length}
             'Find/Replace'     {
                 $FindForm.Visible = $True
                 $FindForm.BringToFront()
@@ -2010,6 +2011,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
                     $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pix')
                         $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
+                        $GetMouseCoords.Add_MouseDown({$This.Text = 'Drag Mouse'})
+                        $GetMouseCoords.Add_MouseUp({$This.Text = 'Get Mouse Inf'})
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
 
@@ -2342,7 +2345,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Temp+=((GCI Function:Actions).Definition)
                         $Temp+=('}'+$NL)
                         $Temp+=('Function GO{'+$NL)
-                        $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{$_ -ne '' -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
+                        $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{($_ -ne '') -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
                         $Temp+=('}'+$NL)
                         $Temp+=('$Tab = ([String][Char][Int]9)'+$NL)
                         $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
