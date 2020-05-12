@@ -33,6 +33,13 @@ namespace Cons{
         [DllImport("user32.dll")]
         public static extern void keybd_event(Byte bVk, Byte bScan, Int64 dwFlags, Int64 dwExtraInfo);
     }
+    public class WindowMessages{
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        public static extern IntPtr PostMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
+    }
     public class WindowDisp{
         [DllImport("Kernel32.dll")]
         public static extern IntPtr GetConsoleWindow();
@@ -50,6 +57,7 @@ namespace Cons{
         public extern static int GetWindowText(IntPtr handle, StringBuilder text, int length);
         [DllImport("User32.dll")]
         public extern static int GetWindowTextLength(IntPtr handle);
+        
         public static void Visual (){
             SWF.Application.EnableVisualStyles();
         }
@@ -398,8 +406,8 @@ Function Interpret{
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
             ($X -match '{GETSCREEN') -OR `
-            ($X -match '{READIN '))
-        ){
+            ($X -match '{READIN '))){
+        
         $PHSplitX = $X.Split('{}')
         
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
@@ -1845,13 +1853,16 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'S' -AND $Control){
         If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
             $Form.Text = ($Form.Text -replace '\*$')
+            $TempName = ($Profile.Text -replace '^Working Profile: ')
+            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$TempName+'\')
 
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
-
-            [Void](MKDIR $TempDir)
-
-            $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-            $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+            #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+            #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+            Try{
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+            }Catch{
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+            }
 
             $SaveAsProfText.Text = ''
         }
@@ -1934,7 +1945,13 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     If($Form.Text -notmatch '\*$'){
                         $Form.Text+='*'
                     }
-                    $This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
+                    
+                    #$This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
+                    Try{
+                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                    }Catch{
+                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                    }
                 })
                 $Commands.Add_MouseDown({
                     If([String]$_.Button -eq 'Right'){
@@ -1950,7 +1967,15 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $RightClickMenu.BringToFront()
                     }
                 })
-                $Commands.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Commands.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
+                $Commands.Text = Try{
+                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                }Catch{
+                    Try{
+                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                    }Catch{
+                        ''
+                    }
+                }
                 $Commands.Parent = $TabPageCommMain
                 $Commands.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Commands' -Shift $_.Shift -Control $_.Control -Alt $_.Alt})
             $TabPageCommMain.Parent = $TabControllerComm
@@ -1966,7 +1991,13 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     If($Form.Text -notmatch '\*$'){
                         $Form.Text+='*'
                     }
-                    $This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
+                    
+                    #$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
+                    Try{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                    }Catch{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                    }
                 })
                 $FunctionsBox.Add_MouseDown({
                     If([String]$_.Button -eq 'Right'){
@@ -1982,7 +2013,15 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $RightClickMenu.BringToFront()
                     }
                 })
-                $FunctionsBox.Text = Try{(Get-Content ($env:APPDATA+'\Macro\Functions.txt') -ErrorAction SilentlyContinue | Out-String).TrimEnd($NL) -join $NL}Catch{''}
+                $FunctionsBox.Text = Try{
+                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                }Catch{
+                    Try{
+                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                    }Catch{
+                        ''
+                    }
+                }
                 $FunctionsBox.Dock = 'Fill'
                 $FunctionsBox.Parent = $TabPageFunctMain
                 $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions' -Shift $_.Shift -Control $_.Control -Alt $_.Alt})
@@ -2251,13 +2290,18 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $QuickSave.Add_Click({
                     If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
                         $Form.Text = ($Form.Text -replace '\*$')
-
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
+                        $TempName = ($Profile.Text -replace '^Working Profile: ')
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$TempName+'\')
 
                         [Void](MKDIR $TempDir)
 
-                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                        #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        Try{
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                        }Catch{
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                        }
 
                         $SaveAsProfText.Text = ''
                     }
@@ -2266,13 +2310,31 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
                 $LoadProfile.Add_Click({
-                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 1){
+                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0){
                         $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
 
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
 
-                        $Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                        $FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                        #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                        #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                        $Commands.Text = Try{
+                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                        }Catch{
+                            Try{
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                            }Catch{
+                                ''
+                            }
+                        }
+                        $FunctionsBox.Text = Try{
+                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                        }Catch{
+                            Try{
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                            }Catch{
+                                ''
+                            }
+                        }
 
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
@@ -2419,13 +2481,18 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     If($SaveAsProfText.Text){
                         $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
                         $Profile.Text = ('Working Profile: ' + $SaveAsProfText.Text)
-
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text)
+                        $TempName = $SaveAsProfText.Text
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text+'\')
 
                         [Void](MKDIR $TempDir)
 
-                        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                        #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                        Try{
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                        }Catch{
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                        }
 
                         $SavedProfiles.Items.Clear()
                         [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
