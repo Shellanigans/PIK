@@ -8,11 +8,18 @@
              ###  #    #  #    #    #  #    #  ######  #  ######  ######      #             #####     # #   
 ############################################################################################################################################################################################################################################################################################################                                                                                                
 
+#Read in either a specific profile to run or a single line command
 Param([String]$Macro = $Null,[String]$CLICMD = '')
 
+#Clean up the env
 Remove-Variable * -Exclude Macro,CLICMD -EA SilentlyContinue
 
+#Using a giant script block allows for regexing the new types of constructors to the old kind (i.e. the New() vs. the New-Object)
+#The New() constructors are much faster but for backwards compatibility a way to swap everything to the New-object was needed
+#At the end there is some regex parsing going on that converts the whole program if the environment doesn't support New()
 $MainBlock = {
+#Some C# code that I use as wrapper class for System.Windows.Forms (for easy instantiation) as well as a collection of imported functions from other dlls
+#Eventually should move to entirely C# invoked by Powershell and some of the migration is done below (the interpret method in the parser class)
 $CSharpDef = @'
 using System;
 using System.IO;
@@ -371,12 +378,27 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
              #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
              #         ####   #    #   ####     #    #   ####   #    #   ####  
 ############################################################################################################################################################################################################################################################################################################
+#Major functions are located here the all call each other and are organized like so:
+<#
+    "GO" is the main function called to action on button click or F-Key press, contains a lot of instancing and cleanup prior to each run as well as macro function parsing
+     |
+     ---> "Actions" is called to check each line in and which is the collection of keyword detection to perform actual actions on the machine (i.e. not just simple substitution or "Get" style keywords)
+           |
+           ---> "Interpret" Gets called before any actions (though if statetments take precedence). The purpose is to make the substitutions that need to be made such as var substitutions or getting content (i.e. values are known and need to be placed here)
+                 |
+                 ---> "[Parser]::Interpret" Ultimately where interpret will reside, but for now a place where extremely simple find/replace keywords can get parsed.
+      
+#>
 Function Interpret{
     Param([String]$X)
 
+    #Do the really basic parsing
     $X = [Parser]::Interpret($X)
+
+    #Reset the depth overflow (useful for finding bad logic with infinite loops)
     $DepthOverflow = 0
 
+    #Don't exit until we see no more matches to any of the following substitution keywords or we hit the depth overflow
     While(
             $DepthOverflow -lt 500 -AND `
             (($X -match '{VAR ') -OR `
@@ -410,6 +432,7 @@ Function Interpret{
         
         $PHSplitX = $X.Split('{}')
         
+        #Perform all the var substitutions now that are not for var setting, by replacing the string with the value stored in the VarHash
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
             $PH = $_.Split(' ')[1]
             $PHFound = $True
@@ -427,21 +450,25 @@ Function Interpret{
             If($PHFound){If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)}}
         }
         
+        #Replace the keyword with the content from a file
         $PHSplitX | ?{$_ -match 'GETCON \S+'} | %{
             $X = ($X.Replace(('{'+$_+'}'),((GC $_.Substring(7)) | Out-String)))
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        #Replace the keyword with the dimension of all screens separated by semi-colons
         $PHSplitX | ?{$_ -match 'GETSCREEN'} | %{
             $X = ($X.Replace(('{'+$_+'}'),(([System.Windows.Forms.Screen]::AllScreens | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        #Replace the keyword with the present working directory
         $PHSplitX | ?{$_ -match '^PWD$'} | %{
             $X = ($X.Replace(('{'+$_+'}'),(PWD).Path))
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        #Replace the keyword with the names of all variables matching the regex in the keyword (e.g. {FINDVAR Temp.*})
         $PHSplitX | ?{$_ -match 'FINDVAR \S+'} | %{
             $X = (($Script:VarsHash.Keys | ?{$_ -match ($X -replace '^{FINDVAR ' -replace '}$')} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort}) -join ',')
         }
@@ -558,6 +585,7 @@ Function Interpret{
             $X = ($X.Replace(('{'+$_+'}'),$PHOut.Trim(';')))
         }
 
+        #Replace the keyword with the input supplied to either the message box or the console prompt
         $PHSplitX | ?{$_ -match 'READIN \S+'} | %{
             If($CommandLine -OR ($X -match '{READIN -C')){
                 $PH = $_.Substring(9)
@@ -569,6 +597,7 @@ Function Interpret{
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        #Replace the keyword with simple math function results (e.g. {SIN 0} returns 0)
         $PHSplitX | ?{
             ($_ -match '^LEN \S+') -OR `
             ($_ -match '^ABS \S+') -OR `
@@ -604,6 +633,7 @@ Function Interpret{
             If($ShowCons.Checked){[System.Console]::WriteLine($X)}
         }
 
+        #Replaces the keyword with the evaluation of the arithmetic
         $PHSplitX | ?{$_ -match '^EVAL \S+.*\d$'} | %{
             ($_.SubString(5) -replace ' ') | %{
                 #Preparse
@@ -1805,15 +1835,22 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         
         Try{$_.SuppressKeyPress = $True}Catch{}
     }ElseIf($KeyCode -eq 'F11'){
-        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+        If($Script:LoadedProfile -ne $Null){
             $Form.Text = ($Form.Text -replace '\*$')
-
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
+            #$TempName = ($Profile.Text -replace '^Working Profile: ')
+            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
 
             [Void](MKDIR $TempDir)
 
-            $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-            $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+            $Script:Saved = $True
+
+            #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+            #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+            Try{
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+            }Catch{
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+            }
 
             $SaveAsProfText.Text = ''
         }
@@ -1851,17 +1888,19 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $_.SuppressKeyPress = $True
         }
     }ElseIf($KeyCode -eq 'S' -AND $Control){
-        If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+        If($Script:LoadedProfile -ne $Null){
             $Form.Text = ($Form.Text -replace '\*$')
-            $TempName = ($Profile.Text -replace '^Working Profile: ')
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$TempName+'\')
+            #$TempName = ($Profile.Text -replace '^Working Profile: ')
+            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
+
+            $Script:Saved = $True
 
             #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
             #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
             Try{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
             }Catch{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
             }
 
             $SaveAsProfText.Text = ''
@@ -1886,6 +1925,9 @@ $NL = [System.Environment]::NewLine
 
 $Script:Refocus = $False
 $Script:IfEl = $True
+
+$Script:LoadedProfile = $Null
+$Script:Saved = $True
 
 $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
@@ -1942,8 +1984,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $Commands.AcceptsTab = $True
                 $Commands.DetectUrls = $False
                 $Commands.Add_TextChanged({
-                    If($Form.Text -notmatch '\*$'){
+                    If($Script:Saved){
                         $Form.Text+='*'
+                        $Script:Saved = $False
                     }
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
@@ -1988,8 +2031,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $FunctionsBox.AcceptsTab = $True
                 $FunctionsBox.DetectUrls = $False
                 $FunctionsBox.Add_TextChanged({
-                    If($Form.Text -notmatch '\*$'){
+                    If($Script:Saved){
                         $Form.Text+='*'
+                        $Script:Saved = $False
                     }
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
@@ -2288,19 +2332,21 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $QuickSave = [GUI.B]::New(75, 25, 10, 85, 'SAVE')
                 $QuickSave.Add_Click({
-                    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals'){
+                    If($Script:LoadedProfile -ne $Null){
                         $Form.Text = ($Form.Text -replace '\*$')
-                        $TempName = ($Profile.Text -replace '^Working Profile: ')
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$TempName+'\')
+                        #$TempName = ($Profile.Text -replace '^Working Profile: ')
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
 
                         [Void](MKDIR $TempDir)
+
+                        $Script:Saved = $True
 
                         #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         Try{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
                         }Catch{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
                         }
 
                         $SaveAsProfText.Text = ''
@@ -2312,6 +2358,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $LoadProfile.Add_Click({
                     If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0){
                         $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
+                        $Script:LoadedProfile = $SavedProfiles.SelectedItem
 
                         $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
 
@@ -2336,6 +2383,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             }
                         }
 
+                        $Script:Saved = $True
+
                         $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
                 })
@@ -2344,11 +2393,14 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $BlankProfile = [GUI.B]::New(75, 25, 186, 85, 'NEW')
                 $BlankProfile.Add_Click({
                     $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                    $Script:LoadedProfile = $Null
                     
                     $SavedProfiles.SelectedIndex = -1
 
                     $Commands.Text = ''
                     $FunctionsBox.Text = ''
+
+                    $Script:Saved = $True
 
                     $Form.Text = 'Pickle'
                 })
@@ -2481,22 +2533,25 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     If($SaveAsProfText.Text){
                         $Form.Text = ('Pickle - ' + $SaveAsProfText.Text)
                         $Profile.Text = ('Working Profile: ' + $SaveAsProfText.Text)
-                        $TempName = $SaveAsProfText.Text
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SaveAsProfText.Text+'\')
+                        $Script:LoadedProfile = $SaveAsProfText.Text
+                        #$TempName = $SaveAsProfText.Text
+                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
 
                         [Void](MKDIR $TempDir)
+
+                        $Script:Saved = $True
 
                         #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         Try{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
                         }Catch{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$TempName+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
                         }
 
                         $SavedProfiles.Items.Clear()
                         [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                        $SavedProfiles.SelectedItem = $SaveAsProfText.Text
+                        $SavedProfiles.SelectedItem = $Script:LoadedProfile
 
                         $SaveAsProfText.Text = ''
                     }
@@ -2511,11 +2566,14 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $DelProfile = [GUI.B]::New(75, 20, 186, 259, 'DELETE')
                 $DelProfile.Add_Click({
-                    If($Profile.Text -eq ('Working Profile: ' + $DelProfText.Text)){
+                    If($Script:LoadedProfile -eq $DelProfText.Text){
                         $Profile.Text = ('Working Profile: None/Prev Text Vals')
                         $SavedProfiles.SelectedItem = $Null
+                        $Script:LoadedProfile = $Null
 
                         $Form.Text = ('Pickle')
+
+                        $Script:Saved = $True
                     }
 
                     (Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | ?{$_.Name -eq $DelProfText.Text} | Remove-Item -Recurse -Force
@@ -2789,6 +2847,7 @@ Try{
         }Else{
             $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
             $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
+            $Script:LoadedProfile = $LoadedConfig.PrevProfile
             $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
         }
     }
@@ -2825,6 +2884,43 @@ If($CommandLine){
 
     $Form.Visible = $False
 
+    $Form.Add_Closing({
+        $Config.ShowConsCheck = $ShowCons.Checked
+        $Config.OnTopCheck    = $OnTop.Checked
+
+        If($Script:LoadedProfile -ne $Null){
+            $Config.PrevProfile = $Script:LoadedProfile
+            
+            If(!$Script:Saved){
+                $result = [System.Windows.Forms.MessageBox]::Show('Save before exiting?' , "Info" , 4)
+                If($result -eq 'Yes'){
+                    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
+
+                    [Void](MKDIR $TempDir)
+
+                    $Script:Saved = $True
+
+                    Try{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                    }Catch{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                    }
+                }
+            }
+        }Else{
+            $Config.PrevProfile = $Null
+        }
+
+        $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
+        $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
+
+        Try{
+            $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
+        }Catch{
+            $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
+        }
+    })
+
     [System.Windows.Forms.Application]::Run($Form)
 }
 
@@ -2845,37 +2941,6 @@ $Config.DelayRandVal  = $DelayRandTimer.Value
 $Config.CommTimeVal   = $CommandDelayTimer.Value
 $Config.CommChecked   = $CommDelayCheck.Checked
 $Config.CommRandVal   = $CommRandTimer.Value
-
-If(!$CommandLine){
-    $Config.ShowConsCheck = $ShowCons.Checked
-    $Config.OnTopCheck    = $OnTop.Checked
-
-    If($Profile.Text -ne 'Working Profile: None/Prev Text Vals' -AND $Profile.Text){
-        $Config.PrevProfile = ($Profile.Text -replace '^Working Profile: ')
-    
-        $Form.Text = ($Form.Text -replace '\*$')
-
-        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+($Profile.Text -replace '^Working Profile: '))
-
-        [Void](MKDIR $TempDir)
-
-        $Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-        $FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-
-        $SaveAsProfText.Text = ''
-    }Else{
-        $Config.PrevProfile = $Null
-    }
-
-    $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
-    $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
-
-    Try{
-        $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
-    }Catch{
-        $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
-    }
-}
 
 If($Host.Name -match 'Console'){Exit}
 }
