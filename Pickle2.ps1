@@ -433,7 +433,7 @@ Function Interpret{
         $PHSplitX = $X.Split('{}')
         
         #Perform all the var substitutions now that are not for var setting, by replacing the string with the value stored in the VarHash
-        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '='} | %{
+        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '=' -AND $_ -notmatch '\+\+$' -AND $_ -notmatch '--$'} | %{
             $PH = $_.Split(' ')[1]
             $PHFound = $True
             If($Script:VarsHash.ContainsKey($PH)){
@@ -1112,6 +1112,9 @@ Function Actions{
                             $RemainderX = 0
                             $RemainderY = 0
                             For($i = 0; $i -lt $Dist -AND !$SyncHash.Stop; $i+=[Math]::Sqrt([Math]::Pow($OffsetX,2)+[Math]::Pow($OffsetY,2))){
+                                If($DistX -eq 0){$DistX = 1}
+                                If($DistY -eq 0){$DistY = 1}
+                                
                                 Switch($PHMoveType){
                                     'LINEAR'{
                                         $OffsetX = $Dist/$DistY + $RemainderX
