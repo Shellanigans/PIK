@@ -1850,9 +1850,9 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
             #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
             Try{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
             }Catch{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
             }
 
             $SaveAsProfText.Text = ''
@@ -1901,9 +1901,9 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
             #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
             Try{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
             }Catch{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
             }
 
             $SaveAsProfText.Text = ''
@@ -1994,9 +1994,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
                     Try{
-                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.pik') -Width 1000 -Force
                     }Catch{
-                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$This.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.pik') -Width 1000 -Force
                     }
                 })
                 $Commands.Add_MouseDown({
@@ -2014,10 +2014,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     }
                 })
                 $Commands.Text = Try{
-                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
                 }Catch{
                     Try{
-                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
                     }Catch{
                         ''
                     }
@@ -2041,9 +2041,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Functions.txt') -Width 1000 -Force
                     Try{
-                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\AutoSave.pik') -Width 1000 -Force
                     }Catch{
-                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$This.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\AutoSave.pik') -Width 1000 -Force
                     }
                 })
                 $FunctionsBox.Add_MouseDown({
@@ -2061,10 +2061,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     }
                 })
                 $FunctionsBox.Text = Try{
-                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                    ((Get-Content ($env:APPDATA+'\Macro\AutoSave.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
                 }Catch{
                     Try{
-                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                        ((Get-Content ($env:APPDATA+'\Macro\AutoSave.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
                     }Catch{
                         ''
                     }
@@ -2347,9 +2347,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         Try{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                         }Catch{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                         }
 
                         $SaveAsProfText.Text = ''
@@ -2359,7 +2359,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $LoadProfile = [GUI.B]::New(75, 25, 99, 85, 'LOAD')
                 $LoadProfile.Add_Click({
-                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0){
+                    If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0 -AND $SavedProfiles.SelectedIndex -ne -1){
                         $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
                         $Script:LoadedProfile = $SavedProfiles.SelectedItem
 
@@ -2368,19 +2368,19 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
                         #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
                         $Commands.Text = Try{
-                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
                         }Catch{
                             Try{
-                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
                             }Catch{
                                 ''
                             }
                         }
                         $FunctionsBox.Text = Try{
-                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
                         }Catch{
                             Try{
-                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.PIK') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
                             }Catch{
                                 ''
                             }
@@ -2413,117 +2413,189 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $ImportProfile.Add_Click({
                     $DialogO = [System.Windows.Forms.OpenFileDialog]::New()
                     $DialogO.InitialDirectory = (PWD).Path
-                    $DialogO.Filter = 'ps1 files (*.ps1)|*.ps1'
-                    $DialogO.MultiSelect = $False
+                    $DialogO.Filter = 'pik files (*.pik)|*.pik|ps1 files (*.ps1)|*.ps1'
+                    $DialogO.MultiSelect = $True
                     $DialogO.ShowHelp = $True
                     $DialogO.RestoreDirectory = $True
  
                     If($DialogO.ShowDialog() -eq 'OK'){
-                        $PH = ((GC $DialogO.FileName | Out-String).Split($NL) | ?{$_ -ne ''} | %{$Started = $False}{
-                            If($_ -match 'GO -InlineCommand \$ScriptedCMDs'){
-                                $Started = $False
-                            }
+                        $PIK_PS1 = ($DialogO.FileName -match '\.ps1$')
+                        If($PIK_PS1){
+                            $PH = ((GC $DialogO.FileName | Out-String).Split($NL) | ?{$_ -ne ''} | %{$Started = $False}{
+                                If($_ -match 'GO -InlineCommand \$ScriptedCMDs'){
+                                    $Started = $False
+                                }
                             
-                            If($Started){$_}
+                                If($Started){$_}
 
-                            If($_ -match '\$ScriptedCMDs = @'){
-                                $Started = $True
+                                If($_ -match '\$ScriptedCMDs = @'){
+                                    $Started = $True
+                                }
+                            })
+
+                            $PH[-1] = ''
+
+                            $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                            $Script:LoadedProfile = $Null
+                    
+                            $SavedProfiles.SelectedIndex = -1
+
+                            $Commands.Text = ($PH -join $NL)
+                            $FunctionsBox.Text = ''
+
+                            $Script:Saved = $True
+
+                            $Form.Text = 'Pickle'
+                        }Else{
+                            $ImportedName = ($DialogO.FileName.Split('\')[-1] -replace '\.pik$')
+                            $Profile.Text = ('Working Profile: ' + $ImportedName)
+                            $Script:LoadedProfile = $ImportedName
+
+                            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$ImportedName+'\')
+
+                            [Void](MKDIR $TempDir)
+
+                            #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                            #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                            $Commands.Text = Try{
+                                ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                            }Catch{
+                                Try{
+                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                                }Catch{
+                                    ''
+                                }
                             }
-                        })
+                            $FunctionsBox.Text = Try{
+                                ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                            }Catch{
+                                Try{
+                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                                }Catch{
+                                    ''
+                                }
+                            }
 
-                        $PH[-1] = ''
+                            Try{
+                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
+                            }Catch{
+                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
+                            }
 
-                        $Commands.Text = ($PH -join $NL)
-                        $FunctionsBox.Text = ''
+                            $SavedProfiles.Items.Clear()
+                            [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                            $SavedProfiles.SelectedItem = $Script:LoadedProfile
+
+                            $SaveAsProfText.Text = ''
+
+                            $Script:Saved = $True
+
+                            $Form.Text = ('Pickle - ' + $ImportedName)
+                        }
                     }
                 })
                 $ImportProfile.Parent = $TabPageProfiles
 
                 $ExportProfile = [GUI.B]::New(100,25,162,125,'EXPORT')
                 $ExportProfile.Add_Click({
+                    $PIK_PS1 = ([System.Windows.Forms.MessageBox]::Show('Export as executable script? Select "No" or close to save as a PIK file instead.','Export Type','YesNo') -eq 'Yes')
+                    
                     $DialogS = [System.Windows.Forms.SaveFileDialog]::New()
                     $DialogS.InitialDirectory = (PWD).Path
-                    $DialogS.Filter = 'ps1 files (*.ps1)|*.ps1'
+                    If($PIK_PS1){
+                        $DialogS.Filter = 'ps1 files (*.ps1)|*.ps1'
+                    }Else{
+                        $DialogS.Filter = 'pik files (*.pik)|*.pik'
+                    }
+                    #$DialogS.MultiSelect = $True
                     $DialogS.ShowHelp = $True
                     $DialogS.RestoreDirectory = $True
  
                     If($DialogS.ShowDialog() -eq 'OK'){
                         $SavePath = $DialogS.FileName
 
-                        $Temp = ('$MainBlock = {'+$NL)
-                        $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
-                        $Temp+=($CSharpDef+$NL)
-                        $Temp+=("'"+[Char]64+$NL)
-                        $Temp+=('Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef'+$NL)
-                        $Temp+=('Function Interpret{'+$NL)
-                        $Temp+=(((GCI Function:Interpret).Definition)+$NL)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('Function Actions{'+$NL)
-                        $Temp+=((GCI Function:Actions).Definition)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('Function GO{'+$NL)
-                        $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{($_ -ne '') -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('$Tab = ([String][Char][Int]9)'+$NL)
-                        $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
-                        $Temp+=('$Script:Refocus = $False'+$NL)
-                        $Temp+=('$Script:IfEl = $True'+$NL)
-                        $Temp+=('$UndoHash = @{KeyList=[String[]]@()}'+$NL)
-                        $Temp+=('$Script:VarsHash = @{}'+$NL)
-                        $Temp+=('$Script:FuncHash = @{}'+$NL)
-                        $Temp+=('$Script:HiddenWindows = @{}'+$NL)
-                        $Temp+=('$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})'+$NL)
-                        $Temp+=('$ClickHelperParent = [HashTable]::Synchronized(@{})'+$NL)
-                        $Temp+=('$AutoChange = $False'+$NL)
-                        $Temp+=('$Pow = [Powershell]::Create()'+$NL)
-                        $Temp+=('$Run = [RunspaceFactory]::CreateRunspace()'+$NL)
-                        $Temp+=('$Run.Open()'+$NL)
-                        $Temp+=('$Pow.Runspace = $Run'+$NL)
-                        $Temp+=('$Pow.AddScript({'+$NL)
-                        $Temp+=('    Param($SyncHash)'+$NL)
-                        $Temp+=('    Add-Type -Name Win32 -Namespace API -MemberDefinition '+"'"+$NL)
-                        $Temp+=('    [DllImport("user32.dll")]'+$NL)
-                        $Temp+=('    public static extern short GetAsyncKeyState(int virtualKeyCode);'+$NL)
-                        $Temp+=('    '+"'"+' -ErrorAction SilentlyContinue'+$NL)
-                        $Temp+=('    While(!$SyncHash.Kill){'+$NL)
-                        $Temp+=('        [System.Threading.Thread]::Sleep(50)'+$NL)
-                        $Temp+=('        If([API.Win32]::GetAsyncKeyState(145)){'+$NL)
-                        $Temp+=('            $SyncHash.Stop = $True'+$NL)
-                        $Temp+=('            $SyncHash.Restart = $False'+$NL)
-                        $Temp+=('        }'+$NL)
-                        $Temp+=('    }'+$NL)
-                        $Temp+=('}) | Out-Null'+$NL)
-                        $Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
-                        $Temp+=('$Pow.BeginInvoke() | Out-Null'+$NL)
-                        $Temp+=('$ShowCons = @{Checked=$True}'+$NL)
-                        $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
-                        $Temp+=($FunctionsBox.Text+$NL)
-                        $Temp+=($Commands.Text+$NL)
-                        $Temp+=("'"+[Char]64+$NL)
-                        $Temp+=('GO -InlineCommand $ScriptedCMDs'+$NL)
-                        $Temp+=('$UndoHash.KeyList | %{'+$NL)
-                        $Temp+=('    If($_ -notmatch '+"'"+'MOUSE'+"'"+'){'+$NL)
-                        $Temp+=('        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '+"'"+'&H2'+"'"+', 0)'+$NL)
-                        $Temp+=('    }Else{'+$NL)
-                        $Temp+=('        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('+"'"+'MOUSE'+"'"+','+"'"+''+"'"+').Replace('+"'"+'L'+"'"+',4).Replace('+"'"+'R'+"'"+',16).Replace('+"'"+'M'+"'"+',64))), 0, 0, 0, 0)'+$NL)
-                        $Temp+=('    }'+$NL)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('$SyncHash.Kill = $True'+$NL)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility
-                        $Temp+=('::New()}Catch{$True})){'+$NL)
-                        $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
-                        $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
-                        $Temp+=('            (($_.Split('+"'"+'['+"'"+')[0]+'+"'"+'(New-Object '+"'"+'+$_.Split('+"'"+'['+"'"+')[-1]+'+"'"+')'+"'"+') -replace '+"'"+']::New'+"'"+','+"'"+' -ArgumentList '+"'"+').Replace('+"'"+' -ArgumentList ()'+"'"+','+"'"+''+"'"+')'+$NL)
-                        $Temp+=('        }Else{'+$NL)
-                        $Temp+=('            $_'+$NL)
-                        $Temp+=('        }'+$NL)
-                        $Temp+=('    }) -join [System.Environment]::NewLine'+$NL)
-                        $Temp+=('}'+$NL)
-                        $Temp+=('$MainBlock = [ScriptBlock]::Create($MainBlock)'+$NL)
-                        $Temp+=('$MainBlock.Invoke($Macro)'+$NL)
+                        If($PIK_PS1){
+                            $Temp = ('$MainBlock = {'+$NL)
+                            $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
+                            $Temp+=($CSharpDef+$NL)
+                            $Temp+=("'"+[Char]64+$NL)
+                            $Temp+=('Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef'+$NL)
+                            $Temp+=('Function Interpret{'+$NL)
+                            $Temp+=(((GCI Function:Interpret).Definition)+$NL)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('Function Actions{'+$NL)
+                            $Temp+=((GCI Function:Actions).Definition)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('Function GO{'+$NL)
+                            $Temp+=((((GCI Function:GO).Definition.Split($NL) | ?{($_ -ne '') -AND ($_ -notmatch '\$Commands') -AND ($_ -notmatch '\$Form') -AND ($_ -notmatch '\$FunctionsBox') -AND ($_ -notmatch '#Ignore')}) -join $NL)+$NL)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('$Tab = ([String][Char][Int]9)'+$NL)
+                            $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
+                            $Temp+=('$Script:Refocus = $False'+$NL)
+                            $Temp+=('$Script:IfEl = $True'+$NL)
+                            $Temp+=('$UndoHash = @{KeyList=[String[]]@()}'+$NL)
+                            $Temp+=('$Script:VarsHash = @{}'+$NL)
+                            $Temp+=('$Script:FuncHash = @{}'+$NL)
+                            $Temp+=('$Script:HiddenWindows = @{}'+$NL)
+                            $Temp+=('$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})'+$NL)
+                            $Temp+=('$ClickHelperParent = [HashTable]::Synchronized(@{})'+$NL)
+                            $Temp+=('$AutoChange = $False'+$NL)
+                            $Temp+=('$Pow = [Powershell]::Create()'+$NL)
+                            $Temp+=('$Run = [RunspaceFactory]::CreateRunspace()'+$NL)
+                            $Temp+=('$Run.Open()'+$NL)
+                            $Temp+=('$Pow.Runspace = $Run'+$NL)
+                            $Temp+=('$Pow.AddScript({'+$NL)
+                            $Temp+=('    Param($SyncHash)'+$NL)
+                            $Temp+=('    Add-Type -Name Win32 -Namespace API -MemberDefinition '+"'"+$NL)
+                            $Temp+=('    [DllImport("user32.dll")]'+$NL)
+                            $Temp+=('    public static extern short GetAsyncKeyState(int virtualKeyCode);'+$NL)
+                            $Temp+=('    '+"'"+' -ErrorAction SilentlyContinue'+$NL)
+                            $Temp+=('    While(!$SyncHash.Kill){'+$NL)
+                            $Temp+=('        [System.Threading.Thread]::Sleep(50)'+$NL)
+                            $Temp+=('        If([API.Win32]::GetAsyncKeyState(145)){'+$NL)
+                            $Temp+=('            $SyncHash.Stop = $True'+$NL)
+                            $Temp+=('            $SyncHash.Restart = $False'+$NL)
+                            $Temp+=('        }'+$NL)
+                            $Temp+=('    }'+$NL)
+                            $Temp+=('}) | Out-Null'+$NL)
+                            $Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
+                            $Temp+=('$Pow.BeginInvoke() | Out-Null'+$NL)
+                            $Temp+=('$ShowCons = @{Checked=$True}'+$NL)
+                            $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
+                            $Temp+=($FunctionsBox.Text+$NL)
+                            $Temp+=($Commands.Text+$NL)
+                            $Temp+=("'"+[Char]64+$NL)
+                            $Temp+=('GO -InlineCommand $ScriptedCMDs'+$NL)
+                            $Temp+=('$UndoHash.KeyList | %{'+$NL)
+                            $Temp+=('    If($_ -notmatch '+"'"+'MOUSE'+"'"+'){'+$NL)
+                            $Temp+=('        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '+"'"+'&H2'+"'"+', 0)'+$NL)
+                            $Temp+=('    }Else{'+$NL)
+                            $Temp+=('        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('+"'"+'MOUSE'+"'"+','+"'"+''+"'"+').Replace('+"'"+'L'+"'"+',4).Replace('+"'"+'R'+"'"+',16).Replace('+"'"+'M'+"'"+',64))), 0, 0, 0, 0)'+$NL)
+                            $Temp+=('    }'+$NL)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('$SyncHash.Kill = $True'+$NL)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility
+                            $Temp+=('::New()}Catch{$True})){'+$NL)
+                            $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
+                            $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
+                            $Temp+=('            (($_.Split('+"'"+'['+"'"+')[0]+'+"'"+'(New-Object '+"'"+'+$_.Split('+"'"+'['+"'"+')[-1]+'+"'"+')'+"'"+') -replace '+"'"+']::New'+"'"+','+"'"+' -ArgumentList '+"'"+').Replace('+"'"+' -ArgumentList ()'+"'"+','+"'"+''+"'"+')'+$NL)
+                            $Temp+=('        }Else{'+$NL)
+                            $Temp+=('            $_'+$NL)
+                            $Temp+=('        }'+$NL)
+                            $Temp+=('    }) -join [System.Environment]::NewLine'+$NL)
+                            $Temp+=('}'+$NL)
+                            $Temp+=('$MainBlock = [ScriptBlock]::Create($MainBlock)'+$NL)
+                            $Temp+=('$MainBlock.Invoke($Macro)'+$NL)
 
-                        $Temp | Out-File $SavePath -Width 10000 -Encoding UTF8
+                            $Temp | Out-File $SavePath -Width 10000 -Encoding UTF8
+                        }Else{
+                            Try{
+                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File $SavePath -Width 1000 -Force
+                            }Catch{
+                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File $SavePath -Width 1000 -Force
+                            }
+                        }
                     }
                 })
                 $ExportProfile.Parent = $TabPageProfiles
@@ -2547,9 +2619,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
                         #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
                         Try{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                         }Catch{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                         }
 
                         $SavedProfiles.Items.Clear()
@@ -2904,9 +2976,9 @@ If($CommandLine){
                     $Script:Saved = $True
 
                     Try{
-                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                     }Catch{
-                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.PIK') -Width 1000 -Force
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
                     }
                 }
             }
@@ -2920,7 +2992,12 @@ If($CommandLine){
         Try{
             $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
         }Catch{
-            $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
+            Try{
+                $Config | ConvertTo-CSV -NoTypeInformation | Out-File ($env:APPDATA+'\Macro\_Config_.csv') -Width 1000 -Force
+            }Catch{
+                [System.Console]::WriteLine('COULD NOT SAVE CONFIG FILE!')
+                [System.Threading.Thread]::Sleep(3000)
+            }
         }
     })
 
