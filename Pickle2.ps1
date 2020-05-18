@@ -382,11 +382,11 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
 <#
     "GO" is the main function called to action on button click or F-Key press, contains a lot of instancing and cleanup prior to each run as well as macro function parsing
      |
-     ---> "Actions" is called to check each line in and which is the collection of keyword detection to perform actual actions on the machine (i.e. not just simple substitution or "Get" style keywords)
+     ---> "Actions" is called to check each line as it comes in and is the collection of keywords for performing actual actions on the machine (i.e. not just simple substitution or "Get" style keywords)
            |
-           ---> "Interpret" Gets called before any actions (though if statetments take precedence). The purpose is to make the substitutions that need to be made such as var substitutions or getting content (i.e. values are known and need to be placed here)
+           ---> "Interpret" Gets called before any actions (though if statetments true/flase conditions take precedence). The purpose is to make substitutions such as var substitutions or getting content (i.e. values are known)
                  |
-                 ---> "[Parser]::Interpret" Ultimately where interpret will reside, but for now a place where extremely simple find/replace keywords can get parsed.
+                 ---> "[Parser]::Interpret" Ultimately where interpret/actions/GO will reside, but for now a place where extremely simple find/replace keywords can get parsed and is completed first.
       
 #>
 Function Interpret{
@@ -1733,14 +1733,18 @@ Function Handle-MousePosGet{
         $CenterDot.BackColor = [System.Drawing.Color]::White
     }
 
-    $Bounds = [GUI.Rect]::R($PH.X-7,$PH.Y-7,14,14)
+    $Bounds = [GUI.Rect]::R($PH.X-8,$PH.Y-8,16,16)
 
     $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-            
     $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
     $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
 
-    $ZoomPanel.BackgroundImage = $BMP
+    $BMPBig = [System.Drawing.Bitmap]::New(120, 106)    
+    $GraphicsBig = [System.Drawing.Graphics]::FromImage($BMPBig)
+    $GraphicsBig.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
+    $GraphicsBig.DrawImage($BMP,0,0,120,106)
+
+    $ZoomPanel.BackgroundImage = $BMPBig
 }
 
 Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt){
@@ -1931,6 +1935,8 @@ $Script:IfEl = $True
 
 $Script:LoadedProfile = $Null
 $Script:Saved = $True
+
+#$Script:Cons = $True
 
 $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
@@ -2180,7 +2186,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $RightMouseBox.Parent = $TabHelperSubMouse
 
                         $ZoomPanel = [GUI.GB]::New(115,115,155,105,'')
-                        $ZoomPanel.BackgroundImageLayout = [System.Windows.Forms.ImageLayout]::Zoom
+                        $ZoomPanel.BackgroundImageLayout = [System.Windows.Forms.ImageLayout]::Stretch
                         $ZoomPanel.Parent = $TabHelperSubMouse
 
                         $GraphicFixPanel = [GUI.P]::New(115,5,155,105)
@@ -2188,7 +2194,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GraphicFixPanel.Parent = $TabHelperSubMouse
                         $GraphicFixPanel.BringToFront()
                         
-                        $CenterDot = [GUI.P]::New(7,7,209,160)
+                        $CenterDot = [GUI.P]::New(8,8,209,159)
                         $CenterDot.BackColor = [System.Drawing.Color]::Black
                         $CenterDot.Parent = $TabHelperSubMouse
                         $CenterDot.BringToFront()
@@ -2257,9 +2263,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GetFuncts = [GUI.B]::New(135, 25, 10, 10, 'Display Functions')
                         $GetFuncts.Add_Click({
                             $Script:FuncHash.Keys | Sort | %{
-                                If($ShowCons.Checked){[System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)}
+                                [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)
 
-                                If($ShowCons.Checked){[System.Console]::WriteLine($NL * 3)}
+                                [System.Console]::WriteLine($NL * 3)
                             }
                         })
                         $GetFuncts.Parent = $TabPageDebug
@@ -2267,9 +2273,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GetVars = [GUI.B]::New(135, 25, 10, 35, 'Display Variables')
                         $GetVars.Add_Click({
                             $Script:VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
-                                If($ShowCons.Checked){[System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)}
+                                [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)
 
-                                If($ShowCons.Checked){[System.Console]::WriteLine($NL * 3)}
+                                [System.Console]::WriteLine($NL * 3)
                             }
                         })
                         $GetVars.Parent = $TabPageDebug
@@ -2291,7 +2297,17 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                         $SingleGO = [GUI.B]::New(90, 20, 205, 300, 'Run Line')
                         $SingleGO.Add_Click({
-                            If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){GO -InlineCommand $SingleCMD.Text}Else{GO -InlineCommand $SingleCMD.Text -WhatIf}
+                            If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){
+                                $PrevConsCheck = $ShowCons.Checked
+                                $ShowCons.Checked = $True
+                                GO -InlineCommand $SingleCMD.Text
+                                $ShowCons.Checked = $PrevConsCheck
+                            }Else{
+                                $PrevConsCheck = $ShowCons.Checked
+                                $ShowCons.Checked = $True
+                                GO -InlineCommand $SingleCMD.Text -WhatIf
+                                $ShowCons.Checked = $PrevConsCheck
+                            }
                         })
                         $SingleGO.Parent = $TabPageDebug
                     $TabPageDebug.Parent = $TabHelperSub
@@ -2896,6 +2912,8 @@ Try{
     $CommRandTimer.Value     = $LoadedConfig.CommRandVal
 
     $ShowCons.Checked        = $(If([String]$LoadedConfig.ShowConsCheck -eq 'False') {$False}Else{[Boolean]$LoadedConfig.ShowConsCheck})
+    #$Script:Cons             = $ShowCons.Checked
+
     $OnTop.Checked           = $(If([String]$LoadedConfig.OnTopCheck -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.OnTopCheck})
 
     $ShowCons.Checked = !$ShowCons.Checked
