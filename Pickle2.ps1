@@ -933,10 +933,10 @@ Function Actions{
                     'MATCH'    {If($Op1 -match $Op2)                       {$Script:IfEl = $True}}
                     'EQ'       {If($Op1 -eq $Op2)                          {$Script:IfEl = $True}}
                     'LIKE'     {If($Op1 -like $Op2)                        {$Script:IfEl = $True}}
-                    'LT'       {Try{If([Double]$Op1 -lt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}}
-                    'LE'       {Try{If([Double]$Op1 -le [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}}
-                    'GT'       {Try{If([Double]$Op1 -gt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}}
-                    'GE'       {Try{If([Double]$Op1 -ge [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT STR TO NUMERIC!')}}}
+                    'LT'       {Try{If([Double]$Op1 -lt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT TO NUMERIC!')}}}
+                    'LE'       {Try{If([Double]$Op1 -le [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT TO NUMERIC!')}}}
+                    'GT'       {Try{If([Double]$Op1 -gt [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT TO NUMERIC!')}}}
+                    'GE'       {Try{If([Double]$Op1 -ge [Double]$Op2)      {$Script:IfEl = $True}}Catch [System.Management.Automation.RuntimeException]{If($ShowCons.Checked){[System.Console]::WriteLine($Tab + 'COULD NOT CONVERT TO NUMERIC!')}}}
                     'NOTMATCH' {If($Op1 -notmatch $Op2)                    {$Script:IfEl = $True}}
                     'NE'       {If($Op1 -ne $Op2)                          {$Script:IfEl = $True}}
                     'NOTLIKE'  {If($Op1 -notlike $Op2)                     {$Script:IfEl = $True}}
@@ -1017,6 +1017,44 @@ Function Actions{
             }ElseIf($X -match '{SETCLIP '){
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
                     If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}}
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+            }ElseIf($X -match '{BEEP '){
+                $X.Split('{}') | ?{$_ -match 'BEEP '} | %{
+                    $Tone = [Int](($_ -replace 'BEEP ').Split(',')[0])
+                    $Time = [Int](($_ -replace 'BEEP ').Split(',')[1])
+                    If(!$WhatIf){[System.Console]::Beep($Tone,$Time)}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: BEEP FOR '+$Time+' AT '+$Tone)}}
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+            }ElseIf($X -match '{FLASH'){
+                $X.Split('{}') | ?{$_ -match 'FLASH$' -OR $_ -match 'FLASH '} | %{
+                    $Flashes  = $(If($_ -match ' '){[Int]($_ -replace 'FLASH ')}Else{3})
+                    If(!$WhatIf){
+                        1..$Flashes | %{
+                            $Coords = $Host.UI.RawUI.WindowSize
+                            $Origin = $Host.UI.RawUI.CursorPosition
+    
+                            [System.Console]::WriteLine($Blank)
+
+                            $Blank = (' '*($Coords.Width*$Coords.Height))
+                        }{
+                            If($_ % 2){
+                                $Host.UI.RawUI.CursorPosition = $Origin
+                                Write-Host -BackgroundColor White $Blank -NoNewline
+                                [System.Threading.Thread]::Sleep(100)
+                            }Else{
+                                $Host.UI.RawUI.CursorPosition = $Origin
+                                Write-Host -BackgroundColor Black $Blank -NoNewline
+                                [System.Threading.Thread]::Sleep(100)
+                            }
+                        }{
+                            $Host.UI.RawUI.CursorPosition = $Origin
+                            [System.Console]::WriteLine($Blank)
+                            $Host.UI.RawUI.CursorPosition = $Origin
+                        }
+                    }Else{
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: BEEP FOR '+$Time+' AT '+$Tone)}
+                    }
                     $X = ($X -replace ('{'+$_+'}'))
                 }
             }ElseIf($X -match '{WAIT ?(M )?\d*}'){
