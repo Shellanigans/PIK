@@ -1271,7 +1271,9 @@ Function Actions{
                         If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                         If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}}
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
+
+                        If($_ -notmatch '^\s*?\\\\#' -AND !$Commented -AND $_ -notmatch '^:::'){$_}
                     } | %{
                         If(!$SyncHash.Stop){
                             If(!$WhatIf){
@@ -1581,10 +1583,10 @@ Function GO{
                 If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                 If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
+
                 If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
                     $_
-                }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
                 }
             } | %{$InlineFunction = $False}{
                 If(!$SyncHash.Stop){
