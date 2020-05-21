@@ -1882,25 +1882,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         
         Try{$_.SuppressKeyPress = $True}Catch{}
     }ElseIf($KeyCode -eq 'F11'){
-        If($Script:LoadedProfile -ne $Null){
-            $Form.Text = ($Form.Text -replace '\*$')
-            #$TempName = ($Profile.Text -replace '^Working Profile: ')
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-
-            [Void](MKDIR $TempDir)
-
-            $Script:Saved = $True
-
-            #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-            #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-            Try{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-            }Catch{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-            }
-
-            #$SaveAsProfText.Text = ''
-        }
+        Save-Profile
     }ElseIf($KeyCode -eq 'F12'){
         GO
     }ElseIf($KeyCode -eq 'TAB'){
@@ -1935,22 +1917,117 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $_.SuppressKeyPress = $True
         }
     }ElseIf($KeyCode -eq 'S' -AND $Control){
-        If($Script:LoadedProfile -ne $Null){
-            $Form.Text = ($Form.Text -replace '\*$')
-            #$TempName = ($Profile.Text -replace '^Working Profile: ')
-            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
+        Save-Profile
+    }
+}
 
-            $Script:Saved = $True
+Function Check-Saved{
+    $Response = 'No'
+    If(!$Script:Saved -OR ($Script:LoadedProfile -eq $Null -AND ($Commands.Text -OR $FunctionsBox.Text))){
+        If($Script:LoadedProfile){
+            $Response = [System.Windows.Forms.MessageBox]::Show('You have not saved. Would you like to save now?','Save?','YesNoCancel')
+            If($Response -eq 'Yes'){
+                $Form.Text = ($Form.Text -replace '\*$')
+                #$TempName = ($Profile.Text -replace '^Working Profile: ')
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
 
-            #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-            #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-            Try{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-            }Catch{
-                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                [Void](MKDIR $TempDir)
+
+                $Script:Saved = $True
+
+                #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                Try{
+                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                }Catch{
+                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                }
+
+                #$SaveAsProfText.Text = ''
             }
+        }Else{
+            $Response = [System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to create a new save?','Create New Save?','YesNoCancel')
+            If($Response -eq 'Yes'){
+                $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
+                If($PH){
+                    $Form.Text = ('Pickle - ' + $PH)
+                    $Profile.Text = ('Working Profile: ' + $PH)
+                    $Script:LoadedProfile = $PH
+                    #$TempName = $SaveAsProfText.Text
+                    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
 
-            #$SaveAsProfText.Text = ''
+                    [Void](MKDIR $TempDir)
+
+                    $Script:Saved = $True
+
+                    #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                    #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                    Try{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                    }Catch{
+                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                    }
+
+                    $SavedProfiles.Items.Clear()
+                    [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                    $SavedProfiles.SelectedItem = $Script:LoadedProfile
+
+                    #$SaveAsProfText.Text = ''
+                }
+            }
+        }
+    }
+
+    Return $Response
+}
+
+Function Save-Profile{
+    If($Script:LoadedProfile){
+        $Form.Text = ($Form.Text -replace '\*$')
+        #$TempName = ($Profile.Text -replace '^Working Profile: ')
+        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
+
+        [Void](MKDIR $TempDir)
+
+        $Script:Saved = $True
+
+        #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+        #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+        Try{
+            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+        }Catch{
+            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+        }
+
+        #$SaveAsProfText.Text = ''
+    }Else{
+        If([System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to create a new save?','Create New Save?','YesNoCancel') -eq 'Yes'){
+            $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
+            If($PH){
+                $Form.Text = ('Pickle - ' + $PH)
+                $Profile.Text = ('Working Profile: ' + $PH)
+                $Script:LoadedProfile = $PH
+                #$TempName = $SaveAsProfText.Text
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
+
+                [Void](MKDIR $TempDir)
+
+                $Script:Saved = $True
+
+                #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
+                #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
+                Try{
+                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                }Catch{
+                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
+                }
+
+                $SavedProfiles.Items.Clear()
+                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                $SavedProfiles.SelectedItem = $Script:LoadedProfile
+
+                #$SaveAsProfText.Text = ''
+            }
         }
     }
 }
@@ -2394,35 +2471,37 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $LoadProfile = [GUI.B]::New(75, 21, 10, 54, 'Load')
                 $LoadProfile.Add_Click({
                     If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0 -AND $SavedProfiles.SelectedIndex -ne -1){
-                        $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
-                        $Script:LoadedProfile = $SavedProfiles.SelectedItem
+                        If((Check-Saved) -ne 'Cancel'){
+                            $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
+                            $Script:LoadedProfile = $SavedProfiles.SelectedItem
 
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
+                            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
 
-                        #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                        #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                        $Commands.Text = Try{
-                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
-                        }Catch{
-                            Try{
-                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                            #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                            #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                            $Commands.Text = Try{
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
                             }Catch{
-                                ''
+                                Try{
+                                    ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                                }Catch{
+                                    ''
+                                }
                             }
-                        }
-                        $FunctionsBox.Text = Try{
-                            ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
-                        }Catch{
-                            Try{
-                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                            $FunctionsBox.Text = Try{
+                                ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
                             }Catch{
-                                ''
+                                Try{
+                                    ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                                }Catch{
+                                    ''
+                                }
                             }
+
+                            $Script:Saved = $True
+
+                            $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                         }
-
-                        $Script:Saved = $True
-
-                        $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
                     }
                 })
                 $LoadProfile.Parent = $TabPageProfiles
@@ -2432,60 +2511,11 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
                 $SavedProfiles.Parent = $TabPageProfiles
 
-                $QuickSave = [GUI.B]::New(75, 21, 10, 85, 'Save')
-                $QuickSave.Add_Click({
-                    If($Script:LoadedProfile -ne $Null){
-                        $Form.Text = ($Form.Text -replace '\*$')
-                        #$TempName = ($Profile.Text -replace '^Working Profile: ')
-                        $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-
-                        [Void](MKDIR $TempDir)
-
-                        $Script:Saved = $True
-
-                        #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                        #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                        Try{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                        }Catch{
-                            '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                        }
-
-                        #$SaveAsProfText.Text = ''
-                    }Else{
-                        If([System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to create a new save?','Create New Save?','YesNo') -eq 'Yes'){
-                            $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
-                            If($PH){
-                                $Form.Text = ('Pickle - ' + $PH)
-                                $Profile.Text = ('Working Profile: ' + $PH)
-                                $Script:LoadedProfile = $PH
-                                #$TempName = $SaveAsProfText.Text
-                                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-
-                                [Void](MKDIR $TempDir)
-
-                                $Script:Saved = $True
-
-                                #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                                #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                                Try{
-                                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                                }Catch{
-                                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                                }
-
-                                $SavedProfiles.Items.Clear()
-                                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                                $SavedProfiles.SelectedItem = $Script:LoadedProfile
-
-                                #$SaveAsProfText.Text = ''
-                            }
-                        }
-                    }
-                })
+                $QuickSave = [GUI.B]::New(75, 21, 10, 75, 'Save')
+                $QuickSave.Add_Click({[Void](Save-Profile)})
                 $QuickSave.Parent = $TabPageProfiles
 
-                $SaveProfile = [GUI.B]::New(75, 21, 10, 115, 'Save As')
+                $SaveProfile = [GUI.B]::New(75, 21, 10, 96, 'Save As')
                 $SaveProfile.Add_Click({
                     $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
                     If($PH){
@@ -2516,155 +2546,108 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $SaveProfile.Parent = $TabPageProfiles
 
-                $BlankProfile = [GUI.B]::New(75, 21, 10, 175, 'New')
+                $BlankProfile = [GUI.B]::New(75, 21, 10, 132, 'New')
                 $BlankProfile.Add_Click({
-                    If(!$Script:Saved -OR ($Script:LoadedProfile -eq $Null -AND ($Commands.Text -OR $FunctionsBox.Text))){
-                        If($Script:LoadedProfile -ne $Null -AND ([System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to save?','Save?','YesNo') -eq 'Yes')){
-                            $Form.Text = ($Form.Text -replace '\*$')
-                            #$TempName = ($Profile.Text -replace '^Working Profile: ')
-                            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-
-                            [Void](MKDIR $TempDir)
-
-                            $Script:Saved = $True
-
-                            #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                            #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                            Try{
-                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                            }Catch{
-                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                            }
-
-                            #$SaveAsProfText.Text = ''
-                        }Else{
-                            If([System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to create a new save?','Create New Save?','YesNo') -eq 'Yes'){
-                                $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
-                                If($PH){
-                                    $Form.Text = ('Pickle - ' + $PH)
-                                    $Profile.Text = ('Working Profile: ' + $PH)
-                                    $Script:LoadedProfile = $PH
-                                    #$TempName = $SaveAsProfText.Text
-                                    $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-
-                                    [Void](MKDIR $TempDir)
-
-                                    $Script:Saved = $True
-
-                                    #$Commands.Text | Out-File ($TempDir+'\Commands.txt') -Width 10000 -Force
-                                    #$FunctionsBox.Text | Out-File ($TempDir+'\Functions.txt') -Width 10000 -Force
-                                    Try{
-                                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                                    }Catch{
-                                        '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 1000 -Force
-                                    }
-
-                                    $SavedProfiles.Items.Clear()
-                                    [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                                    $SavedProfiles.SelectedItem = $Script:LoadedProfile
-
-                                    #$SaveAsProfText.Text = ''
-                                }
-                            }
-                        }
-                    }
-
-                    $Profile.Text = 'Working Profile: None/Prev Text Vals'
-                    $Script:LoadedProfile = $Null
+                    If((Check-Saved) -ne 'Cancel'){
+                        $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                        $Script:LoadedProfile = $Null
                     
-                    $SavedProfiles.SelectedIndex = -1
+                        $SavedProfiles.SelectedIndex = -1
 
-                    $Commands.Text = ''
-                    $FunctionsBox.Text = ''
+                        $Commands.Text = ''
+                        $FunctionsBox.Text = ''
 
-                    $Script:Saved = $True
+                        $Script:Saved = $True
 
-                    $Form.Text = 'Pickle'
+                        $Form.Text = 'Pickle'
+                    }
                 })
                 $BlankProfile.Parent = $TabPageProfiles
 
                 $ImportProfile = [GUI.B]::New(75,21,186,85,'Import')
                 $ImportProfile.Add_Click({
-                    $DialogO = [System.Windows.Forms.OpenFileDialog]::New()
-                    $DialogO.InitialDirectory = (PWD).Path
-                    $DialogO.Filter = 'pik files (*.pik)|*.pik|ps1 files (*.ps1)|*.ps1'
-                    $DialogO.MultiSelect = $True
-                    $DialogO.ShowHelp = $True
-                    $DialogO.RestoreDirectory = $True
+                    If((Check-Saved) -ne 'Cancel'){
+                        $DialogO = [System.Windows.Forms.OpenFileDialog]::New()
+                        $DialogO.InitialDirectory = (PWD).Path
+                        $DialogO.Filter = 'pik files (*.pik)|*.pik|ps1 files (*.ps1)|*.ps1'
+                        $DialogO.MultiSelect = $True
+                        $DialogO.ShowHelp = $True
+                        $DialogO.RestoreDirectory = $True
  
-                    If($DialogO.ShowDialog() -eq 'OK'){
-                        $PIK_PS1 = ($DialogO.FileName -match '\.ps1$')
-                        If($PIK_PS1){
-                            $PH = ((GC $DialogO.FileName | Out-String).Split($NL) | ?{$_ -ne ''} | %{$Started = $False}{
-                                If($_ -match 'GO -InlineCommand \$ScriptedCMDs'){
-                                    $Started = $False
-                                }
+                        If($DialogO.ShowDialog() -eq 'OK'){
+                            $PIK_PS1 = ($DialogO.FileName -match '\.ps1$')
+                            If($PIK_PS1){
+                                $PH = ((GC $DialogO.FileName | Out-String).Split($NL) | ?{$_ -ne ''} | %{$Started = $False}{
+                                    If($_ -match 'GO -InlineCommand \$ScriptedCMDs'){
+                                        $Started = $False
+                                    }
                             
-                                If($Started){$_}
+                                    If($Started){$_}
 
-                                If($_ -match '\$ScriptedCMDs = @'){
-                                    $Started = $True
-                                }
-                            })
+                                    If($_ -match '\$ScriptedCMDs = @'){
+                                        $Started = $True
+                                    }
+                                })
 
-                            $PH[-1] = ''
+                                $PH[-1] = ''
 
-                            $Profile.Text = 'Working Profile: None/Prev Text Vals'
-                            $Script:LoadedProfile = $Null
+                                $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                                $Script:LoadedProfile = $Null
                     
-                            $SavedProfiles.SelectedIndex = -1
+                                $SavedProfiles.SelectedIndex = -1
 
-                            $Commands.Text = ($PH -join $NL)
-                            $FunctionsBox.Text = ''
+                                $Commands.Text = ($PH -join $NL)
+                                $FunctionsBox.Text = ''
 
-                            $Script:Saved = $True
+                                $Script:Saved = $True
 
-                            $Form.Text = 'Pickle'
-                        }Else{
-                            $ImportedName = ($DialogO.FileName.Split('\')[-1] -replace '\.pik$')
-                            $Profile.Text = ('Working Profile: ' + $ImportedName)
-                            $Script:LoadedProfile = $ImportedName
+                                $Form.Text = 'Pickle'
+                            }Else{
+                                $ImportedName = ($DialogO.FileName.Split('\')[-1] -replace '\.pik$')
+                                $Profile.Text = ('Working Profile: ' + $ImportedName)
+                                $Script:LoadedProfile = $ImportedName
 
-                            $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$ImportedName+'\')
+                                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$ImportedName+'\')
 
-                            [Void](MKDIR $TempDir)
+                                [Void](MKDIR $TempDir)
 
-                            #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                            #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
-                            $Commands.Text = Try{
-                                ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
-                            }Catch{
-                                Try{
-                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                                #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                                #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                                $Commands.Text = Try{
+                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
                                 }Catch{
-                                    ''
+                                    Try{
+                                        ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                                    }Catch{
+                                        ''
+                                    }
                                 }
-                            }
-                            $FunctionsBox.Text = Try{
-                                ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
-                            }Catch{
-                                Try{
-                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                                $FunctionsBox.Text = Try{
+                                    ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
                                 }Catch{
-                                    ''
+                                    Try{
+                                        ((Get-Content $DialogO.FileName -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                                    }Catch{
+                                        ''
+                                    }
                                 }
+
+                                Try{
+                                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
+                                }Catch{
+                                    '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
+                                }
+
+                                $SavedProfiles.Items.Clear()
+                                [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
+                                $SavedProfiles.SelectedItem = $Script:LoadedProfile
+
+                                #$SaveAsProfText.Text = ''
+
+                                $Script:Saved = $True
+
+                                $Form.Text = ('Pickle - ' + $ImportedName)
                             }
-
-                            Try{
-                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
-                            }Catch{
-                                '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-CSV -NoTypeInformation | Out-File ($TempDir+$ImportedName+'.pik') -Width 1000 -Force
-                            }
-
-                            $SavedProfiles.Items.Clear()
-                            [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
-                            $SavedProfiles.SelectedItem = $Script:LoadedProfile
-
-                            #$SaveAsProfText.Text = ''
-
-                            $Script:Saved = $True
-
-                            $Form.Text = ('Pickle - ' + $ImportedName)
                         }
                     }
                 })
