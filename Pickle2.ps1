@@ -1651,10 +1651,14 @@ Function GO{
                                     }Catch{}
                                 }
                             }Else{
-                                If(!$WhatIf){
-                                    $PHGOTO = (Actions $Line)
+                                If($Line.Trim() -match '{SERVERSTOP}'){
+                                    $Server = $False
                                 }Else{
-                                    $PHGOTO = (Actions $Line -WhatIf)
+                                    If(!$WhatIf){
+                                        $PHGOTO = (Actions $Line)
+                                    }Else{
+                                        $PHGOTO = (Actions $Line -WhatIf)
+                                    }
                                 }
                             }
                         }ElseIf(($_ -match '^:::'+$PHGOTO)){
