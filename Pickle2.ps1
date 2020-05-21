@@ -885,15 +885,7 @@ Function Actions{
             If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$X)}
         }
 
-        $GOTOLabel = ''
-        
-        If($X -match '^{GOTO '){
-            $GOTOLabel = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
-            $SyncHash.Restart = $True
-            $SyncHash.Stop = $True
-                
-            $X = ''
-        }
+        $GOTOLabel = ''''
 
         If($X -match '{IF \(.*?\)}'){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN IF')}
@@ -976,8 +968,14 @@ Function Actions{
                 $TempX = $X
                 $X = ''
             }
-
-            If($X -match '^{POWER .*}$'){
+        
+            If($X -match '^{GOTO '){
+                $GOTOLabel = ($X.Substring(0,$X.Length - 1) -replace '^{GOTO ')
+                $SyncHash.Restart = $True
+                $SyncHash.Stop = $True
+                
+                $X = ''
+            }ElseIf($X -match '^{POWER .*}$'){
                 If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
             }ElseIf($X -match '{PAUSE'){
                 If($CommandLine -OR ($X -match '{PAUSE -C}')){
