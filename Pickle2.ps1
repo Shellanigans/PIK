@@ -1249,7 +1249,13 @@ Function Actions{
                         $PH = ($X -replace '{REMOTE ' -replace '}$')
                         $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
                         $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
-                        $PHCMDS = '{CMDS_START}'+($NL*2)+($Script:FuncHash.($PH.Split(',')[-1]))+($NL*2)+'{CMDS_END}'
+                        $PHSendString = ($PH.Split(',')[-1])
+
+                        If($Script:FuncHash.($PHSendString -replace '^{' -replace '}$')){
+                            $PHSendString = $Script:FuncHash.($PHSendString -replace '^{' -replace '}$')
+                        }
+
+                        $PHCMDS = '{CMDS_START}'+($NL*2)+$PHSendString+($NL*2)+'{CMDS_END}'
                         $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
 
                         $PHClient = [System.Net.Sockets.TcpClient]::New($PHIP,$PHPort)
@@ -1610,7 +1616,7 @@ Function GO{
                 If($_ -match '^\s*?<\\\\#'){$Commented = $True}
                 If($_ -match '^\s*?\\\\#>'){$Commented = $False}
                 
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
+                #If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
 
                 If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
                     $_
