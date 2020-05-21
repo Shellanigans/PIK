@@ -1243,6 +1243,33 @@ Function Actions{
             }ElseIf($X -match '^{CD '){
                 CD ($X -replace '{CD ' -replace '}$')
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'CHANGING DIRECTORY TO '+($X -replace '{CD ' -replace '}$'))}
+            }ElseIf($X -match '^{REMOTE '){
+                Try{
+                    If(!$WhatIf){
+                        $PH = ($X -replace '{REMOTE ' -replace '}$')
+                        $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
+                        $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
+                        $PHCMDS = '{CMDS_START}'+($NL*2)+($Script:FuncHash.($PH.Split(',')[-1]))+($NL*2)+'{CMDS_END}'
+                        $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
+
+                        $PHClient = [System.Net.Sockets.TcpClient]::New($PHIP,$PHPort)
+                        $PHStream = $PHClient.GetStream()
+                        $PHStream.Write($Buffer, 0, $Buffer.Length)
+                        [System.Threading.Thread]::Sleep(500)
+                        $PHStream.Close()
+                        $PHStream.Dispose()
+                        $PHClient.Close()
+                        $PHClient.Dispose()
+
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
+                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
+                    }Else{
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
+                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
+                    }
+                }Catch{
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)}
+                }
             }ElseIf($X -match '^{SCRNSHT '){
                 $PH = ($X -replace '{SCRNSHT ')
                 $PH = $PH.Substring(0,($PH.Length - 1))
