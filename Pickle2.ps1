@@ -1264,9 +1264,9 @@ Function Actions{
                         If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine($Tab+$_)};$FlipFlop=!$FlipFlop}}
 
                         $PHResp = ''
-                        $Timeout = 0
+                        $Timeout = 1
                         While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 1000)){
-                            If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/6))}
+                            If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/2))}
 
                             $Buff = New-Object Byte[] 1024
                             While($PHStream.DataAvailable){
@@ -2863,10 +2863,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                         $Buff = New-Object Byte[] 1024
                         $CMDsIn = ''
-                        $Timeout = 0
+                        $Timeout = 1
                         While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 1000)){
                             While($Stream.DataAvailable){
-                                $Stream.Read($Buff, 0, 1024)
+                                [Void]$Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
                             [System.Threading.Thread]::Sleep(500)
