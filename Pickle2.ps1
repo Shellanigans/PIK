@@ -1278,6 +1278,7 @@ Function Actions{
                         }
 
                         If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
+                        If($Timeout -ge 1000){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
 
                         $PHStream.Close()
                         $PHStream.Dispose()
