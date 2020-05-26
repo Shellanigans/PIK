@@ -1261,7 +1261,7 @@ Function Actions{
                         $PHStream.Write($Buffer, 0, $Buffer.Length)
 
                         If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
+                        If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine($Tab+$_)};$FlipFlop=!$FlipFlop}}
 
                         $PHResp = ''
                         $Timeout = 0
@@ -1270,7 +1270,7 @@ Function Actions{
 
                             $Buff = New-Object Byte[] 1024
                             While($PHStream.DataAvailable){
-                                $PHStream.Read($Buff, 0, 1024)
+                                [Void]$PHStream.Read($Buff, 0, 1024)
                                 $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
                             [System.Threading.Thread]::Sleep(500)
@@ -1285,7 +1285,7 @@ Function Actions{
                         $PHClient.Dispose()
                     }Else{
                         If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
+                        If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine($Tab+$_)};$FlipFlop=!$FlipFlop}}
                     }
                 }Catch{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)}
