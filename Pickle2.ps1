@@ -885,7 +885,7 @@ Function Actions{
             If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$X)}
         }
 
-        $GOTOLabel = ''''
+        $GOTOLabel = ''
 
         If($X -match '{IF \(.*?\)}'){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN IF')}
@@ -1655,8 +1655,10 @@ Function GO{
                                     }Catch{}
                                 }
                             }Else{
-                                If($Line.Trim() -match '{SERVERSTOP}'){
+                                If($Line.Trim() -match '^{SERVERSTOP}$'){
                                     $Server = $False
+                                    $SyncHash.Stop = $True
+                                    $SyncHash.Restart = $False
                                 }Else{
                                     If(!$WhatIf){
                                         $PHGOTO = (Actions $Line)
