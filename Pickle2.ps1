@@ -1685,7 +1685,6 @@ Function GO{
             }
         }
 
-
         If($Server){$SyncHash.Stop = $False}
 
         If(!$CommandLine -AND !$Server){    
@@ -2861,9 +2860,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Listener.Start()
                     }
 
-                    $Listener.Start()
+                    $Listener.Stop()
 
-                    $SyncHash.Stop = $True
+                    $SyncHash.Stop = $False
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
