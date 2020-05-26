@@ -1684,7 +1684,9 @@ Function GO{
                 [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
             }
         }
-        $SyncHash.Stop = $False
+
+
+        If($Server){$SyncHash.Stop = $False}
 
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
@@ -2858,6 +2860,11 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         GO -InlineCommand ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}') -Server
                         $Listener.Start()
                     }
+
+                    $Listener.Start()
+
+                    $SyncHash.Stop = $True
+                    $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
 
