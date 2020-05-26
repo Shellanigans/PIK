@@ -1259,14 +1259,30 @@ Function Actions{
                         $PHClient = [System.Net.Sockets.TcpClient]::New($PHIP,$PHPort)
                         $PHStream = $PHClient.GetStream()
                         $PHStream.Write($Buffer, 0, $Buffer.Length)
-                        [System.Threading.Thread]::Sleep(500)
+
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
+                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
+
+                        $PHResp = ''
+                        $Timeout = 0
+                        While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 1000)){
+                            If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/6))}
+
+                            $Buff = New-Object Byte[] 1024
+                            While($PHStream.DataAvailable){
+                                $PHStream.Read($Buff, 0, 1024)
+                                $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
+                            }
+                            [System.Threading.Thread]::Sleep(500)
+                            $Timeout++
+                        }
+
+                        If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
+
                         $PHStream.Close()
                         $PHStream.Dispose()
                         $PHClient.Close()
                         $PHClient.Dispose()
-
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                        If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
                     }Else{
                         If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
                         If($ShowCons.Checked){$PHCMDS.Split($NL) | ?{$_ -ne ''} | %{[System.Console]::WriteLine($Tab+$_)}}
@@ -1684,6 +1700,7 @@ Function GO{
                 [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
             }
         }
+
 
         If($Server){$SyncHash.Stop = $False}
 
@@ -2846,23 +2863,25 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                         $Buff = New-Object Byte[] 1024
                         $CMDsIn = ''
-                        $Count = 0
-                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Count -lt 1000)){
+                        $Timeout = 0
+                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 1000)){
                             While($Stream.DataAvailable){
                                 $Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
                             [System.Threading.Thread]::Sleep(500)
-                            $Count++
+                            $Timeout++
                         }
 
                         GO -InlineCommand ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}') -Server
+                        
+                        $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
                         $Listener.Start()
                     }
 
-                    $Listener.Stop()
+                    $Listener.Start()
 
-                    $SyncHash.Stop = $False
+                    $SyncHash.Stop = $True
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
