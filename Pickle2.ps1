@@ -2882,7 +2882,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         }
                     }
 
-                    $Listener.Start()
+                    $Listener.Stop()
 
                     $SyncHash.Stop = $True
                     $SyncHash.Restart = $False
