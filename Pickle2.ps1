@@ -1702,8 +1702,7 @@ Function GO{
             }
         }
 
-
-        If($Server){$SyncHash.Stop = $False}
+        If(!$Server){$SyncHash.Stop = $False}
 
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
