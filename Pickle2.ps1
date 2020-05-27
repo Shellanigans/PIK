@@ -2876,8 +2876,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){GO -InlineCommand ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}') -Server}
                         
                         If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
-                            $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
-                            $Listener.Start()
+                            Try{
+                                $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
+                                $Listener.Start()
+                            }Catch{
+                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')}
+                            }
                         }
                     }
 
