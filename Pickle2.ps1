@@ -887,7 +887,7 @@ Function Actions{
 
         $GOTOLabel = ''
 
-        If($X -match '{IF \(.*?\)}'){
+        If($X -match '{IF \(.*?\)}' -AND $Script:IfEl){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN IF')}
             If($ShowCons.Checked){[System.Console]::WriteLine('--------')}
             
