@@ -1265,7 +1265,7 @@ Function Actions{
 
                         $PHResp = ''
                         $Timeout = 1
-                        While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 1000)){
+                        While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 1000) -AND ($PHSendString -ne '{SERVERSTOP}')){
                             If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/2))}
 
                             $Buff = New-Object Byte[] 1024
@@ -1702,7 +1702,7 @@ Function GO{
             }
         }
 
-        If(!$Server){$SyncHash.Stop = $False}
+        If($Server){$SyncHash.Stop = $False}
 
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
