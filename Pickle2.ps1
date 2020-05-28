@@ -2887,7 +2887,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                     $Listener.Stop()
 
-                    $SyncHash.Stop = $True
+                    $SyncHash.Stop = $False
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
