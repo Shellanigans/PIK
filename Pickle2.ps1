@@ -1895,7 +1895,12 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectionStart = 0
         $MainObj.SelectionLength = $MainObj.Text.Length
         $MainObj.SelectionColor = [System.Drawing.Color]::Black
-                    
+        
+        $DetectedFunctions = @()
+
+        $Commands.Text.Split($NL) | ?{($_ -ne '') -AND $_ -match '{FUNCTION NAME '} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
+        $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
+
         ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
             $PH = $_.TrimStart(' ').TrimStart($Tab)
 
@@ -1906,11 +1911,44 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                 'G,'+$Count
             }
             ElseIf(!$Commented){
-                If(($PH -match '^:::') -AND ($BoxType -eq 'Commands')){
+                If($PH -match '^:::'){
                     'B,'+$Count
-                }
-
-                If($PH -match '^.*{.*}.*$'){
+                }ElseIf(
+                    ($PH -match '{VAR ') -OR `
+                    ($PH -match '{LEN ') -OR `
+                    ($PH -match '{ABS ') -OR `
+                    ($PH -match '{POW ') -OR `
+                    ($PH -match '{SIN ') -OR `
+                    ($PH -match '{COS ') -OR `
+                    ($PH -match '{TAN ') -OR `
+                    ($PH -match '{RND ') -OR `
+                    ($PH -match '{FLR ') -OR `
+                    ($PH -match '{SQT ') -OR `
+                    ($PH -match '{CEI ') -OR `
+                    ($PH -match '{MOD ') -OR `
+                    ($PH -match '{EVAL ') -OR `
+                    ($PH -match '{VAR \S*\+\+}') -OR `
+                    ($PH -match '{VAR \S*\+=') -OR `
+                    ($PH -match '{VAR \S*--}') -OR `
+                    ($PH -match '{VAR \S*-=') -OR `
+                    ($PH -match '{PWD') -OR `
+                    ($PH -match '{MANIP ') -OR `
+                    ($PH -match '{GETCON ') -OR `
+                    ($PH -match '{FINDVAR ') -OR `
+                    ($PH -match '{GETPROC ') -OR `
+                    ($PH -match '{FINDIMG ') -OR `
+                    ($PH -match '{GETWIND ') -OR `
+                    ($PH -match '{GETWINDTEXT ') -OR `
+                    ($PH -match '{GETFOCUS') -OR `
+                    ($PH -match '{GETSCREEN') -OR `
+                    ($PH -match '{READIN ')
+                ){
+                    'T,'+$Count
+                }ElseIf(
+                    @($PH.Split('{}') | %{$DetectedFunctions.Contains('{'+($_ -replace ' \d*')+'}')}).Contains($True)
+                ){
+                    'V,'+$Count
+                }ElseIf($PH -match '^.*{.*}.*$'){
                     'R,'+$Count
                 }
             }
@@ -1922,8 +1960,18 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $MainObj.SelectionLength = $PHLine.Length
             
             Switch($_.Split(',')[0]){
-                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::Gray}
+                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
                 'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
+                'T' {
+                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
+                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
+                    $MainObj.SelectionColor = [System.Drawing.Color]::Teal
+                }
+                'V' {
+                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
+                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
+                    $MainObj.SelectionColor = [System.Drawing.Color]::BlueViolet
+                }
                 'R' {
                     $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
                     $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
@@ -2280,7 +2328,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
 
-                        $MouseCoordLabel = [GUI.L]::New(100, 10, 130, 10, 'Mouse Coords:')
+                        $MouseCoordLabel = [GUI.L]::New(110, 10, 130, 10, 'Mouse Coords:')
                         $MouseCoordLabel.Parent = $TabHelperSubMouse
 
                         $MouseCoordsBox = [GUI.TB]::New(140, 25, 130, 25, '')
@@ -2318,7 +2366,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $YCoord.Parent = $TabHelperSubMouse
 
-                        $PixColorLabel = [GUI.L]::New(100, 10, 130, 60, 'HexVal (ARGB):')
+                        $PixColorLabel = [GUI.L]::New(110, 10, 130, 60, 'HexVal (ARGB):')
                         $PixColorLabel.Parent = $TabHelperSubMouse
 
                         $PixColorBox = [GUI.TB]::New(140, 25, 130, 75, '')
@@ -2327,7 +2375,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                         $PixColorBox.Parent = $TabHelperSubMouse
 
-                        $LeftMouseBox = [GUI.B]::New(135,25,10,110,'Left Mouse Click')
+                        $LeftMouseBox = [GUI.B]::New(135,25,10,110,'Left Click')
                         $LeftMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(2, 0, 0, 0, 0)
@@ -2337,7 +2385,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $LeftMouseBox.Parent = $TabHelperSubMouse
 
-                        $MiddleMouseBox = [GUI.B]::New(135,25,10,152,'Middle Mouse Click')
+                        $MiddleMouseBox = [GUI.B]::New(135,25,10,152,'Middle Click')
                         $MiddleMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
@@ -2347,7 +2395,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $MiddleMouseBox.Parent = $TabHelperSubMouse
 
-                        $RightMouseBox = [GUI.B]::New(135,25,10,194,'Right Mouse Click')
+                        $RightMouseBox = [GUI.B]::New(135,25,10,194,'Right Click')
                         $RightMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
@@ -2373,7 +2421,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $TabHelperSubMouse.Parent = $TabHelperSub
 
                     $TabHelperSubSystem = [GUI.TP]::new(0, 0, 0, 0, 'Sys/Proc')
-                        $ScreenInfoLabel = [GUI.L]::New(100, 10, 10, 10, 'Display Info:')
+                        $ScreenInfoLabel = [GUI.L]::New(110, 15, 10, 8, 'Display Info:')
                         $ScreenInfoLabel.Parent = $TabHelperSubSystem
 
                         $ScreenInfoBox = [GUI.RTB]::New(285, 95, 10, 25, '')
@@ -2388,10 +2436,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         }) -join $NL).TrimEnd($NL)
                         $ScreenInfoBox.Parent = $TabHelperSubSystem
 
-                        $ProcInfoLabel = [GUI.L]::New(100,15,10,136,'Process Info:')
+                        $ProcInfoLabel = [GUI.L]::New(110,15,10,136,'Process Info:')
                         $ProcInfoLabel.Parent = $TabHelperSubSystem
 
-                        $GetProcInfo = [GUI.B]::New(135, 20, 125, 132, 'Get Proc Inf')
+                        $GetProcInfo = [GUI.B]::New(140, 23, 125, 129, 'Get Proc Inf')
                         $GetProcInfo.Add_MouseDown({If($_.Button.ToString() -eq 'Left'){$This.Text = 'Click on Proc'}ElseIf($_.Button.ToString() -eq 'Right'){$ProcInfoBox.Text = ''}})
                         $GetProcInfo.Add_LostFocus({
                             If($This.Text -ne 'Get Proc Inf'){
@@ -2432,7 +2480,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $TabHelperSubSystem.Parent = $TabHelperSub
 
                     $TabPageDebug = [GUI.TP]::New(0, 0, 0, 0, 'Debug')
-                        $GetFuncts = [GUI.B]::New(135, 25, 10, 10, 'Display Functions')
+                        $GetFuncts = [GUI.B]::New(150, 25, 10, 10, 'Display Functions')
                         $GetFuncts.Add_Click({
                             $Script:FuncHash.Keys | Sort | %{
                                 [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)
@@ -2442,7 +2490,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $GetFuncts.Parent = $TabPageDebug
 
-                        $GetVars = [GUI.B]::New(135, 25, 10, 35, 'Display Variables')
+                        $GetVars = [GUI.B]::New(150, 25, 10, 35, 'Display Variables')
                         $GetVars.Add_Click({
                             $Script:VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                                 [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)
@@ -2452,7 +2500,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         })
                         $GetVars.Parent = $TabPageDebug
 
-                        $ClearCons = [GUI.B]::New(135, 25, 10, 60, 'Clear Console')
+                        $ClearCons = [GUI.B]::New(150, 25, 10, 60, 'Clear Console')
                         $ClearCons.Add_Click({Cls; $PseudoConsole.Text = ''})
                         $ClearCons.Parent = $TabPageDebug
 
@@ -2467,7 +2515,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $SingleCMD.AcceptsTab = $True
                         $SingleCMD.Parent = $TabPageDebug
 
-                        $SingleGO = [GUI.B]::New(90, 20, 205, 300, 'Run Line')
+                        $SingleGO = [GUI.B]::New(90, 22, 205, 298, 'Run Line')
                         $SingleGO.Add_Click({
                             If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){
                                 $PrevConsCheck = $ShowCons.Checked
@@ -2510,7 +2558,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
         $TabControllerAdvanced.ItemSize = [GUI.SP]::SI(25,75)
         $TabControllerAdvanced.Alignment = [System.Windows.Forms.TabAlignment]::Left
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Save/Load')
-                $Profile = [GUI.L]::New(250, 15, 10, 10, 'Working Profile: None/Prev Text Vals')
+                $Profile = [GUI.L]::New(275, 15, 10, 10, 'Working Profile: None/Prev Text Vals')
                 $Profile.Parent = $TabPageProfiles
 
                 $SavedProfilesLabel = [GUI.L]::New(75, 15, 85, 36, 'Profiles:')
@@ -2898,7 +2946,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
             $TabPageServer.Parent = $TabControllerAdvanced
 
             $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0, 'Config')
-                $DelayLabel = [GUI.L]::New(150, 25, 10, 10, 'Keystroke Delay (ms):')
+                $DelayLabel = [GUI.L]::New(175, 22, 10, 8, 'Keystroke Delay (ms):')
                 $DelayLabel.Parent = $TabPageConfig
 
                 $DelayTimer = [GUI.NUD]::New(150, 25, 10, 30)
@@ -2909,7 +2957,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $DelayCheck = [GUI.ChB]::New(150, 25, 170, 25, 'Randomize')
                 $DelayCheck.Parent = $TabPageConfig
 
-                $DelayRandLabel = [GUI.L]::New(200, 25, 10, 60, 'Key Random Weight (ms):')
+                $DelayRandLabel = [GUI.L]::New(200, 25, 25, 60, 'Random Weight (ms):')
                 $DelayRandLabel.Parent = $TabPageConfig
 
                 $DelayRandTimer = [GUI.NUD]::New(75, 25, 180, 55)
@@ -2917,26 +2965,26 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $DelayRandTimer.Parent = $TabPageConfig
                 $DelayRandTimer.BringToFront()
 
-                $CommDelayLabel = [GUI.L]::New(150, 25, 10, 90, 'Command Delay (ms):')
+                $CommDelayLabel = [GUI.L]::New(175, 22, 10, 108, 'Command Delay (ms):')
                 $CommDelayLabel.Parent = $TabPageConfig
 
-                $CommandDelayTimer = [GUI.NUD]::New(150, 25, 10, 110)
+                $CommandDelayTimer = [GUI.NUD]::New(150, 25, 10, 130)
                 $CommandDelayTimer.Maximum = 999999999
                 $CommandDelayTimer.Parent = $TabPageConfig
                 $CommandDelayTimer.BringToFront()
 
-                $CommDelayCheck = [GUI.ChB]::New(150, 25, 170, 105, 'Randomize')
+                $CommDelayCheck = [GUI.ChB]::New(150, 25, 170, 125, 'Randomize')
                 $CommDelayCheck.Parent = $TabPageConfig
 
-                $CommRandLabel = [GUI.L]::New(200, 25, 10, 140, 'Comm Random Weight (ms):')
+                $CommRandLabel = [GUI.L]::New(200, 25, 25, 160, 'Random Weight (ms):')
                 $CommRandLabel.Parent = $TabPageConfig
 
-                $CommRandTimer = [GUI.NUD]::New(75, 25, 180, 135)
+                $CommRandTimer = [GUI.NUD]::New(75, 25, 180, 155)
                 $CommRandTimer.Maximum = 999999999
                 $CommRandTimer.Parent = $TabPageConfig
                 $CommRandTimer.BringToFront()
 
-                $ShowCons = [GUI.ChB]::New(150, 25, 10, 160, 'Show Console')
+                $ShowCons = [GUI.ChB]::New(150, 25, 10, 200, 'Show Console')
                 $ShowCons.Add_CheckedChanged({
                     If($Host.Name -match 'Console'){
                         If($This.Checked){
@@ -2948,7 +2996,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ShowCons.Parent = $TabPageConfig
 
-                $OnTop = [GUI.ChB]::New(150, 25, 10, 185, 'Always On Top')
+                $OnTop = [GUI.ChB]::New(150, 25, 10, 225, 'Always On Top')
                 $OnTop.Add_CheckedChanged({
                     $Form.TopMost = !$Form.TopMost
                 })
@@ -2976,7 +3024,7 @@ $GOSel.Add_Click({
 })
 $GOSel.Parent = $Form
 
-$WhatIfCheck = [GUI.ChB]::New(75,27,365,415,'WhatIf?')
+$WhatIfCheck = [GUI.ChB]::New(80,27,365,415,'WhatIf?')
 $WhatIfCheck.Parent = $Form
 
 $Form.Add_SizeChanged({
@@ -2990,9 +3038,9 @@ $Form.Add_SizeChanged({
     $SingleCMD.Location         = [GUI.SP]::PO(10,($TabController.Height-100))
     $SingleCMD.Size             = [GUI.SP]::SI(($TabController.Width-220),20)
     
-    $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-200),($TabController.Height-100))
+    $SingleGO.Location          = [GUI.SP]::PO(($TabController.Width-200),($TabController.Height-102))
 
-    $Help.Location              = [GUI.SP]::PO(($This.Width-40),0)
+    $Help.Location              = [GUI.SP]::PO(($This.Width-40),-1)
     #$Help.Size                  = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),25)
 
     $ProcInfoBox.Size           = [GUI.SP]::SI(($SingleCMD.Width+$SingleGo.Width+10),($TabController.Height-240))
@@ -3030,7 +3078,7 @@ $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
         ) | %{
             $Index = 0
         }{
-            $PH = [GUI.B]::New(125,20,0,(20*$Index),$_)
+            $PH = [GUI.B]::New(135,22,0,(22*$Index),$_)
             $PH.Add_Click({Handle-RMenuClick $This})
             $PH.Add_MouseLeave({Handle-RMenuExit $This})
             $PH.FlatStyle = 'Flat'
@@ -3041,7 +3089,7 @@ $RightClickMenu = [GUI.P]::New(0,0,-1000,-1000)
             $Index++
         }
     )
-$RightClickMenu.Size = [GUI.SP]::SI(127,(2+($Index*20)))
+$RightClickMenu.Size = [GUI.SP]::SI(137,(2+($Index*22)))
 
 $RightClickMenu.Visible = $False
 $RightClickMenu.BorderStyle = 'FixedSingle'
@@ -3053,29 +3101,29 @@ $FindForm.BorderStyle = 'FixedSingle'
 $FindForm.Visible = $False
     $FRTitle = [GUI.L]::New(300,18,25,7,'Find and Replace (RegEx):')
     $FRTitle.Parent = $FindForm
-    $FLabel = [GUI.L]::New(18,20,6,28,'F:')
+    $FLabel = [GUI.L]::New(20,20,4,28,'F:')
     $FLabel.Parent = $FindForm
     $Finder = [GUI.RTB]::New(200,20,25,25,'')
     $Finder.AcceptsTab = $True
     $Finder.Parent = $FindForm
-    $RLabel = [GUI.L]::New(18,20,6,53,'R:')
+    $RLabel = [GUI.L]::New(20,20,4,53,'R:')
     $RLabel.Parent = $FindForm
     $Replacer = [GUI.RTB]::New(200,20,25,50,'')
     $Replacer.AcceptsTab = $True
     $Replacer.Parent = $FindForm
-    $FRGO = [GUI.B]::New(90,25,25,75,'Replace All')
+    $FRGO = [GUI.B]::New(95,25,25,75,'Replace All')
         $FRGO.Add_Click({
             $Commands.Text = ((($Commands.Text.Split($NL) | ?{$_ -ne ''}) | %{
                 $_ -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text.Replace('(NEWLINE)',$NL))
             }) -join $NL)
         })
     $FRGO.Parent = $FindForm
-    $FRClose = [GUI.B]::New(90,25,135,75,'Close')
+    $FRClose = [GUI.B]::New(95,25,130,75,'Close')
         $FRClose.Add_Click({$This.Parent.Visible = $False})
     $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
 
-$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',8.25,[System.Drawing.FontStyle]::Regular)}
+$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
 
 If($Host.Name -match 'Console'){Cls}
 
