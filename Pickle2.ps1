@@ -892,6 +892,7 @@ Function Actions{
             If($ShowCons.Checked){[System.Console]::WriteLine('--------')}
             
             $Script:IfEl = $False
+            $Script:SkipEl = $False
             
             $x = $X.Replace('{IF (','')
             $X = $X.Substring(0,($X.Length - 2))
@@ -952,13 +953,16 @@ Function Actions{
             }
 
             $X = ''
+        }ElseIf($X -match '{IF \(.*?\)}' -AND !$Script:IfEl){
+            $Script:SkipEl = $True
+        }ElseIf($X -match '{ELSE}' -AND !$Script:SkipEl){
+            $Script:IfEl = !$Script:IfEl
+        }ElseIf($X -match '{FI}'){
+            $Script:IfEl = $True
+            $Script:SkipEl = $False
         }
         
-        If(($X -match '{ELSE}') -OR ($X -match '{FI}')){
-            If($X -match '{ELSE}' -AND $Script:ElFi){$Script:IfEl = !$Script:IfEl}
-
-            If($X -match '{FI}'){$Script:IfEl = $True}
-        }ElseIf($Script:IfEl){
+        If($Script:IfEl){
             $Escaped = $False
             $X,$Escaped = (Interpret $X)
 
@@ -1552,7 +1556,7 @@ Function GO{
 
     $Script:Refocus = $False
     $Script:IfEl = $True
-    $Script:ElFi = $True
+    $Script:SkipEl = $False
 
     $Script:VarsHash = @{}
     $Script:FuncHash = @{}
@@ -1682,8 +1686,6 @@ Function GO{
                                     }Else{
                                         $PHGOTO = (Actions $Line -WhatIf)
                                     }
-                                    
-                                    If($Line -match '{ELSE}'){$Script:ElFi = $False}ElseIf($Line -match '{FI}'){$Script:ElFi = $True}
                                 }
                             }
                         }ElseIf(($_ -match '^:::'+$PHGOTO)){
@@ -2154,7 +2156,7 @@ $NL = [System.Environment]::NewLine
 
 $Script:Refocus = $False
 $Script:IfEl = $True
-$Script:ElFi = $True
+$Script:SkipEl = $False
 
 $Script:LoadedProfile = $Null
 $Script:Saved = $True
