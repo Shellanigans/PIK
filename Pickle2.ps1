@@ -955,11 +955,10 @@ Function Actions{
         }
         
         If(($X -match '{ELSE}') -OR ($X -match '{FI}')){
-            If($X -match '{ELSE}'){$Script:IfEl = !$Script:IfEl}
+            If($X -match '{ELSE}' -AND $Script:ElFi){$Script:IfEl = !$Script:IfEl}
 
             If($X -match '{FI}'){$Script:IfEl = $True}
-        }
-        ElseIf($Script:IfEl){
+        }ElseIf($Script:IfEl){
             $Escaped = $False
             $X,$Escaped = (Interpret $X)
 
@@ -1553,6 +1552,7 @@ Function GO{
 
     $Script:Refocus = $False
     $Script:IfEl = $True
+    $Script:ElFi = $True
 
     $Script:VarsHash = @{}
     $Script:FuncHash = @{}
@@ -1682,6 +1682,8 @@ Function GO{
                                     }Else{
                                         $PHGOTO = (Actions $Line -WhatIf)
                                     }
+                                    
+                                    If($Line -match '{ELSE}'){$Script:ElFi = $False}ElseIf($Line -match '{FI}'){$Script:ElFi = $True}
                                 }
                             }
                         }ElseIf(($_ -match '^:::'+$PHGOTO)){
@@ -2152,6 +2154,7 @@ $NL = [System.Environment]::NewLine
 
 $Script:Refocus = $False
 $Script:IfEl = $True
+$Script:ElFi = $True
 
 $Script:LoadedProfile = $Null
 $Script:Saved = $True
