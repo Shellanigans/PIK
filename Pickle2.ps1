@@ -955,11 +955,14 @@ Function Actions{
             $X = ''
         }ElseIf($X -match '{IF \(.*?\)}' -AND !$Script:IfEl){
             $Script:SkipEl = $True
+            $X = ''
         }ElseIf($X -match '{ELSE}' -AND !$Script:SkipEl){
             $Script:IfEl = !$Script:IfEl
+            $X = ''
         }ElseIf($X -match '{FI}'){
             $Script:IfEl = $True
             $Script:SkipEl = $False
+            $X = ''
         }
         
         If($Script:IfEl){
