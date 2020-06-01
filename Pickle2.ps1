@@ -1965,13 +1965,13 @@ Function GO{
 
         If($Server){$SyncHash.Stop = $False}
 
+        [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
+
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
             $FunctionsBox.ReadOnly = $False
 
             [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
-
-            [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
 
             $Form.Refresh()
 
@@ -2118,11 +2118,11 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectionLength = 4
         If($MainObj.SelectedText -eq '\\# '){
             $MainObj.SelectedText = ''
-            $MainObj.SelectionStart = $PrevStart+4
+            $MainObj.SelectionStart = $PrevStart-4
         }Else{
             $MainObj.SelectionLength = 0
             $MainObj.SelectedText = '\\# '
-            $MainObj.SelectionStart = $PrevStart-4
+            $MainObj.SelectionStart = $PrevStart+4
         }
         $MainObj.SelectionLength = $PrevLength
     }ElseIf($KeyCode -eq 'F4'){
@@ -2430,7 +2430,7 @@ $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
 $Script:FuncHash = @{}
 $Script:HiddenWindows = @{}
-$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False})
+$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP='0.0.0.0'})
 
 $ClickHelperParent = [HashTable]::Synchronized(@{})
 
@@ -2453,6 +2453,8 @@ $Pow.AddScript({
         If([API.Win32]::GetAsyncKeyState(145)){
             $SyncHash.Stop = $True
             $SyncHash.Restart = $False
+
+            Try{([System.Net.Sockets.TCPClient]::New([String]$SyncHash.SrvIP,[Int]$SyncHash.SrvPort)) | %{$_.Close; $_.Dispose}}Catch{}
         }
     }
 }) | Out-Null
@@ -3169,6 +3171,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $ServerStart = [GUI.B]::New(100, 20, 25, 25, 'Start')
                 $ServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
+
+                    $SyncHash.SrvPort = $PHPort
+                    $SyncHash.SrvIP = '0.0.0.0'
+
                     $Listener = [System.Net.Sockets.TcpListener]::New('0.0.0.0',$PHPort)
                     $Listener.Start()
                     While(!$SyncHash.Stop){
