@@ -1600,9 +1600,9 @@ Function Parse-IfEl{
         }
     }Else{
         If(!$WhatIf){
-            [Void](Actions $_)
+            [Void](Actions $X)
         }Else{
-            [Void](Actions $_ -WhatIf)
+            [Void](Actions $X -WhatIf)
         }
     }
 }
@@ -1788,9 +1788,9 @@ Function Parse-While{
         }
     }Else{
         If(!$WhatIf){
-            [Void](Parse-IfEl $_)
+            [Void](Parse-IfEl $X)
         }Else{
-            [Void](Parse-IfEl $_ -WhatIf)
+            [Void](Parse-IfEl $X -WhatIf)
         }
     }
 }
@@ -1963,13 +1963,13 @@ Function GO{
 
         If($Server){$SyncHash.Stop = $False}
 
-        [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
-
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
             $FunctionsBox.ReadOnly = $False
 
             [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+
+            [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
 
             $Form.Refresh()
 
