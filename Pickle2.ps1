@@ -883,6 +883,9 @@ Function Actions{
         If($ShowCons.Checked){[System.Console]::WriteLine($X)}
 
         $Escaped = $False
+
+        #$X = $X.Replace('{FI}','').Replace('{END WHILE}','')
+
         $X,$Escaped = (Interpret $X)
 
         $TempX = $Null
@@ -1535,7 +1538,7 @@ Function Parse-IfEl{
         If($X -match '{IF \(.*?\)}'){
             $Script:IfElDepth++
         }
-        
+
         If($X -match '{FI}'){
             If($Script:IfElDepth -gt 0){
                 $Script:BufferedCommandsIfEl+=($NL+$X)
@@ -1588,9 +1591,9 @@ Function Parse-IfEl{
                 $PHOut | %{
                     $_.Split($NL) | ?{$_ -ne ''} | %{
                         If(!$WhatIf){
-                           [Void](Parse-IfEl $_)
+                           [Void](Parse-While $_)
                         }Else{
-                           [Void](Parse-IfEl $_ -WhatIf)
+                           [Void](Parse-While $_ -WhatIf)
                         }
                     }
                 }
@@ -1610,12 +1613,12 @@ Function Parse-IfEl{
 Function Parse-While{
     Param([String]$X,[Switch]$WhatIf)
 
-    If($X -match '{WHILE \(.*?\)}' -AND !$Script:Inside_While){
+    If($X -match '{WHILE \(.*?\)}' -AND !$Script:Inside_While -AND !$Script:Inside_If){
         If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN WHILE')}
         If($ShowCons.Checked){[System.Console]::WriteLine('--------')}
             
         $Script:Inside_While = $True
-        $Script:WhileDepth = 0
+        $Script:WhileDepth = 1
         $Script:WhileEval = $False
 
         $Script:BufferedCommandsWhile = $X
@@ -1685,20 +1688,21 @@ Function Parse-While{
         If($X -match '{WHILE \(.*?\)}'){
             $Script:WhileDepth++
         }
-        
+
         If($X -match '{END WHILE}'){
-            If($Script:WhileDepth -gt 0){
+            If($Script:WhileDepth -gt 1){
                 $Script:BufferedCommandsWhile+=($NL+$X)
                 $Script:WhileDepth--
             }Else{
                 $Script:Inside_While = $False
-                $Script:WhileDepth = 0
+                $Script:WhileDepth = 1
 
+                #$Script:BufferedCommandsWhile+=($NL+$X)
                 $PH = ($Script:BufferedCommandsWhile.Split($NL) | ?{$_ -ne ''})
 
                 $Script:BufferedCommandsWhile = ''
 
-                $PH | %{$PHDepth = 0; $PHOut = ''}{
+                $PH | %{$PHDepth = 1; $PHOut = ''}{
                     $Temp = $_
                     If($Temp -match '{WHILE \(.*?\)}'){
                         $PHDepth++
