@@ -2256,11 +2256,11 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
 
             If($_.Shift -AND ($MainObj.SelectedText -match ($Tab))){
                 $TempLines = $MainObj.Lines
-                $Start..($End - 1) | %{
-                    If([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -gt 1){
+                $Start..$End | %{
+                    If($TempLines[$_].Length -gt 1 -AND [Int][Char]$TempLines[$_].Substring(0,1) -eq 9){
                         $TempLines[$_] = $TempLines[$_].Substring(1, ($TempLines[$_].Length - 1))
                         $TempSelectionLength--
-                    }ElseIf([Int][Char]$TempLines[$_].Substring(0,1) -eq 9 -AND $TempLines[$_].Length -eq 1){
+                    }ElseIf($TempLines[$_].Length -eq 1 -AND [Int][Char]$TempLines[$_].Substring(0,1) -eq 9){
                         $TempLines[$_] = ''
                         $TempSelectionLength--
                     }
@@ -2271,6 +2271,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                 $Start..($End - 1) | %{$TempLines[$_] = ($Tab + $TempLines[$_]); $TempSelectionLength++}
                 $MainObj.Lines = $TempLines
             }
+
+            If($TempSelectionLength -lt 0){$TempSelectionLength = 0}
 
             $MainObj.SelectionStart = $TempSelectionIndex
             $MainObj.SelectionLength = $TempSelectionLength
@@ -2454,7 +2456,15 @@ $Pow.AddScript({
             $SyncHash.Stop = $True
             $SyncHash.Restart = $False
 
-            Try{([System.Net.Sockets.TCPClient]::New([String]$SyncHash.SrvIP,[Int]$SyncHash.SrvPort)) | %{$_.Close; $_.Dispose}}Catch{}
+            Try{
+                $IP = [String]$SyncHash.SrvIP
+                $Port = [Int]$SyncHash.SrvPort
+                $TmpCli = ([System.Net.Sockets.TCPClient]::New($IP,$Port))
+                $TmpCli | %{
+                    $_.Close
+                    $_.Dispose
+                }
+            }Catch{}
         }
     }
 }) | Out-Null
@@ -2972,9 +2982,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 $Commands.Text = ($PH -join $NL)
                                 $FunctionsBox.Text = ''
 
-                                $Script:Saved = $True
+                                $Script:Saved = $False
 
-                                $Form.Text = 'Pickle'
+                                $Form.Text = 'Pickle*'
                             }Else{
                                 $ImportedName = ($DialogO.FileName.Split('\')[-1] -replace '\.pik$')
                                 $Profile.Text = ('Working Profile: ' + $ImportedName)
@@ -3465,6 +3475,33 @@ Try{
                 $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
                 $Script:LoadedProfile = $LoadedConfig.PrevProfile
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
+
+                $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
+
+                #$Commands.Text = ((Get-Content ($TempDir+'\Commands.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                #$FunctionsBox.Text = ((Get-Content ($TempDir+'\Functions.txt')).Split($NL) -join $NL).TrimEnd($NL)
+                $Commands.Text = Try{
+                    ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Commands | Out-String).TrimEnd($NL)# -join $NL
+                }Catch{
+                    Try{
+                        ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Commands | Out-String).TrimEnd($NL)# -join $NL
+                    }Catch{
+                        ''
+                    }
+                }
+                $FunctionsBox.Text = Try{
+                    ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-JSON).Functions | Out-String).TrimEnd($NL)# -join $NL
+                }Catch{
+                    Try{
+                        ((Get-Content ($TempDir+$SavedProfiles.SelectedItem+'.pik') -ErrorAction SilentlyContinue | Out-String | ConvertFrom-CSV).Functions | Out-String).TrimEnd($NL)# -join $NL
+                    }Catch{
+                        ''
+                    }
+                }
+
+                $Script:Saved = $True
+
+                $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
             }
         }
     }
