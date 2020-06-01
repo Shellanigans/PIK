@@ -1963,13 +1963,13 @@ Function GO{
 
         If($Server){$SyncHash.Stop = $False}
 
+        [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
+
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
             $FunctionsBox.ReadOnly = $False
 
             [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
-
-            [System.Console]::WriteLine($NL+'---------'+$NL+'Complete!'+$NL+'---------'+$NL)
 
             $Form.Refresh()
 
