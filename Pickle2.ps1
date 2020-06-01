@@ -1767,13 +1767,11 @@ Function Parse-While{
                         }
 
                         If($TempWhileEval){
-                            $PHOut | Select -Skip 1 | %{
-                                $_.Split($NL) | ?{$_ -ne ''} | %{
-                                    If(!$WhatIf){
-                                       [Void](Parse-While $_)
-                                    }Else{
-                                       [Void](Parse-While $_ -WhatIf)
-                                    }
+                            $PHOut | Select -Skip 1 | ?{$_ -ne ''} | %{
+                                If(!$WhatIf){
+                                    [Void](Parse-While $_)
+                                }Else{
+                                    [Void](Parse-While $_ -WhatIf)
                                 }
                             }
                         }
