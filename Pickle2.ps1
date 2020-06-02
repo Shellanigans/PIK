@@ -1572,9 +1572,12 @@ Function Parse-IfEl{
                         }
 
                         If($Temp -match '{FI}' -AND $PHDepth){
-                            If(!($PHDepth % 2)){$PHDepth--}
+                            If(!($PHDepth % 2)){
+                                $PHDepth--
+                            }
                             $PHDepth--
-                        }ElseIf($Temp -match '{FI}' -AND !$PHDepth){
+                            If(!$PHDepth){$Temp = ''}
+                        }ElseIf($Temp -match '{FI}'){
                             $Temp = ''
                         }
 
