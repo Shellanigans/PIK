@@ -884,8 +884,6 @@ Function Actions{
 
         $Escaped = $False
 
-        #$X = $X.Replace('{FI}','').Replace('{END WHILE}','')
-
         $X,$Escaped = (Interpret $X)
 
         $TempX = $Null
@@ -893,6 +891,8 @@ Function Actions{
             $TempX = $X
             $X = ''
         }
+
+        $X = $X.Replace('{FI}','').Replace('{END WHILE}','').Replace('{ELSE}','')
         
         If($X -match '^{POWER .*}$'){
             If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
@@ -1194,6 +1194,8 @@ Function Actions{
                         }
                         [System.Threading.Thread]::Sleep(500)
                         $Timeout++
+
+                        If($PHResp -eq '{KEEPALIVE}'){$Timeout = 0}
                     }
 
                     If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
@@ -1798,7 +1800,7 @@ Function Parse-While{
 }
 
 Function GO{
-    Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand)
+    Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand,$Stream=$Null)
     
     #Any lines with #Ignore are there for regex purposes when exporting scripts
     [System.Console]::WriteLine($NL+'Initializing:')                                             #Ignore
@@ -1941,10 +1943,14 @@ Function GO{
                                 $SyncHash.Stop = $True
                                 $SyncHash.Restart = $False
                             }Else{
-                                If(!$WhatIf){
-                                    [Void](Parse-While $Line)
+                                If($Line -match '{KEEPALIVE}'){
+                                    [Void]$Stream.Write([Text.Encoding]::UTF8.GetBytes('{KEEPALIVE}'),0,11)
                                 }Else{
-                                    [Void](Parse-While $Line -WhatIf)
+                                    If(!$WhatIf){
+                                        [Void](Parse-While $Line)
+                                    }Else{
+                                        [Void](Parse-While $Line -WhatIf)
+                                    }
                                 }
                             }
                         }
@@ -2458,13 +2464,16 @@ $Pow.AddScript({
 
             Try{
                 $IP = [String]$SyncHash.SrvIP
+                If($IP -match '0\.0\.0\.0'){$IP = '127.0.0.1'}
                 $Port = [Int]$SyncHash.SrvPort
-                $TmpCli = ([System.Net.Sockets.TCPClient]::New($IP,$Port))
+                $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)
                 $TmpCli | %{
                     $_.Close
                     $_.Dispose
                 }
             }Catch{}
+
+            [System.Threading.Thread]::Sleep(500)
         }
     }
 }) | Out-Null
@@ -3209,7 +3218,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $Timeout++
                         }
 
-                        If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){GO -InlineCommand ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}') -Server}
+                        If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
+                            $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
+                            GO -InlineCommand $CMDsIn -Server -Stream $Stream
+                        }
                         
                         If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
                             Try{
