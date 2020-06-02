@@ -3185,6 +3185,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $SyncHash.SrvPort = $PHPort
                     $SyncHash.SrvIP = '0.0.0.0'
 
+                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
+
+                    [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+
                     $Listener = [System.Net.Sockets.TcpListener]::New('0.0.0.0',$PHPort)
                     $Listener.Start()
                     While(!$SyncHash.Stop){
@@ -3218,6 +3222,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     }
 
                     $Listener.Stop()
+
+                    [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+                    
+                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+
+                    $Form.Refresh()
 
                     $SyncHash.Stop = $False
                     $SyncHash.Restart = $False
