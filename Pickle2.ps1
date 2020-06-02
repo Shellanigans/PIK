@@ -1182,7 +1182,7 @@ Function Actions{
                     $PHStream.Write($Buffer, 0, $Buffer.Length)
 
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                    If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine($Tab+$_)};$FlipFlop=!$FlipFlop}}
+                    If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine(($Tab*2)+$_)};$FlipFlop=!$FlipFlop}}
 
                     $PHResp = ''
                     $Timeout = 1
