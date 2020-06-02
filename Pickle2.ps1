@@ -1869,8 +1869,8 @@ Function GO{
             If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}        #Ignore
             If($FunctionStart){                                                                  #Ignore
                 If($_ -match '^{FUNCTION NAME '){                                                #Ignore
-                    $NameFunc = [String]($_ -replace '{FUNCTION NAME ' -replace '}')             #Ignore
-                }ElseIf($_ -match '^{FUNCTION END}'){                                            #Ignore
+                    $NameFunc = [String]($_ -replace '^.*{FUNCTION NAME ' -replace '}\s*$')      #Ignore
+                }ElseIf($_ -match '{FUNCTION END}'){                                            #Ignore
                     $FunctionStart = $False                                                      #Ignore
                     $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))                    #Ignore
                     $FunctionText = @()                                                          #Ignore
@@ -1928,7 +1928,7 @@ Function GO{
 
                         If($Line -match '{FUNCTION NAME '){
                             $InlineFunction = $True
-                            $NewFuncName = ($Line.Replace('{FUNCTION NAME ','') -replace '}$').Trim(' ')
+                            $NewFuncName = ($Line -replace '^.*{FUNCTION NAME ' -replace '}\s*$').Trim(' ')
                             $NewFuncName,$FuncEsc = (Interpret $NewFuncName)
                             If(!$FuncEsc){
                                 $Line = ''
@@ -1938,7 +1938,7 @@ Function GO{
                             }
                         }
                         If($InlineFunction){
-                            If($Line -notmatch '^{FUNCTION END}'){
+                            If($Line -notmatch '{FUNCTION END}'){
                                 $NewFuncBody+=($Line+$NL)
                             }Else{
                                 $InlineFunction = $False
