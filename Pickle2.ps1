@@ -1868,7 +1868,7 @@ Function GO{
             If($FunctionStart){                                                                  #Ignore
                 If($_ -match '^{FUNCTION NAME '){                                                #Ignore
                     $NameFunc = [String]($_ -replace '^.*{FUNCTION NAME ' -replace '}\s*$')      #Ignore
-                }ElseIf($_ -match '{FUNCTION END}'){                                            #Ignore
+                }ElseIf($_ -match '{FUNCTION END}'){                                             #Ignore
                     $FunctionStart = $False                                                      #Ignore
                     $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))                    #Ignore
                     $FunctionText = @()                                                          #Ignore
