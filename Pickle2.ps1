@@ -258,6 +258,10 @@ namespace GUI{
             return (new DR.Rectangle(lx, ly, sx, sy));
         }
     }
+
+    public class ScreenInfo{
+        public static SWF.Screen[] All = SWF.Screen.AllScreens;
+    }
 }
 
 public class Parser{
@@ -2737,7 +2741,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $ScreenInfoBox.ScrollBars = 'Both'
                         $ScreenInfoBox.WordWrap = $False
                         $ScreenInfoBox.ReadOnly = $True
-                        $ScreenInfoBox.Text = (([System.Windows.Forms.Screen]::AllScreens | %{$DispCount = 1}{
+                        $ScreenInfoBox.Text = (([GUI.ScreenInfo]::All | %{$DispCount = 1}{
                             $PH = $_.Bounds
                             'DISPLAY '+$DispCount+':'+$NL+'----------------'+$NL+'TOP LEFT     (x,y) : '+$PH.X+','+$PH.Y+$NL+'WIDTH/HEIGHT (w,h) : '+$PH.Width+','+$PH.Height+$NL+$NL
                             $DispCount++
