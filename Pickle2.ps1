@@ -1055,7 +1055,7 @@ Function Interpret{
 
         #Replace the keyword with the dimension of all screens separated by semi-colons
         $PHSplitX | ?{$_ -match 'GETSCREEN'} | %{
-            $X = ($X.Replace(('{'+$_+'}'),(([System.Windows.Forms.Screen]::AllScreens | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
+            $X = ($X.Replace(('{'+$_+'}'),(([GUI.ScreenInfo]::All | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
             If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}
         }
 
