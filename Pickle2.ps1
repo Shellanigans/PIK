@@ -2745,10 +2745,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $ScreenInfoBox.ScrollBars = 'Both'
                         $ScreenInfoBox.WordWrap = $False
                         $ScreenInfoBox.ReadOnly = $True
-                        $ScreenInfoBox.Text = (([GUI.ScreenInfo]::All | %{$DispCount = 1}{
+                        $ScreenInfoBox.Text = (([GUI.ScreenInfo]::All | %{$Count = 1}{
                             $PH = $_.Bounds
-                            'DISPLAY '+$DispCount+':'+$NL+'----------------'+$NL+'TOP LEFT     (x,y) : '+$PH.X+','+$PH.Y+$NL+'WIDTH/HEIGHT (w,h) : '+$PH.Width+','+$PH.Height+$NL+$NL
-                            $DispCount++
+                            'DISPLAY '+$Count+':'+$NL+'----------------'+$NL+'TOP LEFT     (x,y) : '+$PH.X+','+$PH.Y+$NL+'WIDTH/HEIGHT (w,h) : '+$PH.Width+','+$PH.Height+$NL+$NL
+                            $Count++
                         }) -join $NL).TrimEnd($NL)
                         $ScreenInfoBox.Parent = $TabHelperSubSystem
 
