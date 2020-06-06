@@ -63,7 +63,7 @@ Watch the title of this window~~
 {WAIT}
 {SETWIND {GETPROC -ID {GETFOCUS -ID}},100,100,1000,500}
 
-My PID is: {MYPID}~
+My PID is: {PID}~
 I am running as: {WHOAMI}~
 The currently focussed window is: {GETFOCUS}~
 Which has a PID of: {GETFOCUS -ID}
