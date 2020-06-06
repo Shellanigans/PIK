@@ -321,7 +321,7 @@ public class Parser{
                 X = (X.Replace("{SELECTALL}","(^a)"));
             }
             if(Regex.IsMatch(X, "{PID}")){
-                X = (X.Replace("{MYPID}",(Process.GetCurrentProcess().Id.ToString())));
+                X = (X.Replace("{PID}",(Process.GetCurrentProcess().Id.ToString())));
             }
             if(Regex.IsMatch(X, "{WHOAMI}")){
                 X = (X.Replace("{WHOAMI}",(Environment.UserDomainName.ToString()+"\\"+Environment.UserName.ToString())));
@@ -492,7 +492,7 @@ Function Actions{
                         $Host.UI.RawUI.CursorPosition = $Origin
                     }
                 }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: BEEP FOR '+$Time+' AT '+$Tone)}
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: FLASH '+$Flashes+' TIMES')}
                 }
                 $X = ($X -replace ('{'+$_+'}'))
             }
