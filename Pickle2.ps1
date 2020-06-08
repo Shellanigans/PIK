@@ -448,9 +448,9 @@ Function Actions{
 
             If(!$WhatIf){
                 If($X -notmatch '^{SETCONA '){
-                    $PHFileContent | Out-File $PHFileName -Force
+                    $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Force
                 }Else{
-                    $PHFileContent | Out-File $PHFileName -Append -Force
+                    $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Append -Force
                 }
             }Else{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)}
