@@ -418,6 +418,8 @@ Function Actions{
         
         If($X -match '^{POWER .*}$'){
             If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
+        }ElseIf($X -match '^{CMD .*}$'){
+            If(!$WhatIf){$X = ([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}}
         }ElseIf($X -match '{PAUSE'){
             If($CommandLine -OR ($X -match '{PAUSE -C}')){
                 If($ShowCons.Checked){[System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')}
