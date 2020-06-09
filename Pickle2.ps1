@@ -2163,7 +2163,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'F4'){
         Switch($BoxType){
             'Commands'{
-                $MainObj.SelectedText = ('{IF ()}'+$NL+'{ELSE}'+$NL+{FI})
+                $MainObj.SelectedText = ('{IF ()}'+$NL+'{ELSE}'+$NL+'{FI}')
             }
             'Functions'{
                 $MainObj.Text+=($NL+'{FUNCTION NAME RENAMETHIS}'+$NL+$Tab+$NL+'{FUNCTION END}'+$NL)
