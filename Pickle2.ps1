@@ -395,7 +395,6 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
                        ---> "Interpret" Gets called before any actions (though if statetments and while true/false conditions take precedence). The purpose is to make substitutions such as var substitutions or getting content (i.e. values are known)
                              |
                              ---> "Actions" is called to check each line as it comes in and is the collection of keywords for performing actual actions on the machine (i.e. not just simple substitution or "Get" style keywords)
-      
 #>
 Function Actions{
     Param([String]$X,[Switch]$WhatIf)
@@ -421,14 +420,14 @@ Function Actions{
         }ElseIf($X -match '^{CMD .*}$'){
             If(!$WhatIf){$X = ([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}}
         }ElseIf($X -match '{PAUSE'){
-            If($CommandLine -OR ($X -match '{PAUSE -C}')){
+            If($CommandLine -OR ($ShowCons.Checked -AND ($X -notmatch '{PAUSE -GUI}'))){
                 If($ShowCons.Checked){[System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')}
                 [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
             }Else{
                 [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
             }
             
-            $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -C}','')
+            $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -GUI}','')
         }ElseIf($X -match '^{FOREACH '){
             $PH = ($X.Substring(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
             $Script:VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
@@ -763,12 +762,12 @@ Function Actions{
                 $Script:FuncHash.($X.Trim('{}').Split()[0]).Split($NL) | %{
                     ($_ -replace ('`'+$NL),'' -replace '^\s*' | ?{$_ -ne ''})
                 } | %{$Commented = $False}{
-                    If($_ -match '^\s*?<\\\\#'){$Commented = $True}
-                    If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+                    If($_ -match '^<\\\\#'){$Commented = $True}
+                    If($_ -match '^\\\\#>'){$Commented = $False}
                 
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
 
-                    If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){$_}
+                    If($_ -notmatch '^\\\\#' -AND !$Commented){$_}
                 } | %{
                     If(!$SyncHash.Stop){
                         If(!$WhatIf){
@@ -904,8 +903,8 @@ Function Actions{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
             }
         }ElseIf($X -match '{ECHO .*?}'){
-            If($X -match '{ECHO -GUI \S+'){
-                [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO -GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
+            If($X -match '{ECHO -GUI \S+' -OR !$ShowCons.Checked){
+                [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO ' -replace '^-GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
             }Else{
                 [System.Console]::WriteLine($Tab+'ECHO: '+($X -replace '^{ECHO ' -replace '}$'))
             }
@@ -1917,12 +1916,12 @@ Function GO{
         }
 
         $PHText = (($PHText -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
-            If($_ -match '^\s*?<\\\\#'){$Commented = $True}
-            If($_ -match '^\s*?\\\\#>'){$Commented = $False}
+            If($_ -match '^<\\\\#'){$Commented = $True}
+            If($_ -match '^\\\\#>'){$Commented = $False}
                 
             #If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
 
-            If($_ -notmatch '^\s*?\\\\#' -AND !$Commented){
+            If($_ -notmatch '^\\\\#' -AND !$Commented){
                 $_
             }
         })
@@ -2163,7 +2162,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'F4'){
         Switch($BoxType){
             'Commands'{
-                $MainObj.SelectedText = ('{IF ()}'+$NL+'{ELSE}'+$NL+'{FI}')
+                $MainObj.SelectedText = ('{IF ()}'+$NL+'{ELSE}'+$NL+{FI})
             }
             'Functions'{
                 $MainObj.Text+=($NL+'{FUNCTION NAME RENAMETHIS}'+$NL+$Tab+$NL+'{FUNCTION END}'+$NL)
@@ -2196,81 +2195,109 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $Commands.Text.Split($NL) | ?{($_ -ne '') -AND $_ -match '{FUNCTION NAME '} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
         $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
 
-        ($MainObj.Lines | %{$Count = 0; $Commented = $False}{
+        $MainObj.Lines | %{$LineCount = 0; $Commented = $False}{
             $PH = $_.TrimStart(' ').TrimStart($Tab)
 
             If($PH -match '^<\\\\#'){$Commented = $True}
             If($PH -match '^\\\\#>'){$Commented = $False}
 
-            If($PH -match '^\\\\#' -OR $Commented){
-                'G,'+$Count
-            }
-            ElseIf(!$Commented){
-                If(
-                    ($PH -match '{VAR ') -OR `
-                    ($PH -match '{LEN ') -OR `
-                    ($PH -match '{ABS ') -OR `
-                    ($PH -match '{POW ') -OR `
-                    ($PH -match '{SIN ') -OR `
-                    ($PH -match '{COS ') -OR `
-                    ($PH -match '{TAN ') -OR `
-                    ($PH -match '{RND ') -OR `
-                    ($PH -match '{FLR ') -OR `
-                    ($PH -match '{SQT ') -OR `
-                    ($PH -match '{CEI ') -OR `
-                    ($PH -match '{MOD ') -OR `
-                    ($PH -match '{EVAL ') -OR `
-                    ($PH -match '{VAR \S*\+\+}') -OR `
-                    ($PH -match '{VAR \S*\+=') -OR `
-                    ($PH -match '{VAR \S*--}') -OR `
-                    ($PH -match '{VAR \S*-=') -OR `
-                    ($PH -match '{PWD') -OR `
-                    ($PH -match '{MANIP ') -OR `
-                    ($PH -match '{GETCON ') -OR `
-                    ($PH -match '{FINDVAR ') -OR `
-                    ($PH -match '{GETPROC ') -OR `
-                    ($PH -match '{FINDIMG ') -OR `
-                    ($PH -match '{GETWIND ') -OR `
-                    ($PH -match '{GETWINDTEXT ') -OR `
-                    ($PH -match '{GETFOCUS') -OR `
-                    ($PH -match '{GETSCREEN') -OR `
-                    ($PH -match '{READIN ')
-                ){
-                    'T,'+$Count
-                }ElseIf(
-                    @($PH.Split('{}') | %{$DetectedFunctions.Contains('{'+($_ -replace ' \d*')+'}')}).Contains($True)
-                ){
-                    'V,'+$Count
-                }ElseIf($PH -match '^.*{.*}.*$'){
-                    'R,'+$Count
-                }
-            }
-                        
-            $Count++
-        }) | %{
-            $PHLine = $MainObj.Lines[$_.Split(',')[-1]]
-            $MainObj.SelectionStart = $MainObj.GetFirstCharIndexFromLine($_.Split(',')[-1])
-            $MainObj.SelectionLength = $PHLine.Length
+            $PreviousLineStart = $MainObj.GetFirstCharIndexFromLine($LineCount)
+            $MainObj.SelectionStart = $PreviousLineStart
             
-            Switch($_.Split(',')[0]){
-                'G' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen}
-                'B' {$MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue}
-                'T' {
-                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
-                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
-                    $MainObj.SelectionColor = [System.Drawing.Color]::Teal
-                }
-                'V' {
-                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
-                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
-                    $MainObj.SelectionColor = [System.Drawing.Color]::BlueViolet
-                }
-                'R' {
-                    $MainObj.SelectionStart+=($PHLine.Split('{')[0].Length)
-                    $MainObj.SelectionLength=($PHLine.Length-($PHLine.Split('{')[0].Length+$(If($PHLine -notmatch '}\s*$'){$PHLine.Split('}')[-1].Length}Else{0})))
-                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
+            $PreviousLength = $_.Length
+            $MainObj.SelectionLength = $PreviousLength
+
+            If($Commented -OR ($PH -match '^\\\\#')){
+                $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
+            }ElseIf(!$Commented){
+                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
+                    $CharCount+=($_.Length+1)
+                    $MainObj.SelectionStart = $PreviousLineStart
+                    $MainObj.SelectionLength = $PreviousLength
+
+                    If(
+                        ($_ -match 'VAR ') -OR `
+                        ($_ -match 'LEN ') -OR `
+                        ($_ -match 'ABS ') -OR `
+                        ($_ -match 'POW ') -OR `
+                        ($_ -match 'SIN ') -OR `
+                        ($_ -match 'COS ') -OR `
+                        ($_ -match 'TAN ') -OR `
+                        ($_ -match 'RND ') -OR `
+                        ($_ -match 'FLR ') -OR `
+                        ($_ -match 'SQT ') -OR `
+                        ($_ -match 'CEI ') -OR `
+                        ($_ -match 'MOD ') -OR `
+                        ($_ -match 'EVAL ') -OR `
+                        ($_ -match 'VAR \S*\+\+}') -OR `
+                        ($_ -match 'VAR \S*\+=') -OR `
+                        ($_ -match 'VAR \S*--}') -OR `
+                        ($_ -match 'VAR \S*-=') -OR `
+                        ($_ -match 'PWD') -OR `
+                        ($_ -match 'MANIP ') -OR `
+                        ($_ -match 'GETCON ') -OR `
+                        ($_ -match 'FINDVAR ') -OR `
+                        ($_ -match 'GETPROC ') -OR `
+                        ($_ -match 'FINDIMG ') -OR `
+                        ($_ -match 'GETWIND ') -OR `
+                        ($_ -match 'GETWINDTEXT ') -OR `
+                        ($_ -match 'GETFOCUS') -OR `
+                        ($_ -match 'GETSCREEN') -OR `
+                        ($_ -match 'READIN ')
+                    ){
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
+                    }ElseIf($DetectedFunctions.Contains('{'+($_ -replace ' \d*')+'}') -OR ($_ -match 'FUNCTION NAME ') -OR ($_ -match 'FUNCTION END')){
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::BlueViolet
+                    }ElseIf(($_ -match 'IF ') -OR ($_ -match '^ELSE$') -OR ($_ -match '^FI$')){
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen
+                    }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen
+                    }ElseIf(
+                        ($_ -match '^POWER .*$') -OR `
+                        ($_ -match '^CMD .*$') -OR `
+                        ($_ -match 'PAUSE') -OR `
+                        ($_ -match '^FOREACH ') -OR `
+                        ($_ -match '^SETCON') -OR `
+                        ($_ -match 'SETCLIP ') -OR `
+                        ($_ -match 'BEEP ') -OR `
+                        ($_ -match 'FLASH') -OR `
+                        ($_ -match 'WAIT ?(M )?\d*') -OR `
+                        ($_ -match '[/\\]?HOLD') -OR `
+                        ($_ -match '^[LRM]?MOUSE') -OR `
+                        ($_ -match '^RESTART$') -OR `
+                        ($_ -match '^REFOCUS$') -OR `
+                        ($_ -match '^CLEARVAR') -OR `
+                        ($_ -match '^QUIT$') -OR `
+                        ($_ -match '^EXIT$') -OR `
+                        ($_ -match '^CD ') -OR `
+                        ($_ -match '^REMOTE ') -OR `
+                        ($_ -match '^SCRNSHT ') -OR `
+                        ($_ -match 'FOCUS ') -OR `
+                        ($_ -match 'SETWIND ') -OR `
+                        ($_ -match 'MIN ') -OR `
+                        ($_ -match 'MAX ') -OR `
+                        ($_ -match 'HIDE ') -OR `
+                        ($_ -match 'SHOW ') -OR `
+                        ($_ -match 'SETWINDTEXT ') -OR `
+                        ($_ -match 'ECHO .*?')
+                    ){
+                        
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
+                    }
                 }
             }
+
+            $LineCount++
         }
                     
         $MainObj.SelectionStart = $TempSelectionIndex
