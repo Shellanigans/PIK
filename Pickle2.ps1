@@ -1031,7 +1031,7 @@ Function Interpret{
         $PHSplitX = $X.Split('{}')
         
         #Perform all the var substitutions now that are not for var setting, by replacing the string with the value stored in the VarHash
-        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '=' -AND $_ -notmatch '\+\+$' -AND $_ -notmatch '--$'} | %{
+        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '=' -AND $_ -notmatch '\+\+$' -AND $_ -notmatch '--$' -AND $_ -notmatch '\+=' -AND $_ -notmatch '-='} | %{
             $PH = $_.Split(' ')[1]
             $PHFound = $True
             If($Script:VarsHash.ContainsKey($PH)){
@@ -1292,28 +1292,6 @@ Function Interpret{
             If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}
         }
 
-        $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S+\+=\d*') -OR ($_ -match '^VAR \S+-=\d*')} | %{
-            $PH = ((($_ -replace '\+=',' ' -replace '-=',' ' -replace '\+\+',' ' -replace '--',' ').Split(' ') | ?{$_ -ne ''})[1])
-            If($Script:VarsHash.ContainsKey($PH)){
-                Try{
-                    If($_ -match '\+\+'){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + 1)
-                    }ElseIf($_ -match '\+='){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + ($_.Split('=')[-1]))
-                    }ElseIf($_ -match '--'){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - 1)
-                    }ElseIf($_ -match '-='){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - ($_.Split('=')[-1]))
-                    }
-                }Catch{
-                    If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')}
-                }
-            }Else{
-                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')}
-            }
-            $X = ''
-        }
-
         $PHSplitX | ?{$_ -match 'FINDIMG \S+'} | %{
             $PHCoords = ($_ -replace '^FINDIMG ')
             $PHCoords = ($PHCoords.Split(',')[0,1,2,3] | %{[Int]$_})
@@ -1426,6 +1404,35 @@ Function Interpret{
             If($Output){If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}}
         }
 
+        $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S+\+=\d*') -OR ($_ -match '^VAR \S+-=\d*')} | %{
+            $PH = ((($_ -replace '\+=',' ' -replace '-=',' ' -replace '\+\+',' ' -replace '--',' ').Split(' ') | ?{$_ -ne ''})[1])
+            If($Script:VarsHash.ContainsKey($PH)){
+                Try{
+                    If($_ -match '\+\+'){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + 1)
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $X = ''
+                    }ElseIf($_ -match '--'){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - 1)
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $X = ''
+                    }ElseIf($_ -match '-='){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - (Interpret ($_.Split('=')[-1]))[0])
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $X = ''
+                    }ElseIf($_ -match '\+='){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + (Interpret ($_.Split('=')[-1]))[0])
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $X = ''
+                    }
+                }Catch{
+                    If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' BAD DATA TYPE!')}
+                }
+            }Else{
+                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')}
+            }
+        }
+
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
@@ -1450,9 +1457,10 @@ Function Interpret{
                     $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',$NL).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
                 }
 
-
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
+
+                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PHName+' TO '+$PHValue)}
             }
         }
 
@@ -2217,6 +2225,15 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
 
                     If(
                         ($_ -match 'VAR ') -OR `
+                        ($_ -match 'VAR \S*\+\+}') -OR `
+                        ($_ -match 'VAR \S*\+=') -OR `
+                        ($_ -match 'VAR \S*--}') -OR `
+                        ($_ -match 'VAR \S*-=')
+                    ){
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
+                    }ElseIf(
                         ($_ -match 'LEN ') -OR `
                         ($_ -match 'ABS ') -OR `
                         ($_ -match 'POW ') -OR `
@@ -2229,10 +2246,6 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         ($_ -match 'CEI ') -OR `
                         ($_ -match 'MOD ') -OR `
                         ($_ -match 'EVAL ') -OR `
-                        ($_ -match 'VAR \S*\+\+}') -OR `
-                        ($_ -match 'VAR \S*\+=') -OR `
-                        ($_ -match 'VAR \S*--}') -OR `
-                        ($_ -match 'VAR \S*-=') -OR `
                         ($_ -match 'PWD') -OR `
                         ($_ -match 'MANIP ') -OR `
                         ($_ -match 'GETCON ') -OR `
@@ -2247,19 +2260,19 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     ){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
+                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
                     }ElseIf($DetectedFunctions.Contains('{'+($_ -replace ' \d*')+'}') -OR ($_ -match 'FUNCTION NAME ') -OR ($_ -match 'FUNCTION END')){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::BlueViolet
+                        $MainObj.SelectionColor = [System.Drawing.Color]::Blue
                     }ElseIf(($_ -match 'IF ') -OR ($_ -match '^ELSE$') -OR ($_ -match '^FI$')){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
                     }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkGreen
+                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
                     }ElseIf(
                         ($_ -match '^POWER .*$') -OR `
                         ($_ -match '^CMD .*$') -OR `
