@@ -764,10 +764,8 @@ Function Actions{
                 } | %{$Commented = $False}{
                     If($_ -match '^<\\\\#'){$Commented = $True}
                     If($_ -match '^\\\\#>'){$Commented = $False}
-                
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
 
-                    If($_ -notmatch '^\\\\#' -AND !$Commented){$_}
+                    If($_ -notmatch '^\\\\#' -AND !$Commented){$_}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}}
                 } | %{
                     If(!$SyncHash.Stop){
                         If(!$WhatIf){
@@ -999,6 +997,7 @@ Function Interpret{
     #Don't exit until we see no more matches to any of the following substitution keywords or we hit the depth overflow
     While(
             $DepthOverflow -lt 500 -AND `
+            !$SyncHash.Stop -AND `
             (($X -match '{VAR ') -OR `
             ($X -match '{LEN ') -OR `
             ($X -match '{ABS ') -OR `
@@ -1026,26 +1025,30 @@ Function Interpret{
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
             ($X -match '{GETSCREEN') -OR `
-            ($X -match '{READIN '))){
+            ($X -match '{READIN '))
+        ){
         
         $PHSplitX = $X.Split('{}')
         
         #Perform all the var substitutions now that are not for var setting, by replacing the string with the value stored in the VarHash
-        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '=' -AND $_ -notmatch '\+\+$' -AND $_ -notmatch '--$' -AND $_ -notmatch '\+=' -AND $_ -notmatch '-='} | %{
-            $PH = $_.Split(' ')[1]
-            $PHFound = $True
-            If($Script:VarsHash.ContainsKey($PH)){
-                $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
-            }ElseIf($Script:VarsHash.ContainsKey(($PH+'_ESCAPED'))){
-                $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.($PH+'_ESCAPED')))
-                $Esc = $True
-            }Else{
-                $X = ''
-                $PHFound = $False
-                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')}
-            }
+        While($X -match '{VAR [\w\d_:]*?}' -AND !$SyncHash.Stop){
+            $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -notmatch '=' -AND $_ -notmatch '\+\+$' -AND $_ -notmatch '--$' -AND $_ -notmatch '\+=' -AND $_ -notmatch '-='} | %{
+                $PH = $_.Split(' ')[1]
+                $PHFound = $True
+                If($Script:VarsHash.ContainsKey($PH)){
+                    $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.$PH))
+                }ElseIf($Script:VarsHash.ContainsKey(($PH+'_ESCAPED'))){
+                    $X = $X.Replace(('{'+$_+'}'),($Script:VarsHash.($PH+'_ESCAPED')))
+                    $Esc = $True
+                }Else{
+                    $X = ''
+                    $PHFound = $False
+                    If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+$PH+' WAS NOT FOUND!')}
+                }
 
-            If($PHFound){If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)}}
+                If($PHFound){If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab + 'INTERPRETED VALUE: ' + $X)}}
+            }
+            $PHSplitX = $X.Split('{}')
         }
         
         #Replace the keyword with the content from a file
@@ -1404,25 +1407,38 @@ Function Interpret{
             If($Output){If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}}
         }
 
-        $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S+\+=\d*') -OR ($_ -match '^VAR \S+-=\d*')} | %{
+        $PHSplitX = $X.Split('{}')
+
+        $PHSplitX | ?{(($_ -match '^VAR \S*\+\+') -AND ($_ -notmatch '=')) -OR (($_ -match '^VAR \S*--') -AND ($_ -notmatch '=')) -OR ($_ -match '^VAR \S*?\+=\S+') -OR ($_ -match '^VAR \S+-=\d*')} | %{
             $PH = ((($_ -replace '\+=',' ' -replace '-=',' ' -replace '\+\+',' ' -replace '--',' ').Split(' ') | ?{$_ -ne ''})[1])
             If($Script:VarsHash.ContainsKey($PH)){
                 Try{
-                    If($_ -match '\+\+'){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + 1)
-                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
-                        $X = ''
-                    }ElseIf($_ -match '--'){
+                    If($_ -match '--'){
                         $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - 1)
-                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PH+' TO "'+([Double]$Script:VarsHash.$PH)+'"')}
+                        $X = ''
+                    }ElseIf($_ -match '\+\+'){
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + 1)
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PH+' TO "'+([Double]$Script:VarsHash.$PH)+'"')}
                         $X = ''
                     }ElseIf($_ -match '-='){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - (Interpret ($_.Split('=')[-1]))[0])
-                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH - ($_.Split('=')[-1]))
+                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PH+' TO "'+([Double]$Script:VarsHash.$PH)+'"')}
                         $X = ''
                     }ElseIf($_ -match '\+='){
-                        $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + (Interpret ($_.Split('=')[-1]))[0])
-                        If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PH+' TO '+([Double]$Script:VarsHash.$PH))}
+                        $PHInterpret = ($_.Split('=')[-1])
+                        If(
+                            [String]($Script:VarsHash.$PH -replace '\D') -AND `
+                            $(Try{[Double]$Script:VarsHash.$PH;$True}Catch{$False}) -AND `
+                            [String]($PHInterpret -replace '\D') -AND `
+                            $(Try{[Double]$PHInterpret;$True}Catch{$False})
+                        ){
+                            $Script:VarsHash.$PH = ([Double]$Script:VarsHash.$PH + [Double]$PHInterpret)
+                            If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PH+' TO '+([Double]$Script:VarsHash.$PH)+'"')}
+                        }Else{
+                            $Script:VarsHash.$PH = ([String]$Script:VarsHash.$PH + [String]$PHInterpret)
+                            If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PH+' TO "'+([String]$Script:VarsHash.$PH)+'"')}
+                        }
                         $X = ''
                     }
                 }Catch{
@@ -1433,7 +1449,7 @@ Function Interpret{
             }
         }
 
-        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+'} | %{
+        $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+' -AND $_ -notmatch 'VAR \S*?\+='} | %{
             $PH = $_.Substring(4)
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$'){
@@ -1460,11 +1476,11 @@ Function Interpret{
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
 
-                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET '+$PHName+' TO '+$PHValue)}
+                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'SET VAR:'+$PHName+' TO "'+$PHValue+'"')}
             }
         }
 
-        $X.Split('{') | ?{$_ -match 'VAR \S+=}'} | %{
+        $X.Split('{') | ?{$_ -match 'VAR \S+=}' -AND $_ -notmatch 'VAR \S*?\+='} | %{
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
 
             $Script:VarsHash.Remove($PHName)
@@ -1926,12 +1942,8 @@ Function GO{
         $PHText = (($PHText -replace ('`'+$NL),'').Split($NL) | %{$_ -replace '^\s*'} | ?{$_ -ne ''} | %{$Commented = $False}{
             If($_ -match '^<\\\\#'){$Commented = $True}
             If($_ -match '^\\\\#>'){$Commented = $False}
-                
-            #If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}
 
-            If($_ -notmatch '^\\\\#' -AND !$Commented){
-                $_
-            }
+            If($_ -notmatch '^\\\\#' -AND !$Commented){$_}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}}
         })
         
            
@@ -2218,6 +2230,12 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             If($Commented -OR ($PH -match '^\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
+                If(($_ -match '{IF \(') -OR ($_ -match '{ELSE}') -OR ($_ -match '{FI}')){
+                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
+                }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
+                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
+                }
+
                 $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
                     $CharCount+=($_.Length+1)
                     $MainObj.SelectionStart = $PreviousLineStart
@@ -2234,29 +2252,36 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         $MainObj.SelectionLength=($_.Length+2)
                         $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                     }ElseIf(
-                        ($_ -match 'LEN ') -OR `
-                        ($_ -match 'ABS ') -OR `
-                        ($_ -match 'POW ') -OR `
-                        ($_ -match 'SIN ') -OR `
-                        ($_ -match 'COS ') -OR `
-                        ($_ -match 'TAN ') -OR `
-                        ($_ -match 'RND ') -OR `
-                        ($_ -match 'FLR ') -OR `
-                        ($_ -match 'SQT ') -OR `
-                        ($_ -match 'CEI ') -OR `
-                        ($_ -match 'MOD ') -OR `
-                        ($_ -match 'EVAL ') -OR `
-                        ($_ -match 'PWD') -OR `
-                        ($_ -match 'MANIP ') -OR `
-                        ($_ -match 'GETCON ') -OR `
-                        ($_ -match 'FINDVAR ') -OR `
-                        ($_ -match 'GETPROC ') -OR `
-                        ($_ -match 'FINDIMG ') -OR `
-                        ($_ -match 'GETWIND ') -OR `
-                        ($_ -match 'GETWINDTEXT ') -OR `
-                        ($_ -match 'GETFOCUS') -OR `
-                        ($_ -match 'GETSCREEN') -OR `
-                        ($_ -match 'READIN ')
+                        ($_ -match '^LEN ') -OR `
+                        ($_ -match '^ABS ') -OR `
+                        ($_ -match '^POW ') -OR `
+                        ($_ -match '^SIN ') -OR `
+                        ($_ -match '^COS ') -OR `
+                        ($_ -match '^TAN ') -OR `
+                        ($_ -match '^RND ') -OR `
+                        ($_ -match '^FLR ') -OR `
+                        ($_ -match '^SQT ') -OR `
+                        ($_ -match '^CEI ') -OR `
+                        ($_ -match '^MOD ') -OR `
+                        ($_ -match '^EVAL ') -OR `
+                        ($_ -match '^PWD') -OR `
+                        ($_ -match '^MANIP ') -OR `
+                        ($_ -match '^GETCON ') -OR `
+                        ($_ -match '^FINDVAR ') -OR `
+                        ($_ -match '^GETPROC ') -OR `
+                        ($_ -match '^FINDIMG ') -OR `
+                        ($_ -match '^GETWIND ') -OR `
+                        ($_ -match '^GETWINDTEXT ') -OR `
+                        ($_ -match '^GETFOCUS') -OR `
+                        ($_ -match '^GETSCREEN') -OR `
+                        ($_ -match '^READIN ') -OR `
+                        ($_ -match '^PID') -OR `
+                        ($_ -match '^WHOAMI') -OR `
+                        ($_ -match '^DATETIME') -OR `
+                        ($_ -match '^RAND ') -OR `
+                        ($_ -match '^GETCLIP') -OR `
+                        ($_ -match '^GETMOUSE') -OR `
+                        ($_ -match '^GETPIX ')
                     ){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
@@ -2265,14 +2290,6 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
                         $MainObj.SelectionColor = [System.Drawing.Color]::Blue
-                    }ElseIf(($_ -match 'IF ') -OR ($_ -match '^ELSE$') -OR ($_ -match '^FI$')){
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
-                    }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
                     }ElseIf(
                         ($_ -match '^POWER .*$') -OR `
                         ($_ -match '^CMD .*$') -OR `
