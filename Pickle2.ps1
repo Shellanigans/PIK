@@ -2314,19 +2314,24 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         $First = $True
                         $DepthCount = 0
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength = 0
+                        $MainObj.SelectionLength = 1
                     }
 
                     If($StartedParse){$DepthCount++}
 
                     If($_ -match '}'){
-                        $WordCount = ($_.ToCharArray() | ?{$_ -eq '}'}).Count
-                        $DepthCount-=$WordCount
+                        #$WordCount = ($_.ToCharArray() | ?{$_ -eq '}'}).Count
+                        #$DepthCount-=$WordCount
                         $_.Split('}') | %{
-                            $MainObj.SelectionLength+=($_.Length+1)
+                            If($DepthCount -gt 0){
+                                $DepthCount--
+                                $MainObj.SelectionLength+=($_.Length+1)
+                            }
                         }
+                        #$MainObj.SelectionLength++
+                        #If($_ -match '}}$'){$MainObj.SelectionLength--}
                     }Else{
-                        $MainObj.SelectionLength+=($_.Length)
+                        $MainObj.SelectionLength+=($_.Length+1)
                         If(
                             ($_ -match '^LEN ') -OR `
                             ($_ -match '^ABS ') -OR `
@@ -2364,12 +2369,17 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                             }Else{
                                 $First = $False
                             }
+                        }Else{
+                            $MainObj.SelectionLength++
                         }
                     }
 
                     If($StartedParse -AND ($DepthCount -le 0)){
                         $DepthCount = 0
                         $StartedParse = $False
+                        #If($_ -match '}\S*$'){
+                        #    $MainObj.SelectionLength-=($_.Split('}')[-1].Length-1)
+                        #}
                         $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
                     }
                 }
