@@ -2234,24 +2234,50 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
                 }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
+                }ElseIf($_ -match 'VAR \S*?='){
+                    $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
+                }ElseIf(
+                    ($_ -match '^{POWER .*') -OR `
+                    ($_ -match '^{CMD .*') -OR `
+                    ($_ -match '{PAUSE') -OR `
+                    ($_ -match '^{FOREACH ') -OR `
+                    ($_ -match '^{SETCON') -OR `
+                    ($_ -match '{SETCLIP ') -OR `
+                    ($_ -match '{BEEP ') -OR `
+                    ($_ -match '{FLASH') -OR `
+                    ($_ -match '{WAIT ?(M )?\d*') -OR `
+                    ($_ -match '{[/\\]?HOLD') -OR `
+                    ($_ -match '{MOUSE ') -OR `
+                    ($_ -match '^{[LRM]?MOUSE') -OR `
+                    ($_ -match '^{RESTART') -OR `
+                    ($_ -match '^{REFOCUS') -OR `
+                    ($_ -match '^{CLEARVAR') -OR `
+                    ($_ -match '^{QUIT') -OR `
+                    ($_ -match '^{EXIT') -OR `
+                    ($_ -match '^{CD ') -OR `
+                    ($_ -match '^{REMOTE ') -OR `
+                    ($_ -match '^{SCRNSHT ') -OR `
+                    ($_ -match '{FOCUS ') -OR `
+                    ($_ -match '{SETWIND ') -OR `
+                    ($_ -match '{MIN ') -OR `
+                    ($_ -match '{MAX ') -OR `
+                    ($_ -match '{HIDE ') -OR `
+                    ($_ -match '{SHOW ') -OR `
+                    ($_ -match '{SETWINDTEXT ') -OR `
+                    ($_ -match '{ECHO .*?')
+                ){
+                    $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
                 }
 
-                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
+                $MainObj.SelectionStart = $PreviousLineStart
+                $MainObj.SelectionLength = $PreviousLength
+                $DepthCount = 0
+                $First = $False
+                $StartedParse = $False
+                $_.Split('{') | %{$CharCount = $PreviousLineStart}{
                     $CharCount+=($_.Length+1)
-                    $MainObj.SelectionStart = $PreviousLineStart
-                    $MainObj.SelectionLength = $PreviousLength
 
                     If(
-                        ($_ -match 'VAR ') -OR `
-                        ($_ -match 'VAR \S*\+\+}') -OR `
-                        ($_ -match 'VAR \S*\+=') -OR `
-                        ($_ -match 'VAR \S*--}') -OR `
-                        ($_ -match 'VAR \S*-=')
-                    ){
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
-                    }ElseIf(
                         ($_ -match '^LEN ') -OR `
                         ($_ -match '^ABS ') -OR `
                         ($_ -match '^POW ') -OR `
@@ -2281,48 +2307,90 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         ($_ -match '^RAND ') -OR `
                         ($_ -match '^GETCLIP') -OR `
                         ($_ -match '^GETMOUSE') -OR `
-                        ($_ -match '^GETPIX ')
+                        ($_ -match '^GETPIX ') -AND `
+                        !$StartedParse
+                    ){
+                        $StartedParse = $True
+                        $First = $True
+                        $DepthCount = 0
+                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
+                        $MainObj.SelectionLength = 0
+                    }
+
+                    If($StartedParse){$DepthCount++}
+
+                    If($_ -match '}'){
+                        $WordCount = ($_.ToCharArray() | ?{$_ -eq '}'}).Count
+                        $DepthCount-=$WordCount
+                        $_.Split('}') | %{
+                            $MainObj.SelectionLength+=($_.Length+1)
+                        }
+                    }Else{
+                        $MainObj.SelectionLength+=($_.Length)
+                        If(
+                            ($_ -match '^LEN ') -OR `
+                            ($_ -match '^ABS ') -OR `
+                            ($_ -match '^POW ') -OR `
+                            ($_ -match '^SIN ') -OR `
+                            ($_ -match '^COS ') -OR `
+                            ($_ -match '^TAN ') -OR `
+                            ($_ -match '^RND ') -OR `
+                            ($_ -match '^FLR ') -OR `
+                            ($_ -match '^SQT ') -OR `
+                            ($_ -match '^CEI ') -OR `
+                            ($_ -match '^MOD ') -OR `
+                            ($_ -match '^EVAL ') -OR `
+                            ($_ -match '^PWD') -OR `
+                            ($_ -match '^MANIP ') -OR `
+                            ($_ -match '^GETCON ') -OR `
+                            ($_ -match '^FINDVAR ') -OR `
+                            ($_ -match '^GETPROC ') -OR `
+                            ($_ -match '^FINDIMG ') -OR `
+                            ($_ -match '^GETWIND ') -OR `
+                            ($_ -match '^GETWINDTEXT ') -OR `
+                            ($_ -match '^GETFOCUS') -OR `
+                            ($_ -match '^GETSCREEN') -OR `
+                            ($_ -match '^READIN ') -OR `
+                            ($_ -match '^PID') -OR `
+                            ($_ -match '^WHOAMI') -OR `
+                            ($_ -match '^DATETIME') -OR `
+                            ($_ -match '^RAND ') -OR `
+                            ($_ -match '^GETCLIP') -OR `
+                            ($_ -match '^GETMOUSE') -OR `
+                            ($_ -match '^GETPIX ')
+                        ){
+                            If(!$First){
+                                $MainObj.SelectionLength++
+                            }Else{
+                                $First = $False
+                            }
+                        }
+                    }
+
+                    If($StartedParse -AND ($DepthCount -le 0)){
+                        $DepthCount = 0
+                        $StartedParse = $False
+                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
+                    }
+                }
+
+                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
+                    $CharCount+=($_.Length+1)
+                    $MainObj.SelectionStart = $PreviousLineStart
+                    $MainObj.SelectionLength = $PreviousLength
+
+                    If(
+                        ($_ -match 'VAR [\w\d_:]*?$') -OR `
+                        ($_ -match 'VAR [\w\d_:]*?\+\+$') -OR `
+                        ($_ -match 'VAR [\w\d_:]*?--$')
                     ){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
+                        $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                     }ElseIf($DetectedFunctions.Contains('{'+($_ -replace ' \d*')+'}') -OR ($_ -match 'FUNCTION NAME ') -OR ($_ -match 'FUNCTION END')){
                         $MainObj.SelectionStart=($CharCount-($_.Length+2))
                         $MainObj.SelectionLength=($_.Length+2)
                         $MainObj.SelectionColor = [System.Drawing.Color]::Blue
-                    }ElseIf(
-                        ($_ -match '^POWER .*$') -OR `
-                        ($_ -match '^CMD .*$') -OR `
-                        ($_ -match 'PAUSE') -OR `
-                        ($_ -match '^FOREACH ') -OR `
-                        ($_ -match '^SETCON') -OR `
-                        ($_ -match 'SETCLIP ') -OR `
-                        ($_ -match 'BEEP ') -OR `
-                        ($_ -match 'FLASH') -OR `
-                        ($_ -match 'WAIT ?(M )?\d*') -OR `
-                        ($_ -match '[/\\]?HOLD') -OR `
-                        ($_ -match '^[LRM]?MOUSE') -OR `
-                        ($_ -match '^RESTART$') -OR `
-                        ($_ -match '^REFOCUS$') -OR `
-                        ($_ -match '^CLEARVAR') -OR `
-                        ($_ -match '^QUIT$') -OR `
-                        ($_ -match '^EXIT$') -OR `
-                        ($_ -match '^CD ') -OR `
-                        ($_ -match '^REMOTE ') -OR `
-                        ($_ -match '^SCRNSHT ') -OR `
-                        ($_ -match 'FOCUS ') -OR `
-                        ($_ -match 'SETWIND ') -OR `
-                        ($_ -match 'MIN ') -OR `
-                        ($_ -match 'MAX ') -OR `
-                        ($_ -match 'HIDE ') -OR `
-                        ($_ -match 'SHOW ') -OR `
-                        ($_ -match 'SETWINDTEXT ') -OR `
-                        ($_ -match 'ECHO .*?')
-                    ){
-                        
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength=($_.Length+2)
-                        $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
                     }
                 }
             }
