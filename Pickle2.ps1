@@ -2272,114 +2272,64 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                 $MainObj.SelectionStart = $PreviousLineStart
                 $MainObj.SelectionLength = $PreviousLength
                 $DepthCount = 0
-                $First = $False
                 $StartedParse = $False
-                $_.Split('{') | %{$CharCount = $PreviousLineStart}{
-                    $CharCount+=($_.Length+1)
+                $_.ToCharArray() | %{$CurrentCount = 0;$StrBldr = ''}{
+                    $CurrentCount++
+                    $StrBldr+=$_
+                    If($_ -match '{' -AND !$StartedParse){$StrBldr = '{'}
 
-                    If(
-                        ($_ -match '^LEN ') -OR `
-                        ($_ -match '^ABS ') -OR `
-                        ($_ -match '^POW ') -OR `
-                        ($_ -match '^SIN ') -OR `
-                        ($_ -match '^COS ') -OR `
-                        ($_ -match '^TAN ') -OR `
-                        ($_ -match '^RND ') -OR `
-                        ($_ -match '^FLR ') -OR `
-                        ($_ -match '^SQT ') -OR `
-                        ($_ -match '^CEI ') -OR `
-                        ($_ -match '^MOD ') -OR `
-                        ($_ -match '^EVAL ') -OR `
-                        ($_ -match '^PWD') -OR `
-                        ($_ -match '^MANIP ') -OR `
-                        ($_ -match '^GETCON ') -OR `
-                        ($_ -match '^FINDVAR ') -OR `
-                        ($_ -match '^GETPROC ') -OR `
-                        ($_ -match '^FINDIMG ') -OR `
-                        ($_ -match '^GETWIND ') -OR `
-                        ($_ -match '^GETWINDTEXT ') -OR `
-                        ($_ -match '^GETFOCUS') -OR `
-                        ($_ -match '^GETSCREEN') -OR `
-                        ($_ -match '^READIN ') -OR `
-                        ($_ -match '^PID') -OR `
-                        ($_ -match '^WHOAMI') -OR `
-                        ($_ -match '^DATETIME') -OR `
-                        ($_ -match '^RAND ') -OR `
-                        ($_ -match '^GETCLIP') -OR `
-                        ($_ -match '^GETMOUSE') -OR `
-                        ($_ -match '^GETPIX ') -AND `
-                        !$StartedParse
-                    ){
-                        $StartedParse = $True
-                        $First = $True
-                        $DepthCount = 0
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength = 1
+                    If($StartedParse){
+                        $MainObj.SelectionLength++
+                        If($_ -match '{'){
+                            $DepthCount++
+                        }ElseIf($_ -match '}'){
+                            $DepthCount--
+                        }
                     }
 
-                    If($StartedParse){$DepthCount++}
-
-                    If($_ -match '}'){
-                        #$WordCount = ($_.ToCharArray() | ?{$_ -eq '}'}).Count
-                        #$DepthCount-=$WordCount
-                        $_.Split('}') | %{
-                            If($DepthCount -gt 0){
-                                $DepthCount--
-                                $MainObj.SelectionLength+=($_.Length+1)
-                            }
-                        }
-                        #$MainObj.SelectionLength++
-                        #If($_ -match '}}$'){$MainObj.SelectionLength--}
-                    }Else{
-                        $MainObj.SelectionLength+=($_.Length+1)
-                        If(
-                            ($_ -match '^LEN ') -OR `
-                            ($_ -match '^ABS ') -OR `
-                            ($_ -match '^POW ') -OR `
-                            ($_ -match '^SIN ') -OR `
-                            ($_ -match '^COS ') -OR `
-                            ($_ -match '^TAN ') -OR `
-                            ($_ -match '^RND ') -OR `
-                            ($_ -match '^FLR ') -OR `
-                            ($_ -match '^SQT ') -OR `
-                            ($_ -match '^CEI ') -OR `
-                            ($_ -match '^MOD ') -OR `
-                            ($_ -match '^EVAL ') -OR `
-                            ($_ -match '^PWD') -OR `
-                            ($_ -match '^MANIP ') -OR `
-                            ($_ -match '^GETCON ') -OR `
-                            ($_ -match '^FINDVAR ') -OR `
-                            ($_ -match '^GETPROC ') -OR `
-                            ($_ -match '^FINDIMG ') -OR `
-                            ($_ -match '^GETWIND ') -OR `
-                            ($_ -match '^GETWINDTEXT ') -OR `
-                            ($_ -match '^GETFOCUS') -OR `
-                            ($_ -match '^GETSCREEN') -OR `
-                            ($_ -match '^READIN ') -OR `
-                            ($_ -match '^PID') -OR `
-                            ($_ -match '^WHOAMI') -OR `
-                            ($_ -match '^DATETIME') -OR `
-                            ($_ -match '^RAND ') -OR `
-                            ($_ -match '^GETCLIP') -OR `
-                            ($_ -match '^GETMOUSE') -OR `
-                            ($_ -match '^GETPIX ')
-                        ){
-                            If(!$First){
-                                $MainObj.SelectionLength++
-                            }Else{
-                                $First = $False
-                            }
-                        }Else{
-                            $MainObj.SelectionLength++
-                        }
+                    If(
+                        !$StartedParse -AND `
+                        (($StrBldr -match '^{LEN ') -OR `
+                        ($StrBldr -match '^{ABS ') -OR `
+                        ($StrBldr -match '^{POW ') -OR `
+                        ($StrBldr -match '^{SIN ') -OR `
+                        ($StrBldr -match '^{COS ') -OR `
+                        ($StrBldr -match '^{TAN ') -OR `
+                        ($StrBldr -match '^{RND ') -OR `
+                        ($StrBldr -match '^{FLR ') -OR `
+                        ($StrBldr -match '^{SQT ') -OR `
+                        ($StrBldr -match '^{CEI ') -OR `
+                        ($StrBldr -match '^{MOD ') -OR `
+                        ($StrBldr -match '^{EVAL ') -OR `
+                        ($StrBldr -match '^{PWD') -OR `
+                        ($StrBldr -match '^{MANIP ') -OR `
+                        ($StrBldr -match '^{GETCON ') -OR `
+                        ($StrBldr -match '^{FINDVAR ') -OR `
+                        ($StrBldr -match '^{GETPROC ') -OR `
+                        ($StrBldr -match '^{FINDIMG ') -OR `
+                        ($StrBldr -match '^{GETWIND ') -OR `
+                        ($StrBldr -match '^{GETWINDTEXT ') -OR `
+                        ($StrBldr -match '^{GETFOCUS') -OR `
+                        ($StrBldr -match '^{GETSCREEN') -OR `
+                        ($StrBldr -match '^{READIN ') -OR `
+                        ($StrBldr -match '^{PID') -OR `
+                        ($StrBldr -match '^{WHOAMI') -OR `
+                        ($StrBldr -match '^{DATETIME') -OR `
+                        ($StrBldr -match '^{RAND ') -OR `
+                        ($StrBldr -match '^{GETCLIP') -OR `
+                        ($StrBldr -match '^{GETMOUSE') -OR `
+                        ($StrBldr -match '^{GETPIX '))
+                    ){
+                        $StartedParse = $True
+                        $DepthCount = 1
+                        $MainObj.SelectionStart=($PreviousLineStart+$CurrentCount-$StrBldr.Length)
+                        $MainObj.SelectionLength = ($StrBldr.Length)
+                        $StrBldr = ''
                     }
 
                     If($StartedParse -AND ($DepthCount -le 0)){
                         $DepthCount = 0
                         $StartedParse = $False
-                        #If($_ -match '}\S*$'){
-                        #    $MainObj.SelectionLength-=($_.Split('}')[-1].Length-1)
-                        #}
                         $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
                     }
                 }
