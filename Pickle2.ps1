@@ -2237,8 +2237,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                 }ElseIf($_ -match 'VAR \S*?='){
                     $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                 }ElseIf(
-                    ($_ -match '^{POWER .*') -OR `
-                    ($_ -match '^{CMD .*') -OR `
+                    ($_ -match '{POWER ') -OR `
+                    ($_ -match '{CMD .*') -OR `
                     ($_ -match '{PAUSE') -OR `
                     ($_ -match '^{FOREACH ') -OR `
                     ($_ -match '^{SETCON') -OR `
@@ -2251,6 +2251,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     ($_ -match '^{[LRM]?MOUSE') -OR `
                     ($_ -match '^{RESTART') -OR `
                     ($_ -match '^{REFOCUS') -OR `
+		    ($_ -match '{REMOTE ') -OR `
                     ($_ -match '^{CLEARVAR') -OR `
                     ($_ -match '^{QUIT') -OR `
                     ($_ -match '^{EXIT') -OR `
@@ -2725,9 +2726,9 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $TabHelperSub.ItemSize = [GUI.SP]::SI(25,75)
                 $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
                     $TabHelperSubMouse = [GUI.TP]::new(0, 0, 0, 0, 'Mouse/Pix')
-                        $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Get Mouse Inf')
+                        $GetMouseCoords = [GUI.B]::New(110, 25, 10, 25, 'Mouse Inf')
                         $GetMouseCoords.Add_MouseDown({$This.Text = 'Drag Mouse'})
-                        $GetMouseCoords.Add_MouseUp({$This.Text = 'Get Mouse Inf'})
+                        $GetMouseCoords.Add_MouseUp({$This.Text = 'Mouse Inf'})
                         $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
                         $GetMouseCoords.Parent = $TabHelperSubMouse
 
