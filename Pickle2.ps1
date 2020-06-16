@@ -2238,7 +2238,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                 }ElseIf(
                     ($_ -match '{POWER ') -OR `
-                    ($_ -match '{CMD .*') -OR `
+                    ($_ -match '{CMD ') -OR `
                     ($_ -match '{PAUSE') -OR `
                     ($_ -match '^{FOREACH ') -OR `
                     ($_ -match '^{SETCON') -OR `
@@ -3449,7 +3449,17 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $OnTop.Add_CheckedChanged({
                     $Form.TopMost = !$Form.TopMost
                 })
-                $OnTop.Parent = $TabPageConfig
+		$OnTop.Parent = $TabPageConfig
+		
+		$Bold = [GUI.ChB]::New(150, 25, 10, 225, 'Bold Font')
+                $Bold.Add_CheckedChanged({
+                    If($This.Checked){
+		    	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+		    }Else{
+		    	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+		    }
+                })
+                $Bold.Parent = $TabPageConfig
             $TabPageConfig.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
@@ -3572,8 +3582,6 @@ $FindForm.Visible = $False
     $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
 
-$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
-
 If($Host.Name -match 'Console'){Cls}
 
 $Config = New-Object PSObject
@@ -3590,6 +3598,7 @@ $Config = ($Config | Select `
     @{NAME='OnTopCheck';EXPRESSION={$False}},`
     @{NAME='PrevProfile';EXPRESSION={$Null}},`
     @{NAME='LastLoc';EXPRESSION={$Null}},`
+    @{NAME='Bolded';EXPRESSION={$False}},`
     @{NAME='SavedSize';EXPRESSION={$Null}}
 )
 
@@ -3620,6 +3629,13 @@ Try{
     $OnTop.Checked = !$OnTop.Checked
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
+
+    $Bold.Checked = $LoadedConfig.Bolded
+    If($Bold.Checked){
+	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+    }Else{
+	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+    }
 
     If($LoadedConfig.PrevProfile -OR $Macro -OR $CLICMD){
         If($Macro){
@@ -3730,8 +3746,18 @@ If($CommandLine){
             $Config.PrevProfile = $Null
         }
 
-        $Config.LastLoc = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
-        $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
+	$Config.DelayTimeVal  = $DelayTimer.Value
+	$Config.DelayChecked  = $DelayCheck.Checked
+	$Config.DelayRandVal  = $DelayRandTimer.Value
+
+	$Config.CommTimeVal   = $CommandDelayTimer.Value
+	$Config.CommChecked   = $CommDelayCheck.Checked
+	$Config.CommRandVal   = $CommRandTimer.Value
+	
+	$Config.Bolded        = $Bold.Checked
+
+        $Config.LastLoc       = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
+        $Config.SavedSize     = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
 
         Try{
             $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 1000 -Force
@@ -3757,14 +3783,6 @@ $UndoHash.KeyList | %{
 }
 
 $SyncHash.Kill = $True
-
-$Config.DelayTimeVal  = $DelayTimer.Value
-$Config.DelayChecked  = $DelayCheck.Checked
-$Config.DelayRandVal  = $DelayRandTimer.Value
-
-$Config.CommTimeVal   = $CommandDelayTimer.Value
-$Config.CommChecked   = $CommDelayCheck.Checked
-$Config.CommRandVal   = $CommRandTimer.Value
 
 If($Host.Name -match 'Console'){Exit}
 }
