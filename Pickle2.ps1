@@ -2203,6 +2203,11 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'F9'){
         GO -SelectionRun
     }ElseIf($KeyCode -eq 'F10'){
+        Try{$_.SuppressKeyPress = $True}Catch{}
+
+        $Form.Enabled = $False
+        #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 0)
+
         $TempSelectionIndex = $MainObj.SelectionStart
         $TempSelectionLength = $MainObj.SelectionLength
 
@@ -2216,7 +2221,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
 
         $MainObj.Lines | %{$LineCount = 0; $Commented = $False}{
-            $PH = $_.TrimStart(' ').TrimStart($Tab)
+            $PH = ($_ -replace '^\s*?')
 
             If($PH -match '^<\\\\#'){$Commented = $True}
             If($PH -match '^\\\\#>'){$Commented = $False}
@@ -2230,42 +2235,41 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             If($Commented -OR ($PH -match '^\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
-                If(($_ -match '{IF \(') -OR ($_ -match '{ELSE}') -OR ($_ -match '{FI}')){
+                If(($PH -match '{IF \(') -OR ($PH -match '{ELSE}') -OR ($PH -match '{FI}')){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
-                }ElseIf(($_ -match 'WHILE ') -OR ($_ -match '^END WHILE$')){
+                }ElseIf(($PH -match 'WHILE ') -OR ($PH -match 'END WHILE$')){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
-                }ElseIf($_ -match 'VAR \S*?='){
+                }ElseIf($PH -match 'VAR \S*?='){
                     $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                 }ElseIf(
-                    ($_ -match '{POWER ') -OR `
-                    ($_ -match '{CMD ') -OR `
-                    ($_ -match '{PAUSE') -OR `
-                    ($_ -match '^{FOREACH ') -OR `
-                    ($_ -match '^{SETCON') -OR `
-                    ($_ -match '{SETCLIP ') -OR `
-                    ($_ -match '{BEEP ') -OR `
-                    ($_ -match '{FLASH') -OR `
-                    ($_ -match '{WAIT ?(M )?\d*') -OR `
-                    ($_ -match '{[/\\]?HOLD') -OR `
-                    ($_ -match '{MOUSE ') -OR `
-                    ($_ -match '^{[LRM]?MOUSE') -OR `
-                    ($_ -match '^{RESTART') -OR `
-                    ($_ -match '^{REFOCUS') -OR `
-		    ($_ -match '{REMOTE ') -OR `
-                    ($_ -match '^{CLEARVAR') -OR `
-                    ($_ -match '^{QUIT') -OR `
-                    ($_ -match '^{EXIT') -OR `
-                    ($_ -match '^{CD ') -OR `
-                    ($_ -match '^{REMOTE ') -OR `
-                    ($_ -match '^{SCRNSHT ') -OR `
-                    ($_ -match '{FOCUS ') -OR `
-                    ($_ -match '{SETWIND ') -OR `
-                    ($_ -match '{MIN ') -OR `
-                    ($_ -match '{MAX ') -OR `
-                    ($_ -match '{HIDE ') -OR `
-                    ($_ -match '{SHOW ') -OR `
-                    ($_ -match '{SETWINDTEXT ') -OR `
-                    ($_ -match '{ECHO .*?')
+                    ($PH -match '{POWER ') -OR `
+                    ($PH -match '{CMD ') -OR `
+                    ($PH -match '{PAUSE') -OR `
+                    ($PH -match '^{FOREACH ') -OR `
+                    ($PH -match '^{SETCON') -OR `
+                    ($PH -match '{SETCLIP ') -OR `
+                    ($PH -match '{BEEP ') -OR `
+                    ($PH -match '{FLASH') -OR `
+                    ($PH -match '{WAIT ?(M )?\d*') -OR `
+                    ($PH -match '{[/\\]?HOLD') -OR `
+                    ($PH -match '{MOUSE ') -OR `
+                    ($PH -match '^{[LRM]?MOUSE') -OR `
+                    ($PH -match '^{RESTART') -OR `
+                    ($PH -match '^{REFOCUS') -OR `
+		            ($PH -match '{REMOTE ') -OR `
+                    ($PH -match '^{CLEARVAR') -OR `
+                    ($PH -match '^{QUIT') -OR `
+                    ($PH -match '^{EXIT') -OR `
+                    ($PH -match '^{CD ') -OR `
+                    ($PH -match '^{SCRNSHT ') -OR `
+                    ($PH -match '{FOCUS ') -OR `
+                    ($PH -match '{SETWIND ') -OR `
+                    ($PH -match '{MIN ') -OR `
+                    ($PH -match '{MAX ') -OR `
+                    ($PH -match '{HIDE ') -OR `
+                    ($PH -match '{SHOW ') -OR `
+                    ($PH -match '{SETWINDTEXT ') -OR `
+                    ($PH -match '{ECHO .*?')
                 ){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
                 }
@@ -2335,7 +2339,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     }
                 }
 
-                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
+                $PH.Split('{}') | %{$CharCount = $PreviousLineStart}{
                     $CharCount+=($_.Length+1)
                     $MainObj.SelectionStart = $PreviousLineStart
                     $MainObj.SelectionLength = $PreviousLength
@@ -2361,8 +2365,12 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     
         $MainObj.SelectionStart = $TempSelectionIndex
         $MainObj.SelectionLength = $TempSelectionLength
-        
-        Try{$_.SuppressKeyPress = $True}Catch{}
+
+        $Form.Enabled = $True
+        #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 1)
+
+        $Form.Text = ($Form.Text -replace '\*$')
+        $Script:Saved = $True
     }ElseIf($KeyCode -eq 'F11'){
         Save-Profile
     }ElseIf($KeyCode -eq 'F12'){
@@ -2582,9 +2590,11 @@ $Pow.AddScript({
                 If($IP -match '0\.0\.0\.0'){$IP = '127.0.0.1'}
                 $Port = [Int]$SyncHash.SrvPort
                 $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)
-                $TmpCli | %{
-                    $_.Close
-                    $_.Dispose
+                0..2 | %{
+                    $TmpCli | %{
+                        $_.Close
+                        $_.Dispose
+                    }
                 }
             }Catch{}
 
