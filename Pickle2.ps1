@@ -445,6 +445,8 @@ Function Actions{
             $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
             $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
 
+            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WRITING '+$PHFileContent+' TO FILE '+$PHFileName)}
+
             If(!$WhatIf){
                 If($X -notmatch '^{SETCONA '){
                     $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Force
