@@ -3383,8 +3383,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         
                         If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
                             Try{
-                                $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
                                 $Listener.Start()
+                                $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
                             }Catch{
                                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')}
                             }
