@@ -714,6 +714,7 @@ Function Actions{
 
                         $Buff = New-Object Byte[] 1024
                         While($PHStream.DataAvailable){
+                            $Buff = New-Object Byte[] 1024
                             [Void]$PHStream.Read($Buff, 0, 1024)
                             $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
                         }
