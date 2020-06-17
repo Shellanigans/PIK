@@ -709,7 +709,7 @@ Function Actions{
 
                     $PHResp = ''
                     $Timeout = 1
-                    While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 1000) -AND ($PHSendString -ne '{SERVERSTOP}')){
+                    While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 99999) -AND ($PHSendString -ne '{SERVERSTOP}')){
                         If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/2))}
 
                         $Buff = New-Object Byte[] 1024
@@ -724,7 +724,7 @@ Function Actions{
                     }
 
                     If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
-                    If($Timeout -ge 1000){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
+                    If($Timeout -ge 99999){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
 
                     $PHStream.Close()
                     $PHStream.Dispose()
@@ -3366,7 +3366,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Buff = New-Object Byte[] 1024
                         $CMDsIn = ''
                         $Timeout = 1
-                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 1000)){
+                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 99999)){
                             While($Stream.DataAvailable){
                                 $Buff = New-Object Byte[] 1024
                                 [Void]$Stream.Read($Buff, 0, 1024)
@@ -3376,12 +3376,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $Timeout++
                         }
 
-                        If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
+                        If(!$SyncHash.Stop -AND ($Timeout -lt 99999)){
                             $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
                             GO -InlineCommand $CMDsIn -Server -Stream $Stream
                         }
                         
-                        If(!$SyncHash.Stop -AND ($Timeout -lt 1000)){
+                        If(!$SyncHash.Stop -AND ($Timeout -lt 99999)){
                             Try{
                                 $Listener.Start()
                                 $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
