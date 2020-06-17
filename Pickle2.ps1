@@ -1757,7 +1757,7 @@ Function Parse-While{
                             $PHDepth++
                         }
 
-                        If($Temp -match '{END WHILE}' -AND $PHDepth){
+                        If($Temp -match '{END WHILE}' -AND ($PHDepth -gt 0)){
                             $PHDepth--
                         }ElseIf($Temp -match '{END WHILE}'){$Temp = ''}
 
@@ -2206,6 +2206,9 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         Try{$_.SuppressKeyPress = $True}Catch{}
 
         $Form.Enabled = $False
+        $PrevFormText = $Form.Text
+        $Form.Text = 'PARSING'
+        $Form.Refresh()
         #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 0)
 
         $TempSelectionIndex = $MainObj.SelectionStart
@@ -2221,10 +2224,10 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
 
         $MainObj.Lines | %{$LineCount = 0; $Commented = $False}{
-            $PH = ($_ -replace '^\s*?')
 
-            If($PH -match '^<\\\\#'){$Commented = $True}
-            If($PH -match '^\\\\#>'){$Commented = $False}
+
+            If($_ -match '<\\\\#'){$Commented = $True}
+            If($_ -match '\\\\#>'){$Commented = $False}
 
             $PreviousLineStart = $MainObj.GetFirstCharIndexFromLine($LineCount)
             $MainObj.SelectionStart = $PreviousLineStart
@@ -2232,44 +2235,44 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $PreviousLength = $_.Length
             $MainObj.SelectionLength = $PreviousLength
 
-            If($Commented -OR ($PH -match '^\\\\#')){
+            If($Commented -OR ($_ -match '^\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
-                If(($PH -match '{IF \(') -OR ($PH -match '{ELSE}') -OR ($PH -match '{FI}')){
+                If(($_ -match '{IF \(') -OR ($_ -match '{ELSE}') -OR ($_ -match '{FI}')){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
-                }ElseIf(($PH -match 'WHILE ') -OR ($PH -match 'END WHILE$')){
+                }ElseIf(($_ -match '{WHILE \(') -OR ($_ -match '{END WHILE}')){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkBlue
-                }ElseIf($PH -match 'VAR \S*?='){
+                }ElseIf($_ -match '{VAR \S*?='){
                     $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                 }ElseIf(
-                    ($PH -match '{POWER ') -OR `
-                    ($PH -match '{CMD ') -OR `
-                    ($PH -match '{PAUSE') -OR `
-                    ($PH -match '^{FOREACH ') -OR `
-                    ($PH -match '^{SETCON') -OR `
-                    ($PH -match '{SETCLIP ') -OR `
-                    ($PH -match '{BEEP ') -OR `
-                    ($PH -match '{FLASH') -OR `
-                    ($PH -match '{WAIT ?(M )?\d*') -OR `
-                    ($PH -match '{[/\\]?HOLD') -OR `
-                    ($PH -match '{MOUSE ') -OR `
-                    ($PH -match '^{[LRM]?MOUSE') -OR `
-                    ($PH -match '^{RESTART') -OR `
-                    ($PH -match '^{REFOCUS') -OR `
-		            ($PH -match '{REMOTE ') -OR `
-                    ($PH -match '^{CLEARVAR') -OR `
-                    ($PH -match '^{QUIT') -OR `
-                    ($PH -match '^{EXIT') -OR `
-                    ($PH -match '^{CD ') -OR `
-                    ($PH -match '^{SCRNSHT ') -OR `
-                    ($PH -match '{FOCUS ') -OR `
-                    ($PH -match '{SETWIND ') -OR `
-                    ($PH -match '{MIN ') -OR `
-                    ($PH -match '{MAX ') -OR `
-                    ($PH -match '{HIDE ') -OR `
-                    ($PH -match '{SHOW ') -OR `
-                    ($PH -match '{SETWINDTEXT ') -OR `
-                    ($PH -match '{ECHO .*?')
+                    ($_ -match '{POWER ') -OR `
+                    ($_ -match '{CMD ') -OR `
+                    ($_ -match '{PAUSE') -OR `
+                    ($_ -match '^{FOREACH ') -OR `
+                    ($_ -match '^{SETCON') -OR `
+                    ($_ -match '{SETCLIP ') -OR `
+                    ($_ -match '{BEEP ') -OR `
+                    ($_ -match '{FLASH') -OR `
+                    ($_ -match '{WAIT ?(M )?\d*') -OR `
+                    ($_ -match '{[/\\]?HOLD') -OR `
+                    ($_ -match '{MOUSE ') -OR `
+                    ($_ -match '^{[LRM]?MOUSE') -OR `
+                    ($_ -match '^{RESTART') -OR `
+                    ($_ -match '^{REFOCUS') -OR `
+		            ($_ -match '{REMOTE ') -OR `
+                    ($_ -match '^{CLEARVAR') -OR `
+                    ($_ -match '^{QUIT') -OR `
+                    ($_ -match '^{EXIT') -OR `
+                    ($_ -match '^{CD ') -OR `
+                    ($_ -match '^{SCRNSHT ') -OR `
+                    ($_ -match '{FOCUS ') -OR `
+                    ($_ -match '{SETWIND ') -OR `
+                    ($_ -match '{MIN ') -OR `
+                    ($_ -match '{MAX ') -OR `
+                    ($_ -match '{HIDE ') -OR `
+                    ($_ -match '{SHOW ') -OR `
+                    ($_ -match '{SETWINDTEXT ') -OR `
+                    ($_ -match '{ECHO .*?')
                 ){
                     $MainObj.SelectionColor = [System.Drawing.Color]::DarkRed
                 }
@@ -2339,7 +2342,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     }
                 }
 
-                $PH.Split('{}') | %{$CharCount = $PreviousLineStart}{
+                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
                     $CharCount+=($_.Length+1)
                     $MainObj.SelectionStart = $PreviousLineStart
                     $MainObj.SelectionLength = $PreviousLength
@@ -2368,8 +2371,11 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
 
         $Form.Enabled = $True
         #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 1)
-
+        
+        $Form.Text = $PrevFormText
         $Form.Text = ($Form.Text -replace '\*$')
+        $Form.Refresh()
+
         $Script:Saved = $True
     }ElseIf($KeyCode -eq 'F11'){
         Save-Profile
@@ -3364,6 +3370,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Timeout = 1
                         While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 1000)){
                             While($Stream.DataAvailable){
+                                $Buff = New-Object Byte[] 1024
                                 [Void]$Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
@@ -3459,15 +3466,15 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $OnTop.Add_CheckedChanged({
                     $Form.TopMost = !$Form.TopMost
                 })
-		$OnTop.Parent = $TabPageConfig
+		        $OnTop.Parent = $TabPageConfig
 		
-		$Bold = [GUI.ChB]::New(150, 25, 10, 225, 'Bold Font')
+		        $Bold = [GUI.ChB]::New(150, 25, 10, 250, 'Bold Font')
                 $Bold.Add_CheckedChanged({
                     If($This.Checked){
-		    	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
-		    }Else{
-		    	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
-		    }
+		    	        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+		            }Else{
+		    	        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+		            }
                 })
                 $Bold.Parent = $TabPageConfig
             $TabPageConfig.Parent = $TabControllerAdvanced
