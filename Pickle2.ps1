@@ -2224,8 +2224,6 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
 
         $MainObj.Lines | %{$LineCount = 0; $Commented = $False}{
-
-
             If($_ -match '<\\\\#'){$Commented = $True}
             If($_ -match '\\\\#>'){$Commented = $False}
 
@@ -2235,7 +2233,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $PreviousLength = $_.Length
             $MainObj.SelectionLength = $PreviousLength
 
-            If($Commented -OR ($_ -match '\\\\#')){
+            If($Commented -OR (($_ -replace '^\s*?') -match '\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
                 If(($_ -match '{IF \(') -OR ($_ -match '{ELSE}') -OR ($_ -match '{FI}')){
