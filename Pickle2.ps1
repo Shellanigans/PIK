@@ -2235,7 +2235,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
             $PreviousLength = $_.Length
             $MainObj.SelectionLength = $PreviousLength
 
-            If($Commented -OR ($_ -match '^\\\\#')){
+            If($Commented -OR ($_ -match '\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
                 If(($_ -match '{IF \(') -OR ($_ -match '{ELSE}') -OR ($_ -match '{FI}')){
@@ -2259,7 +2259,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                     ($_ -match '^{[LRM]?MOUSE') -OR `
                     ($_ -match '^{RESTART') -OR `
                     ($_ -match '^{REFOCUS') -OR `
-		            ($_ -match '{REMOTE ') -OR `
+                    ($_ -match '{REMOTE ') -OR `
                     ($_ -match '^{CLEARVAR') -OR `
                     ($_ -match '^{QUIT') -OR `
                     ($_ -match '^{EXIT') -OR `
