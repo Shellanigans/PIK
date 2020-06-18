@@ -416,9 +416,9 @@ Function Actions{
         $X = $X.Replace('{FI}','').Replace('{END WHILE}','').Replace('{ELSE}','')
         
         If($X -match '^{POWER .*}$'){
-            If(!$WhatIf){$X = ([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
+            If(!$WhatIf){[Void]([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke(); $X = ''}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
         }ElseIf($X -match '^{CMD .*}$'){
-            If(!$WhatIf){$X = ([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}}
+            If(!$WhatIf){[Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke(); $X = ''}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}}
         }ElseIf($X -match '{PAUSE'){
             If($CommandLine -OR ($ShowCons.Checked -AND ($X -notmatch '{PAUSE -GUI}'))){
                 If($ShowCons.Checked){[System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')}
@@ -1946,7 +1946,7 @@ Function GO{
             If($_ -match '^<\\\\#'){$Commented = $True}
             If($_ -match '^\\\\#>'){$Commented = $False}
 
-            If($_ -notmatch '^\\\\#' -AND !$Commented){$_}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}}
+            If($_ -notmatch '^\\\\#' -AND !$Commented){$_}
         })
         
            
@@ -2374,10 +2374,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 1)
         
         $Form.Text = $PrevFormText
-        $Form.Text = ($Form.Text -replace '\*$')
         $Form.Refresh()
-
-        $Script:Saved = $True
     }ElseIf($KeyCode -eq 'F11'){
         Save-Profile
     }ElseIf($KeyCode -eq 'F12'){
@@ -2597,12 +2594,14 @@ $Pow.AddScript({
                 If($IP -match '0\.0\.0\.0'){$IP = '127.0.0.1'}
                 $Port = [Int]$SyncHash.SrvPort
                 $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)
-                0..2 | %{
-                    $TmpCli | %{
-                        $_.Close
-                        $_.Dispose
-                    }
-                }
+                
+                $TmpStr = $TmpCli.GetStream()
+                $TmpStr.Write([Text.Encoding]::UTF8.GetBytes('{SERVERSTOP}'),0,12)
+                $TmpStr.Close()
+                $TmpStr.Dispose()
+                
+                $TmpCli.Close
+                $TmpCli.Dispose
             }Catch{}
 
             [System.Threading.Thread]::Sleep(500)
@@ -2979,7 +2978,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
         $TabControllerAdvanced.ItemSize = [GUI.SP]::SI(25,75)
         $TabControllerAdvanced.Alignment = [System.Windows.Forms.TabAlignment]::Left
             $TabPageProfiles = [GUI.TP]::New(0, 0, 0, 0,'Save/Load')
-                $Profile = [GUI.L]::New(275, 15, 10, 10, 'Working Profile: None/Prev Text Vals')
+                $Profile = [GUI.L]::New(275, 15, 10, 10, 'Working Profile: None/Prev Text')
                 $Profile.Parent = $TabPageProfiles
 
                 $SavedProfilesLabel = [GUI.L]::New(75, 15, 85, 36, 'Profiles:')
@@ -2999,7 +2998,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         If((Check-Saved) -ne 'Cancel'){
                             $SavedProfiles.SelectedItem = $PHChosenLoad
 
-                            $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text Vals'}))
+                            $Profile.Text = ('Working Profile: ' + $(If($SavedProfiles.SelectedItem -ne $Null){$SavedProfiles.SelectedItem}Else{'None/Prev Text'}))
                             $Script:LoadedProfile = $SavedProfiles.SelectedItem
 
                             $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem+'\')
@@ -3076,7 +3075,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $BlankProfile = [GUI.B]::New(75, 21, 10, 132, 'New')
                 $BlankProfile.Add_Click({
                     If((Check-Saved) -ne 'Cancel'){
-                        $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                        $Profile.Text = 'Working Profile: None/Prev Text'
                         $Script:LoadedProfile = $Null
                     
                         $SavedProfiles.SelectedIndex = -1
@@ -3118,7 +3117,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                                 $PH[-1] = ''
 
-                                $Profile.Text = 'Working Profile: None/Prev Text Vals'
+                                $Profile.Text = 'Working Profile: None/Prev Text'
                                 $Script:LoadedProfile = $Null
                     
                                 $SavedProfiles.SelectedIndex = -1
@@ -3321,7 +3320,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $DelProfile = [GUI.B]::New(75, 20, 186, 279, 'Delete')
                 $DelProfile.Add_Click({
                     If($Script:LoadedProfile -eq $DelProfText.Text){
-                        $Profile.Text = ('Working Profile: None/Prev Text Vals')
+                        $Profile.Text = ('Working Profile: None/Prev Text')
                         $SavedProfiles.SelectedItem = $Null
                         $Script:LoadedProfile = $Null
 
@@ -3346,19 +3345,118 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $OpenFolder.Parent = $TabPageProfiles
             $TabPageProfiles.Parent = $TabControllerAdvanced
 
-            $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Server')
-                $ServerStart = [GUI.B]::New(100, 20, 25, 25, 'Start')
+            $TabPageServer = [GUI.TP]::New(0, 0, 0, 0, 'Comms')
+                $ListenerLabel = [GUI.L]::New(300,15,22,10,'Listening IP/Port:')
+                $ListenerLabel.Parent = $TabPageServer
+
+                $ServerIPOct1 = [GUI.TB]::New(30,25,25,25,'0')
+                $ServerIPOct1.Add_GotFocus({$This.SelectAll()})
+                $ServerIPOct1.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
+                $ServerIPOct1.Add_TextChanged({
+                    $This.Text = ($This.Text -replace '\D')
+                    If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
+                    If([Int]$This.Text -gt 255){
+                        $This.Text = '255'
+                        $ServerIPOct2.Focus()
+                    }ElseIf($This.Text.Length -eq 3){
+                       $ServerIPOct2.Focus()
+                    }
+                    $This.SelectionStart = ($This.Text.Length)
+                })
+                $ServerIPOct1.Add_KeyUp({
+                    If($_.KeyCode -match 'OemPeriod' -OR $_.KeyCode -match 'Decimal'){$ServerIPOct2.Focus()}
+                })
+                $ServerIPOct1.Parent = $TabPageServer
+
+                $ServerIPOct2 = [GUI.TB]::New(30,25,65,25,'0')
+                $ServerIPOct2.Add_GotFocus({$This.SelectAll()})
+                $ServerIPOct2.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
+                $ServerIPOct2.Add_TextChanged({
+                    $This.Text = ($This.Text -replace '\D')
+                    If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
+                    If([Int]$This.Text -gt 255){
+                        $This.Text = '255'
+                        $ServerIPOct3.Focus()
+                    }ElseIf($This.Text.Length -eq 3){
+                        $ServerIPOct3.Focus()
+                    }
+                    $This.SelectionStart = ($This.Text.Length)
+                })
+                $ServerIPOct2.Add_KeyUp({
+                    If($_.KeyCode -match 'OemPeriod' -OR $_.KeyCode -match 'Decimal'){$ServerIPOct3.Focus()}
+                })
+                $ServerIPOct2.Add_KeyDown({
+                    If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct1.Focus()}
+                })
+                $ServerIPOct2.Parent = $TabPageServer
+
+                $ServerIPOct3 = [GUI.TB]::New(30,25,105,25,'0')
+                $ServerIPOct3.Add_GotFocus({$This.SelectAll()})
+                $ServerIPOct3.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
+                $ServerIPOct3.Add_TextChanged({
+                    $This.Text = ($This.Text -replace '\D')
+                    If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
+                    If([Int]$This.Text -gt 255){
+                        $This.Text = '255'
+                        $ServerIPOct4.Focus()
+                    }ElseIf($This.Text.Length -eq 3){
+                        $ServerIPOct4.Focus()
+                    }
+                    $This.SelectionStart = ($This.Text.Length)
+                })
+                $ServerIPOct3.Add_KeyUp({
+                    If($_.KeyCode -match 'OemPeriod' -OR $_.KeyCode -match 'Decimal'){$ServerIPOct4.Focus()}
+                })
+                $ServerIPOct3.Add_KeyDown({
+                    If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct2.Focus()}
+                })
+                $ServerIPOct3.Parent = $TabPageServer
+
+                $ServerIPOct4 = [GUI.TB]::New(30,25,145,25,'0')
+                $ServerIPOct4.Add_GotFocus({$This.SelectAll()})
+                $ServerIPOct4.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
+                $ServerIPOct4.Add_TextChanged({
+                    $This.Text = ($This.Text -replace '\D')
+                    If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
+                    If([Int]$This.Text -gt 255){
+                        $This.Text = '255'
+                        $ServerPort.Focus()
+                    }ElseIf($This.Text.Length -eq 3){
+                        $ServerPort.Focus()
+                    }
+                    $This.SelectionStart = ($This.Text.Length)
+                })
+                $ServerIPOct4.Add_KeyDown({
+                    If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct3.Focus()}
+                })
+                $ServerIPOct4.Parent = $TabPageServer
+
+                $ServerPort = [GUI.TB]::New(75,25,190,25,'42069')
+                $ServerPort.Add_TextChanged({
+                    $This.Text = ($This.Text -replace '\D')
+                    If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
+                    If([Int]$This.Text -gt 65535){
+                        $This.Text = '65535'
+                    }
+                    $This.SelectionStart = ($This.Text.Length)
+                })
+                $ServerPort.Add_KeyDown({
+                    If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '42069'; $ServerIPOct4.Focus()}
+                })
+                $ServerPort.Parent = $TabPageServer
+
+                $ServerStart = [GUI.B]::New(100, 20, 25, 50, 'Start')
                 $ServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
 
                     $SyncHash.SrvPort = $PHPort
-                    $SyncHash.SrvIP = '0.0.0.0'
+                    $SyncHash.SrvIP = ($ServerIPOct1.Text+'.'+$ServerIPOct2.Text+'.'+$ServerIPOct3.Text+'.'+$ServerIPOct4.Text)
 
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
 
                     [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
 
-                    $Listener = [System.Net.Sockets.TcpListener]::New('0.0.0.0',$PHPort)
+                    $Listener = [System.Net.Sockets.TcpListener]::New($SyncHash.SrvIP,$PHPort)
                     $Listener.Start()
                     While(!$SyncHash.Stop){
                         $Client = $Listener.AcceptTCPClient()
@@ -3407,9 +3505,28 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ServerStart.Parent = $TabPageServer
 
-                $ServerPort = [GUI.TB]::New(75,25,135,26,'42069')
-                $ServerPort.Add_TextChanged({$This.Text = ($This.Text -replace '\D')})
-                $ServerPort.Parent = $TabPageServer
+                $CliTimeOutLabel = [GUI.L]::New(172, 15, 25, 200, 'Sender Timeout (s):')
+                $CliTimeOutLabel.Parent = $TabPageServer
+
+                $CliTimeOut = [GUI.NUD]::New(150, 25, 25, 220)
+                $CliTimeOut.Maximum = 999999999
+                $CliTimeOut.Parent = $TabPageServer
+
+                $SrvTimeOutLabel = [GUI.L]::New(172, 15, 25, 275, 'Listener Timeout (s):')
+                $SrvTimeOutLabel.Parent = $TabPageServer
+
+                $SrvTimeOut = [GUI.NUD]::New(150, 25, 25, 295)
+                $SrvTimeOut.Maximum = 999999999
+                $SrvTimeOut.Parent = $TabPageServer
+
+                $IPFormattingLabel1 = [GUI.L]::New(50,20,25,32,'    .')
+                $IPFormattingLabel1.Parent = $TabPageServer
+                $IPFormattingLabel2 = [GUI.L]::New(50,20,65,32,'    .')
+                $IPFormattingLabel2.Parent = $TabPageServer
+                $IPFormattingLabel3 = [GUI.L]::New(50,20,105,32,'    .')
+                $IPFormattingLabel3.Parent = $TabPageServer
+                $IPFormattingLabel4 = [GUI.L]::New(50,20,147,28,'    :')
+                $IPFormattingLabel4.Parent = $TabPageServer
             $TabPageServer.Parent = $TabControllerAdvanced
 
             $TabPageConfig = [GUI.TP]::New(0, 0, 0, 0, 'Config')
