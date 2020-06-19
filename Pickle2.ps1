@@ -85,6 +85,18 @@ namespace Cons{
     public class Send{
         public static void Keys (string Keys)  {SWF.SendKeys.SendWait(Keys);}
     }
+
+    public class Writer{
+        public static void WriteLine (string Line, System.ConsoleColor Back, System.ConsoleColor Fore){
+            System.Console.BackgroundColor = Back;
+            System.Console.ForegroundColor = Fore;
+            System.Console.WriteLine(Line);
+            System.Console.ResetColor();
+        }
+        public static void WriteLine (string Line){
+            System.Console.WriteLine(Line);
+        }
+    }
 }
 
 namespace Img{
@@ -399,6 +411,8 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
 Function Actions{
     Param([String]$X,[Switch]$WhatIf)
 
+    [System.Console]::WriteLine('INSIDE ACTIONS')
+
     If(!$SyncHash.Stop){
 
         If($ShowCons.Checked){[System.Console]::WriteLine($X)}
@@ -416,9 +430,19 @@ Function Actions{
         $X = $X.Replace('{FI}','').Replace('{END WHILE}','').Replace('{ELSE}','')
         
         If($X -match '^{POWER .*}$'){
-            If(!$WhatIf){[Void]([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke(); $X = ''}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}}
+            If(!$WhatIf){
+                [Void]([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
+                $X = ''
+            }Else{
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
+            }
         }ElseIf($X -match '^{CMD .*}$'){
-            If(!$WhatIf){[Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke(); $X = ''}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}}
+            If(!$WhatIf){
+                [Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()
+                $X = ''
+            }Else{
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}
+            }
         }ElseIf($X -match '{PAUSE'){
             If($CommandLine -OR ($ShowCons.Checked -AND ($X -notmatch '{PAUSE -GUI}'))){
                 If($ShowCons.Checked){[System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')}
@@ -472,13 +496,13 @@ Function Actions{
             $X.Split('{}') | ?{$_ -match 'FLASH$' -OR $_ -match 'FLASH '} | %{
                 $Flashes  = $(If($_ -match ' '){[Int]($_ -replace 'FLASH ')}Else{3})
                 If(!$WhatIf){
+                    [System.Console]::WriteLine('')
                     1..$Flashes | %{
                         $Coords = $Host.UI.RawUI.WindowSize
                         $Origin = $Host.UI.RawUI.CursorPosition
     
-                        [System.Console]::WriteLine($Blank)
-
                         $Blank = (' '*($Coords.Width*$Coords.Height))
+                        [System.Console]::WriteLine($Blank)
                     }{
                         If($_ % 2){
                             $Host.UI.RawUI.CursorPosition = $Origin
@@ -693,7 +717,7 @@ Function Actions{
                     $PH = ($X -replace '{REMOTE ' -replace '}$')
                     $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
                     $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
-                    $PHSendString = ($PH.Split(',')[-1])
+                    $PHSendString = (($PH.Split(',') | Select -Skip 1) -join ',')
 
                     If($Script:FuncHash.($PHSendString -replace '^{' -replace '}$')){
                         $PHSendString = $Script:FuncHash.($PHSendString -replace '^{' -replace '}$')
@@ -709,9 +733,11 @@ Function Actions{
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
                     If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine(($Tab*2)+$_)};$FlipFlop=!$FlipFlop}}
 
+                    $MaxTime = [Int]$CliTimeOut.Value
+
                     $PHResp = ''
                     $Timeout = 1
-                    While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt 99999) -AND ($PHSendString -ne '{SERVERSTOP}')){
+                    While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt $MaxTime) -AND ($PHSendString -ne '{SERVERSTOP}')){
                         If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/2))}
 
                         $Buff = New-Object Byte[] 1024
@@ -727,7 +753,7 @@ Function Actions{
                     }
 
                     If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
-                    If($Timeout -ge 99999){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
+                    If($Timeout -ge $MaxTime){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
 
                     $PHStream.Close()
                     $PHStream.Dispose()
@@ -994,6 +1020,7 @@ Function Interpret{
     #Do the really basic parsing
     $X = [Parser]::Interpret($X)
 
+    [System.Console]::WriteLine('INSIDE INTERPRET')
     #Reset the depth overflow (useful for finding bad logic with infinite loops)
     $DepthOverflow = 0
 
@@ -1502,7 +1529,7 @@ Function Interpret{
 
 Function Parse-IfEl{
     Param([String]$X,[Switch]$WhatIf)
-
+    [System.Console]::WriteLine('INSIDE IFEL')
     If(!$SyncHash.Stop){
         If($X -match '{IF \(.*?\)}' -AND !$Script:Inside_If){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN IF')}
@@ -1628,7 +1655,7 @@ Function Parse-IfEl{
                 
                     $Script:IfElEval = $False
 
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FOLLOWING COMMANDS WILL BE RUN')}
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FOLLOWING COMMANDS WILL BE RUN:')}
                     If($ShowCons.Checked){$PHOut | %{[System.Console]::WriteLine($Tab*2+$_)}}
                     If($ShowCons.Checked){[System.Console]::WriteLine('------')}
                     If($ShowCons.Checked){[System.Console]::WriteLine('END IF'+$NL)}
@@ -1663,7 +1690,7 @@ Function Parse-IfEl{
 
 Function Parse-While{
     Param([String]$X,[Switch]$WhatIf)
-    
+    [System.Console]::WriteLine('INSIDE WHILE')
     If(!$SyncHash.Stop){
         If($X -match '{WHILE \(.*?\)}' -AND !$Script:Inside_While -AND !$Script:Inside_If){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN WHILE')}
@@ -1770,7 +1797,7 @@ Function Parse-While{
                     If($Script:WhileEval){
                         $PHOut = (($PHOut).Split($NL) | ?{$_ -ne ''})
 
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FOLLOWING COMMANDS WILL BE RUN UNTIL '+$PHOut[0]+' IS FALSE')}
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FOLLOWING COMMANDS WILL BE RUN UNTIL '+$PHOut[0]+' IS FALSE:')}
                         If($ShowCons.Checked){$PHOut | Select -Skip 1 | %{[System.Console]::WriteLine($Tab*2+$_)}}
                         If($ShowCons.Checked){[System.Console]::WriteLine('------')}
                         If($ShowCons.Checked){[System.Console]::WriteLine('END WHILE'+$NL)}
@@ -1856,7 +1883,7 @@ Function Parse-While{
 
 Function GO{
     Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand,$Stream=$Null)
-    
+    [System.Console]::WriteLine('INSIDE GO')
     #Any lines with #Ignore are there for regex purposes when exporting scripts
     [System.Console]::WriteLine($NL+'Initializing:')                                             #Ignore
     [System.Console]::WriteLine('-------------------------')                                     #Ignore
@@ -1989,7 +2016,9 @@ Function GO{
                                 }Catch{}
                             }
                         }Else{
-                            If($Line.Trim() -match '^{SERVERSTOP}$'){
+                            If($Line -match '{SERVERSTOP}'){
+                                [System.Console]::WriteLine('{SERVERSTOP}')
+                                [System.Console]::WriteLine($Tab+'KILLING SERVER!')
                                 $Server = $False
                                 $SyncHash.Stop = $True
                                 $SyncHash.Restart = $False
@@ -2113,29 +2142,24 @@ Function Handle-RMenuClick($MainObj){
 
 Function Handle-MousePosGet{
     $PH = [Cons.Curs]::GPos()
-
-    $Position = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}')
     
     $XCoord.Value = $PH.X
     $YCoord.Value = $PH.Y
 
-    $MouseCoordsBox.Text = $Position
-
-    $Bounds = [GUI.Rect]::R($PH.X,$PH.Y,1,1)
-
-    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+    $MouseCoordsBox.Text = ('{MOUSE '+$PH.X+','+$PH.Y+'}')
             
-    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+    $Bounds = [GUI.Rect]::R($PH.X-8,$PH.Y-8,16,16)
+    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+    ([System.Drawing.Graphics]::FromImage($BMP)).CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
-    $PHPix = $BMP.GetPixel(0,0)
+    $PHPix = $BMP.GetPixel(8,8)
     $PixColorBox.Text = $PHPix.Name.ToUpper()
-    $PixColorBox.BackColor = [System.Drawing.Color]::FromArgb('0x'+$PixColorBox.Text)
+    $PixColorBox.BackColor = $PHPix
 
     $PHLum = [Math]::Sqrt(
-        [Math]::Pow($PHPix.R,2) * 0.299 +
-        [Math]::Pow($PHPix.G,2) * 0.587 +
-        [Math]::Pow($PHPix.B,2) * 0.114
+        $PHPix.R * $PHPix.R * 0.299 +
+        $PHPix.G * $PHPix.G * 0.587 +
+        $PHPix.B * $PHPix.B * 0.114
     )
 
     If($PHLum -gt 130){
@@ -2145,12 +2169,6 @@ Function Handle-MousePosGet{
         $PixColorBox.ForeColor = [System.Drawing.Color]::White
         $CenterDot.BackColor = [System.Drawing.Color]::White
     }
-
-    $Bounds = [GUI.Rect]::R($PH.X-8,$PH.Y-8,16,16)
-
-    $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
-    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
 
     $BMPBig = [System.Drawing.Bitmap]::New(120, 106)    
     $GraphicsBig = [System.Drawing.Graphics]::FromImage($BMPBig)
@@ -2583,6 +2601,9 @@ $Pow.AddScript({
     public static extern short GetAsyncKeyState(int virtualKeyCode);
     ' -ErrorAction SilentlyContinue
 
+    $PHCMDS = '{CMDS_START}'+($NL*2)+'{SERVERSTOP}'+($NL*2)+'{CMDS_END}'
+    $StopSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
+
     While(!$SyncHash.Kill){
         [System.Threading.Thread]::Sleep(50)
         If([API.Win32]::GetAsyncKeyState(145)){
@@ -2596,7 +2617,7 @@ $Pow.AddScript({
                 $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)
                 
                 $TmpStr = $TmpCli.GetStream()
-                $TmpStr.Write([Text.Encoding]::UTF8.GetBytes('{SERVERSTOP}'),0,12)
+                $TmpStr.Write($StopSrv,0,$StopSrv.Count)
                 $TmpStr.Close()
                 $TmpStr.Dispose()
                 
@@ -2633,10 +2654,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $Commands.AcceptsTab = $True
                 $Commands.DetectUrls = $False
                 $Commands.Add_TextChanged({
-                    If($Script:Saved){
-                        $Form.Text+='*'
-                        $Script:Saved = $False
-                    }
+                    $Form.Text+='*'
+                    $Script:Saved = $False
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
                     Try{
@@ -3456,6 +3475,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                     [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
 
+                    $MaxTime = [Int]$SrvTimeOut.Value
+
                     $Listener = [System.Net.Sockets.TcpListener]::New($SyncHash.SrvIP,$PHPort)
                     $Listener.Start()
                     While(!$SyncHash.Stop){
@@ -3467,7 +3488,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $Buff = New-Object Byte[] 1024
                         $CMDsIn = ''
                         $Timeout = 1
-                        While(!$SyncHash.Stop -AND !(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt 99999)){
+                        While(!(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt $MaxTime)){
                             While($Stream.DataAvailable){
                                 $Buff = New-Object Byte[] 1024
                                 [Void]$Stream.Read($Buff, 0, 1024)
@@ -3477,15 +3498,19 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $Timeout++
                         }
 
-                        If(!$SyncHash.Stop -AND ($Timeout -lt 99999)){
+                        If($Timeout -lt $MaxTime){
                             $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
                             GO -InlineCommand $CMDsIn -Server -Stream $Stream
-                        }
-                        
-                        If(!$SyncHash.Stop -AND ($Timeout -lt 99999)){
+
                             Try{
                                 $Listener.Start()
+                                
                                 $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
+                                $Stream.Close()
+                                $Stream.Dispose()
+
+                                $Client.Close()
+                                $Client.Dispose()
                             }Catch{
                                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')}
                             }
@@ -3510,6 +3535,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $CliTimeOut = [GUI.NUD]::New(150, 25, 25, 220)
                 $CliTimeOut.Maximum = 999999999
+                $CliTimeOut.Value = 99999
                 $CliTimeOut.Parent = $TabPageServer
 
                 $SrvTimeOutLabel = [GUI.L]::New(172, 15, 25, 275, 'Listener Timeout (s):')
@@ -3517,6 +3543,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $SrvTimeOut = [GUI.NUD]::New(150, 25, 25, 295)
                 $SrvTimeOut.Maximum = 999999999
+                $SrvTimeOut.Value = 99999
                 $SrvTimeOut.Parent = $TabPageServer
 
                 $IPFormattingLabel1 = [GUI.L]::New(50,20,25,32,'    .')
