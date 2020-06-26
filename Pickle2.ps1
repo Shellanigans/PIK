@@ -2227,10 +2227,16 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         Try{$_.SuppressKeyPress = $True}Catch{}
 
         $Form.Enabled = $False
-        $PrevFormText = $Form.Text
+        $PrevFormText = (($Form.Text -replace '\*$')+'*')
+        #$PrevFormText = $Form.Text
+        
+        $Script:Saved = $False
+
         $Form.Text = 'PARSING'
         $Form.Refresh()
         #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 0)
+
+        #$Script:Saved = $False
 
         $TempSelectionIndex = $MainObj.SelectionStart
         $TempSelectionLength = $MainObj.SelectionLength
@@ -2392,6 +2398,8 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 1)
         
         $Form.Text = $PrevFormText
+
+        #$Form.Text+='*'
         $Form.Refresh()
     }ElseIf($KeyCode -eq 'F11'){
         Save-Profile
@@ -2654,8 +2662,10 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $Commands.AcceptsTab = $True
                 $Commands.DetectUrls = $False
                 $Commands.Add_TextChanged({
-                    $Form.Text+='*'
-                    $Script:Saved = $False
+                    If($Script:Saved){
+                        $Form.Text+='*'
+                        $Script:Saved = $False
+                    }
                     
                     #$This.Text | Out-File ($env:APPDATA+'\Macro\Commands.txt') -Width 1000 -Force
                     Try{
@@ -2739,7 +2749,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions' -Shift $_.Shift -Control $_.Control -Alt $_.Alt})
             $TabPageFunctMain.Parent = $TabControllerComm
 
-            $TabPageHelper = [GUI.TP]::new(0, 0, 0, 0, 'Info')
+            $TabPageHelper = [GUI.TP]::new(0, 0, 0, 0, 'Helpers')
                 $TabHelperSub = [GUI.TC]::New(0, 0, 0, 0)
                 $TabHelperSub.Dock = 'Fill'
                 $TabHelperSub.SizeMode = 'Fixed'
@@ -2857,6 +2867,35 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $CenterDot.BackColor = [System.Drawing.Color]::Black
                         $CenterDot.Parent = $TabHelperSubMouse
                         $CenterDot.BringToFront()
+
+                        $Tape = [GUI.B]::New(260, 25, 10, 240, 'Measuring Tape')
+                        $Tape.Add_Click({
+                            $TapePow = [Powershell]::Create()
+                            $TapeRun = [RunspaceFactory]::CreateRunspace()
+                            $TapeRun.Open()
+                            $TapePow.Runspace = $TapeRun
+                            $TapePow.AddScript({
+                                $TapeForm = [System.Windows.Forms.Form]::New(500,500,'Measuring Tape')
+                                $TapeForm.BackColor = [System.Drawing.Color]::LimeGreen
+                                $TapeForm.TransparencyKey = [System.Drawing.Color]::LimeGreen
+
+                                $Black = [System.Drawing.Color]::Black
+                                $White = [System.Drawing.Color]::White
+                                $BlackPen = [System.Drawing.Pen]::New($Black)
+                                $WhitePen = [System.Drawing.Pen]::New($White)
+
+                                $Graphics = [System.Drawing.Graphics]::FromHwnd($TapeForm.Handle)
+                                $Graphics.DrawRectangle($WhitePen, 0, 0, 11, 1000)
+                                $Graphics.DrawRectangle($WhitePen, 0, 0, 1000, 11)
+                                $Graphics.DrawLine($BlackPen, 6, 6, 1000, 6)
+                                $Graphics.DrawLine($BlackPen, 6, 6, 6, 1000)
+                                
+
+                                [Void]$TapeForm.ShowDialog()
+                            })
+                            $TapePow.BeginInvoke() | Out-Null
+                        })
+                        $Tape.Parent = $TabHelperSubMouse
                     $TabHelperSubMouse.Parent = $TabHelperSub
 
                     $TabHelperSubSystem = [GUI.TP]::new(0, 0, 0, 0, 'Sys/Proc')
