@@ -2875,21 +2875,62 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $TapeRun.Open()
                             $TapePow.Runspace = $TapeRun
                             $TapePow.AddScript({
-                                $TapeForm = [System.Windows.Forms.Form]::New(500,500,'Measuring Tape')
-                                $TapeForm.BackColor = [System.Drawing.Color]::LimeGreen
+                                Add-Type -AssemblyName System.Windows.Forms
+                                Add-Type -AssemblyName System.Drawing
+                                $TapeForm = New-Object System.Windows.Forms.Form
+                                $TapeForm.Size = New-Object System.Drawing.Size -argumentlist (5000,5000)
+                                $TapeForm.Text = 'Measuring Tape'
                                 $TapeForm.TransparencyKey = [System.Drawing.Color]::LimeGreen
 
                                 $Black = [System.Drawing.Color]::Black
-                                $White = [System.Drawing.Color]::White
-                                $BlackPen = [System.Drawing.Pen]::New($Black)
-                                $WhitePen = [System.Drawing.Pen]::New($White)
+                                $LightGray = [System.Drawing.Color]::LightGray
+                                $Green = [System.Drawing.Color]::LimeGreen
+                                $BlackPen = (New-Object System.Drawing.Pen -ArgumentList ($Black))
+                                $GrayPen = (New-Object System.Drawing.Pen -ArgumentList ($LightGray))
+                                $GreenBrush = (New-Object System.Drawing.SolidBrush -ArgumentList ($Green))
 
                                 $Graphics = [System.Drawing.Graphics]::FromHwnd($TapeForm.Handle)
-                                $Graphics.DrawRectangle($WhitePen, 0, 0, 11, 1000)
-                                $Graphics.DrawRectangle($WhitePen, 0, 0, 1000, 11)
-                                $Graphics.DrawLine($BlackPen, 6, 6, 1000, 6)
-                                $Graphics.DrawLine($BlackPen, 6, 6, 6, 1000)
+                                $TapeForm.Add_Paint({$Graphics.FillRectangle($GreenBrush, 75, 75, 5000, 5000)})
+                                #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 5000, 40)})
+                                #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 40, 5000)})
+
+                                $OriginLabel = (New-Object System.Windows.Forms.Label)
+                                $OriginLabel.Size = (New-Object System.Drawing.Size(70,25))
+                                $OriginLabel.Location = (New-Object System.Drawing.Size(10,10))
+                                $OriginLabel.BackColor = [System.Drawing.Color]::Transparent
+                                $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($TapeForm.Location.X+83)+','+[String]($TapeForm.Location.Y+106))
+                                $OriginLabel.Parent = $TapeForm
+
+                                $OffSet = 50
+                                0..5000 | ?{!($_ % ($OffSet)) -OR !($_ % (($OffSet)/2))} | %{
+                                    $PH = ($_+75)
+                                    If(!($_ % ($OffSet))){
+                                        $LocationLabel = (New-Object System.Windows.Forms.Label)
+                                        $LocationLabel.Size = (New-Object System.Drawing.Size(30,15))
+                                        $LocationLabel.Location = (New-Object System.Drawing.Size(($PH-5), 40))
+                                        #$LocationLabel.BackColor = [System.Drawing.Color]::Transparent
+                                        $LocationLabel.Text = $_
+                                        $LocationLabel.Parent = $TapeForm
+
+                                        $LocationLabel = (New-Object System.Windows.Forms.Label)
+                                        $LocationLabel.Size = (New-Object System.Drawing.Size(30,15))
+                                        $LocationLabel.Location = (New-Object System.Drawing.Size(22, ($PH-5)))
+                                        $LocationLabel.RightToLeft  = [System.Windows.Forms.RightToLeft]::Yes
+                                        $LocationLabel.Text = $_
+                                        $LocationLabel.Parent = $TapeForm
+
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, $PH, 55, $PH, 5000)}.GetNewClosure())
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 55, $PH, 5000, $PH)}.GetNewClosure())
+                                    }Else{
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($GrayPen, $PH, 65, $PH, 5000)}.GetNewClosure())
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($GrayPen, 65, $PH, 5000, $PH)}.GetNewClosure())
+                                    }
+                                }
+                                $TapeForm.Size = (New-Object System.Drawing.Size(500,500))
                                 
+                                $TapeForm.Add_LocationChanged({
+                                    $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($This.Location.X+83)+','+[String]($This.Location.Y+106))
+                                })
 
                                 [Void]$TapeForm.ShowDialog()
                             })
