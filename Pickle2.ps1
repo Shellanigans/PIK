@@ -2883,14 +2883,14 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 $TapeForm.TransparencyKey = [System.Drawing.Color]::LimeGreen
 
                                 $Black = [System.Drawing.Color]::Black
-                                $LightGray = [System.Drawing.Color]::LightGray
+                                $Red = [System.Drawing.Color]::Red
                                 $Green = [System.Drawing.Color]::LimeGreen
                                 $BlackPen = (New-Object System.Drawing.Pen -ArgumentList ($Black))
-                                $GrayPen = (New-Object System.Drawing.Pen -ArgumentList ($LightGray))
+                                $RedPen = (New-Object System.Drawing.Pen -ArgumentList ($Red))
                                 $GreenBrush = (New-Object System.Drawing.SolidBrush -ArgumentList ($Green))
 
                                 $Graphics = [System.Drawing.Graphics]::FromHwnd($TapeForm.Handle)
-                                $TapeForm.Add_Paint({$Graphics.FillRectangle($GreenBrush, 75, 75, 5000, 5000)})
+                                $TapeForm.Add_Paint({$Graphics.FillRectangle($GreenBrush, 70, 70, 5000, 5000)})
                                 #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 5000, 40)})
                                 #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 40, 5000)})
 
@@ -2922,8 +2922,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, $PH, 55, $PH, 5000)}.GetNewClosure())
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 55, $PH, 5000, $PH)}.GetNewClosure())
                                     }Else{
-                                        $TapeForm.Add_Paint({$Graphics.DrawLine($GrayPen, $PH, 65, $PH, 5000)}.GetNewClosure())
-                                        $TapeForm.Add_Paint({$Graphics.DrawLine($GrayPen, 65, $PH, 5000, $PH)}.GetNewClosure())
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($RedPen, $PH, 63, $PH, 5000)}.GetNewClosure())
+                                        $TapeForm.Add_Paint({$Graphics.DrawLine($RedPen, 63, $PH, 5000, $PH)}.GetNewClosure())
                                     }
                                 }
                                 $TapeForm.Size = (New-Object System.Drawing.Size(500,500))
