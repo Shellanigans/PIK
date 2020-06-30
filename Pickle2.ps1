@@ -411,7 +411,7 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
 Function Actions{
     Param([String]$X,[Switch]$WhatIf)
 
-    [System.Console]::WriteLine('INSIDE ACTIONS')
+    #[System.Console]::WriteLine('INSIDE ACTIONS')
 
     If(!$SyncHash.Stop){
 
@@ -869,7 +869,13 @@ Function Actions{
 
                         $PHAction = $X.Split(' ')[0].Replace('{','')
                         Switch($PHAction){
-                            'FOCUS'       {If(!$TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}}
+                            'FOCUS'       {
+                                Try{
+                                    If(!$TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
+                                }Catch{
+                                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT TRUE HAND STATUS: '+([Boolean]$TrueHand).ToString().ToUpper()+', PROC TITLE: '+$PHTMPProcTitle+', HANDLE: '+$PHTMPProcHand)}
+                                }
+                            }
                             'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
                             'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
                             'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
@@ -1020,7 +1026,7 @@ Function Interpret{
     #Do the really basic parsing
     $X = [Parser]::Interpret($X)
 
-    [System.Console]::WriteLine('INSIDE INTERPRET')
+    #[System.Console]::WriteLine('INSIDE INTERPRET')
     #Reset the depth overflow (useful for finding bad logic with infinite loops)
     $DepthOverflow = 0
 
@@ -1529,7 +1535,7 @@ Function Interpret{
 
 Function Parse-IfEl{
     Param([String]$X,[Switch]$WhatIf)
-    [System.Console]::WriteLine('INSIDE IFEL')
+    #[System.Console]::WriteLine('INSIDE IFEL')
     If(!$SyncHash.Stop){
         If($X -match '{IF \(.*?\)}' -AND !$Script:Inside_If){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN IF')}
@@ -1690,7 +1696,7 @@ Function Parse-IfEl{
 
 Function Parse-While{
     Param([String]$X,[Switch]$WhatIf)
-    [System.Console]::WriteLine('INSIDE WHILE')
+    #[System.Console]::WriteLine('INSIDE WHILE')
     If(!$SyncHash.Stop){
         If($X -match '{WHILE \(.*?\)}' -AND !$Script:Inside_While -AND !$Script:Inside_If){
             If($ShowCons.Checked){[System.Console]::WriteLine($NL + 'BEGIN WHILE')}
@@ -1883,7 +1889,7 @@ Function Parse-While{
 
 Function GO{
     Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand,$Stream=$Null)
-    [System.Console]::WriteLine('INSIDE GO')
+    #[System.Console]::WriteLine('INSIDE GO')
     #Any lines with #Ignore are there for regex purposes when exporting scripts
     [System.Console]::WriteLine($NL+'Initializing:')                                             #Ignore
     [System.Console]::WriteLine('-------------------------')                                     #Ignore
@@ -2885,6 +2891,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 $Black = [System.Drawing.Color]::Black
                                 $Red = [System.Drawing.Color]::Red
                                 $Green = [System.Drawing.Color]::LimeGreen
+                                $DarkGray = [System.Drawing.Color]::DarkGray
                                 $BlackPen = (New-Object System.Drawing.Pen -ArgumentList ($Black))
                                 $RedPen = (New-Object System.Drawing.Pen -ArgumentList ($Red))
                                 $GreenBrush = (New-Object System.Drawing.SolidBrush -ArgumentList ($Green))
@@ -2928,10 +2935,22 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 }
                                 $TapeForm.Size = (New-Object System.Drawing.Size(500,500))
                                 
+                                $Box = (New-Object System.Windows.Forms.Panel)
+                                $Box.Size = (New-Object System.Drawing.Size -ArgumentList (25,25))
+                                $Box.Location = (New-Object System.Drawing.Size -ArgumentList (($TapeForm.Width-41),($TapeForm.Height-64)))
+                                $Box.BackColor = $DarkGray
+                                $Box.Parent = $TapeForm
+
+                                $TapeForm.Add_SizeChanged({
+                                    $Box.Location = (New-Object System.Drawing.Size -ArgumentList (($This.Width-41),($This.Height-64)))
+                                })
+
                                 $TapeForm.Add_LocationChanged({
                                     $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($This.Location.X+83)+','+[String]($This.Location.Y+106))
                                 })
 
+                                $TapeForm.BackColor = $DarkGray
+                                $TapeForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::SizableToolWindow
                                 [Void]$TapeForm.ShowDialog()
                             })
                             $TapePow.BeginInvoke() | Out-Null
