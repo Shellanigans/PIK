@@ -856,7 +856,7 @@ Function Actions{
                         $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
                     Try{$PHProc = (PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = ''}
-                    If(!$PHProc){$PHProc = (PS | ?{$_.MainWindowTitle -match $PHProcTMPName})}
+                    If(!$PHProc){$PHProc = (PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
             }Catch{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
@@ -2614,7 +2614,7 @@ $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
 $Script:FuncHash = @{}
 $Script:HiddenWindows = @{}
-$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP='0.0.0.0';ShowMouse=$False})
+$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP='0.0.0.0';ShowMouse=$False;MouseIndPid=0})
 
 $ClickHelperParent = [HashTable]::Synchronized(@{})
 
@@ -2669,6 +2669,8 @@ $MouseIndRun.Open()
 $MouseIndPow.Runspace = $MouseIndRun
 $MouseIndPow.AddScript({
     Param($SyncHash)
+
+    $SyncHash.MouseIndPid = $PID
 
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
