@@ -855,11 +855,11 @@ Function Actions{
                     If(($Script:HiddenWindows.Keys -join '')){
                         $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
-                    $PHProc = (PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+                    Try{$PHProc = (PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = ''}
                     If(!$PHProc){$PHProc = (PS | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
             }Catch{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED TO FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
                 $SyncHash.Stop = $True
                 Break
             }
