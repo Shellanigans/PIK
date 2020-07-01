@@ -2597,7 +2597,7 @@ $UndoHash = @{KeyList=[String[]]@()}
 $Script:VarsHash = @{}
 $Script:FuncHash = @{}
 $Script:HiddenWindows = @{}
-$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP='0.0.0.0'})
+$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP='0.0.0.0';ShowMouse=$False})
 
 $ClickHelperParent = [HashTable]::Synchronized(@{})
 
@@ -2615,11 +2615,38 @@ $Pow.AddScript({
     public static extern short GetAsyncKeyState(int virtualKeyCode);
     ' -ErrorAction SilentlyContinue
 
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    #[System.Windows.Forms.Application]::SetCompatibleTextRenderingDefault($True)
+
+    $MouseForm = New-Object System.Windows.Forms.Form
+    $MouseForm.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
+    $MouseForm.Text = 'Mouse Indicator'
+
+    $Red = [System.Drawing.Color]::Red
+    $DarkRed = [System.Drawing.Color]::DarkRed
+
+    $Pointer = (New-Object System.Windows.Forms.Label)
+    $Pointer.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
+    $Pointer.Location = (New-Object System.Drawing.Size -ArgumentList (-10,0))
+    $Pointer.BackColor = $DarkRed
+    $Pointer.ForeColor = $Red
+    $Pointer.Font = (New-Object System.Drawing.Font -ArgumentList ('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
+    $Pointer.Text = '←'
+    $Pointer.Parent = $MouseForm
+
+    $MouseForm.BackColor = $DarkRed
+    $MouseForm.TransparencyKey = $DarkRed
+    $MouseForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
+    $MouseForm.TopMost = $True
+    $MouseForm.Update()
+
     $PHCMDS = '{CMDS_START}'+($NL*2)+'{SERVERSTOP}'+($NL*2)+'{CMDS_END}'
     $StopSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
 
     While(!$SyncHash.Kill){
-        [System.Threading.Thread]::Sleep(50)
+        [System.Threading.Thread]::Sleep(10)
         If([API.Win32]::GetAsyncKeyState(145)){
             $SyncHash.Stop = $True
             $SyncHash.Restart = $False
@@ -2641,6 +2668,22 @@ $Pow.AddScript({
 
             [System.Threading.Thread]::Sleep(500)
         }
+
+        If($SyncHash.ShowMouse){
+            If($SyncHash.ShowMouse -ne $PrevShowMouse){
+                $MouseForm.Visible = $SyncHash.ShowMouse
+            }
+            $Loc = [System.Windows.Forms.Cursor]::Position
+            $Loc.X+=5
+            $Loc.Y-=35
+            $MouseForm.Location = $Loc
+            $PrevMouseShow = $SyncHash.ShowMouse
+        }Else{
+            If($SyncHash.ShowMouse -ne $PrevShowMouse){
+                $MouseForm.Visible = $SyncHash.ShowMouse
+            }
+        }
+        $MouseForm.Update()
     }
 }) | Out-Null
 $Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
@@ -2884,16 +2927,17 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 Add-Type -AssemblyName System.Windows.Forms
                                 Add-Type -AssemblyName System.Drawing
                                 $TapeForm = New-Object System.Windows.Forms.Form
-                                $TapeForm.Size = New-Object System.Drawing.Size -argumentlist (5000,5000)
+                                $TapeForm.Size = New-Object System.Drawing.Size -ArgumentList (5000,5000)
                                 $TapeForm.Text = 'Measuring Tape'
-                                $TapeForm.TransparencyKey = [System.Drawing.Color]::LimeGreen
 
                                 $Black = [System.Drawing.Color]::Black
                                 $Red = [System.Drawing.Color]::Red
+                                $Blue = [System.Drawing.Color]::Blue
                                 $Green = [System.Drawing.Color]::LimeGreen
                                 $DarkGray = [System.Drawing.Color]::DarkGray
                                 $BlackPen = (New-Object System.Drawing.Pen -ArgumentList ($Black))
                                 $RedPen = (New-Object System.Drawing.Pen -ArgumentList ($Red))
+                                $BluePen = (New-Object System.Drawing.Pen -ArgumentList ($Blue))
                                 $GreenBrush = (New-Object System.Drawing.SolidBrush -ArgumentList ($Green))
 
                                 $Graphics = [System.Drawing.Graphics]::FromHwnd($TapeForm.Handle)
@@ -2909,7 +2953,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 $OriginLabel.Parent = $TapeForm
 
                                 $OffSet = 50
-                                0..5000 | ?{!($_ % ($OffSet)) -OR !($_ % (($OffSet)/2))} | %{
+                                0..5000 | ?{!($_ % ($OffSet)) -OR !($_ % (($OffSet)/2)) -OR !($_ % (($OffSet)/10))} | %{
                                     $PH = ($_+75)
                                     If(!($_ % ($OffSet))){
                                         $LocationLabel = (New-Object System.Windows.Forms.Label)
@@ -2928,9 +2972,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, $PH, 55, $PH, 5000)}.GetNewClosure())
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 55, $PH, 5000, $PH)}.GetNewClosure())
-                                    }Else{
+                                    }ElseIf(!($_ % ($OffSet/2))){
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($RedPen, $PH, 63, $PH, 5000)}.GetNewClosure())
                                         $TapeForm.Add_Paint({$Graphics.DrawLine($RedPen, 63, $PH, 5000, $PH)}.GetNewClosure())
+                                    }Else{
+                                        #$TapeForm.Add_Paint({$Graphics.DrawLine($BluePen, $PH, 67, $PH, 5000)}.GetNewClosure())
+                                        #$TapeForm.Add_Paint({$Graphics.DrawLine($BluePen, 67, $PH, 5000, $PH)}.GetNewClosure())
                                     }
                                 }
                                 $TapeForm.Size = (New-Object System.Drawing.Size(500,500))
@@ -2949,6 +2996,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                     $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($This.Location.X+83)+','+[String]($This.Location.Y+106))
                                 })
 
+                                $TapeForm.TransparencyKey = $Green
                                 $TapeForm.BackColor = $DarkGray
                                 $TapeForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::SizableToolWindow
                                 [Void]$TapeForm.ShowDialog()
@@ -3563,7 +3611,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 })
                 $ServerPort.Parent = $TabPageServer
 
-                $ServerStart = [GUI.B]::New(100, 20, 25, 50, 'Start')
+                $ServerStart = [GUI.B]::New(150, 25, 25, 50, 'Start Listener')
                 $ServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
 
@@ -3628,6 +3676,72 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
+
+                <#$RevServerStart = [GUI.B]::New(150, 25, 25, 50, 'Connect and Listen')
+                $RevServerStart.Add_Click({
+                    $PHPort = [Int]$ServerPort.Text
+
+                    $SyncHash.SrvPort = $PHPort
+                    $SyncHash.SrvIP = ($ServerIPOct1.Text+'.'+$ServerIPOct2.Text+'.'+$ServerIPOct3.Text+'.'+$ServerIPOct4.Text)
+
+                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
+
+                    [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+
+                    $MaxTime = [Int]$SrvTimeOut.Value
+
+                    $Listener = [System.Net.Sockets.TcpListener]::New($SyncHash.SrvIP,$PHPort)
+                    $Listener.Start()
+                    While(!$SyncHash.Stop){
+                        $Client = $Listener.AcceptTCPClient()
+                        $Listener.Stop()
+
+                        $Stream = $Client.GetStream()
+
+                        $Buff = New-Object Byte[] 1024
+                        $CMDsIn = ''
+                        $Timeout = 1
+                        While(!(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt $MaxTime)){
+                            While($Stream.DataAvailable){
+                                $Buff = New-Object Byte[] 1024
+                                [Void]$Stream.Read($Buff, 0, 1024)
+                                $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
+                            }
+                            [System.Threading.Thread]::Sleep(500)
+                            $Timeout++
+                        }
+
+                        If($Timeout -lt $MaxTime){
+                            $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
+                            GO -InlineCommand $CMDsIn -Server -Stream $Stream
+
+                            Try{
+                                $Listener.Start()
+                                
+                                $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
+                                $Stream.Close()
+                                $Stream.Dispose()
+
+                                $Client.Close()
+                                $Client.Dispose()
+                            }Catch{
+                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')}
+                            }
+                        }
+                    }
+
+                    $Listener.Stop()
+
+                    [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+                    
+                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+
+                    $Form.Refresh()
+
+                    $SyncHash.Stop = $False
+                    $SyncHash.Restart = $False
+                })
+                $RevServerStart.Parent = $TabPageServer#>
 
                 $CliTimeOutLabel = [GUI.L]::New(172, 15, 25, 200, 'Sender Timeout (s):')
                 $CliTimeOutLabel.Parent = $TabPageServer
@@ -3721,6 +3835,12 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 		            }
                 })
                 $Bold.Parent = $TabPageConfig
+
+                $MousePosCheck = [GUI.ChB]::New(175, 25, 10, 275, 'Show Mouse Position')
+                $MousePosCheck.Add_CheckedChanged({
+                    $SyncHash.ShowMouse = $This.Checked
+                })
+                $MousePosCheck.Parent = $TabPageConfig
             $TabPageConfig.Parent = $TabControllerAdvanced
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
@@ -3860,6 +3980,7 @@ $Config = ($Config | Select `
     @{NAME='PrevProfile';EXPRESSION={$Null}},`
     @{NAME='LastLoc';EXPRESSION={$Null}},`
     @{NAME='Bolded';EXPRESSION={$False}},`
+    @{NAME='ShowMousePos';EXPRESSION={$False}},`
     @{NAME='SavedSize';EXPRESSION={$Null}}
 )
 
@@ -3883,6 +4004,10 @@ Try{
 
     $OnTop.Checked           = $(If([String]$LoadedConfig.OnTopCheck -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.OnTopCheck})
 
+    $Bold.Checked            = $(If([String]$LoadedConfig.Bolded -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.Bolded})
+
+    $MousePosCheck.Checked   = $(If([String]$LoadedConfig.ShowMousePos -eq 'False')    {$False}Else{[Boolean]$LoadedConfig.ShowMousePos})
+
     $ShowCons.Checked = !$ShowCons.Checked
     Sleep -Milliseconds 40
     $ShowCons.Checked = !$ShowCons.Checked
@@ -3891,12 +4016,18 @@ Try{
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
 
-    $Bold.Checked = $LoadedConfig.Bolded
     If($Bold.Checked){
-	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
     }Else{
-	$Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+	    $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
     }
+
+    $MousePosCheck.Checked = $False
+    #Something fucky is going on here, when the form starts with this property set, there's like a three second pause and a copy of the indicator gets like "stamped" onto the screen. This odesn't happen if the form is made visible AFTER the parent form though
+    #$MousePosCheck.Checked = $LoadedConfig.ShowMousePos
+
+    $SyncHash.ShowMouse = $False
+    $SyncHash.ShowMouse = $MousePosCheck.Checked
 
     If($LoadedConfig.PrevProfile -OR $Macro -OR $CLICMD){
         If($Macro){
@@ -4007,15 +4138,17 @@ If($CommandLine){
             $Config.PrevProfile = $Null
         }
 
-	$Config.DelayTimeVal  = $DelayTimer.Value
-	$Config.DelayChecked  = $DelayCheck.Checked
-	$Config.DelayRandVal  = $DelayRandTimer.Value
+	    $Config.DelayTimeVal  = $DelayTimer.Value
+	    $Config.DelayChecked  = $DelayCheck.Checked
+	    $Config.DelayRandVal  = $DelayRandTimer.Value
 
-	$Config.CommTimeVal   = $CommandDelayTimer.Value
-	$Config.CommChecked   = $CommDelayCheck.Checked
-	$Config.CommRandVal   = $CommRandTimer.Value
+	    $Config.CommTimeVal   = $CommandDelayTimer.Value
+	    $Config.CommChecked   = $CommDelayCheck.Checked
+	    $Config.CommRandVal   = $CommRandTimer.Value
 	
-	$Config.Bolded        = $Bold.Checked
+	    $Config.Bolded        = $Bold.Checked
+
+        $Config.ShowMousePos  = $MousePosCheck.Checked
 
         $Config.LastLoc       = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
         $Config.SavedSize     = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
