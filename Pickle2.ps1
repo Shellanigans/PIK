@@ -420,7 +420,7 @@ Function Actions{
         $Escaped = $False
 
         $X,$Escaped = (Interpret $X)
-
+        #Write-Host 'NEW LINE IN ACTIONS'
         $TempX = $Null
         If($Escaped){
             $TempX = $X
@@ -561,6 +561,8 @@ Function Actions{
                 If($ShowCons.Checked){[System.Console]::WriteLine(($Tab+'WHATIF: '+$(If($Rel){'RELEASE'}ELSE{'HOLD'})+' '+($X.Split()[-1] -replace '}')))}
             }
         }ElseIf($X -match '^{[LRM]?MOUSE'){
+            #Write-Host 'INSIDE MOUSE'
+            #Write-Host $X
             If(!$WhatIf){
                 If($X -match ','){
                     $PHX = $X
@@ -577,8 +579,9 @@ Function Actions{
                     }
 
                     $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
-
+                    #Write-Host 'TEST1'
                     $Coords = [Cons.Curs]::GPos()
+                    #Write-Host 'TEST2'
                     $PHTMPCoords = $Coords
                             
                     If(($PHX -match '\+') -OR ($PHX -match '-\d+')){
@@ -639,11 +642,15 @@ Function Actions{
                             $j = $Coords.X
                             $k = $Coords.Y
                             While($j -ne $PHTMPCoords.X){
+                                #Write-Host 'TEST3'
                                 [Cons.Curs]::SPos($j,$k)
+                                #Write-Host 'TEST4'
                                 If($j -lt $PHTMPCoords.X){$j++}Else{$j--}
                             }
                             While($k -ne $PHTMPCoords.Y){
+                                #Write-Host 'TEST5'
                                 [Cons.Curs]::SPos($j,$k)
+                                #Write-Host 'TEST6'
                                 If($k -lt $PHTMPCoords.Y){$k++}Else{$k--}
                             }
 
@@ -810,46 +817,51 @@ Function Actions{
             If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
                 
             $TrueHand = $False
-
-            If($X -match ' -ID '){
-                $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
-                If(($Script:HiddenWindows.Keys -join '')){
-                    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_.*?_'+$LastHiddenTime+'$')})
-                }
-                $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
-                If($PHProc){$PHHidden = ''}
-            }ElseIf($X -match ' -HAND '){
-                $PHProcHand = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
-                #If(($Script:HiddenWindows.Keys -join '')){
-                #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
-                #}
-                $PHProc = (PS | ?{[String]$_.MainWindowHandle -match $PHProcHand})
-                If($PHProc){
-                    $PHHidden = ''
+            Try{
+                If($X -match ' -ID '){
+                    $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    If(($Script:HiddenWindows.Keys -join '')){
+                        $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                        $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_.*?_'+$LastHiddenTime+'$')})
+                    }
+                    $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
+                    If($PHProc){$PHHidden = ''}
+                }ElseIf($X -match ' -HAND '){
+                    $PHProcHand = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
+                    #If(($Script:HiddenWindows.Keys -join '')){
+                    #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
+                    #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
+                    #}
+                    $PHProc = (PS | ?{[String]$_.MainWindowHandle -match $PHProcHand})
+                    If($PHProc){
+                        $PHHidden = ''
+                    }Else{
+                        $TrueHand = $True
+                        Try{
+                            $PHProcHand = [IntPtr][Int]$PHProcHand
+                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
+                            $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
+                            [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
+                            If(!$PHString){
+                                $PHProc = ''
+                                $PHHidden = ''
+                            }Else{
+                                $PHHidden = $PHProcHand
+                            }
+                        }Catch{$PHProc = ''; $PHHidden = ''}
+                    }
                 }Else{
-                    $TrueHand = $True
-                    Try{
-                        $PHProcHand = [IntPtr][Int]$PHProcHand
-                        $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
-                        $PHString = [System.Text.StringBuilder]::New(($PHTextLength + 1))
-                        [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
-                        If(!$PHString){
-                            $PHProc = ''
-                            $PHHidden = ''
-                        }Else{
-                            $PHHidden = $PHProcHand
-                        }
-                    }Catch{$PHProc = ''; $PHHidden = ''}
+                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('}','')
+                    If(($Script:HiddenWindows.Keys -join '')){
+                        $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
+                    }
+                    $PHProc = (PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+                    If(!$PHProc){$PHProc = (PS | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
-            }Else{
-                $PHProcTMPName = ($PHProc.Split(' ') | ?{$_ -ne ''})[1].Replace('{','').Replace('}','')
-                If(($Script:HiddenWindows.Keys -join '')){
-                    $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
-                }
-                $PHProc = (PS $PHProcTMPName | ?{$_.MainWindowHandle -ne 0})
-                If(!$PHProc){$PHProc = (PS | ?{$_.MainWindowTitle -match $PHProcTMPName})}
+            }Catch{
+                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED TO FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
+                $SyncHash.Stop = $True
+                Break
             }
 
             If($PHHidden){$PHProc+=$PHHidden}
@@ -1024,7 +1036,9 @@ Function Interpret{
     Param([String]$X,[Switch]$SuppressConsole)
 
     #Do the really basic parsing
+    #Write-Host 'NEW LINE IN INTERPRET FUNC'
     $X = [Parser]::Interpret($X)
+    #Write-Host 'NEW LINE IN INTERPRET POST FUNC'
 
     #[System.Console]::WriteLine('INSIDE INTERPRET')
     #Reset the depth overflow (useful for finding bad logic with infinite loops)
@@ -1686,6 +1700,7 @@ Function Parse-IfEl{
             }
         }Else{
             If(!$WhatIf){
+                #Write-Host 'NEW LINE IN ACTIONS'
                 [Void](Actions $X)
             }Else{
                 [Void](Actions $X -WhatIf)
@@ -1879,6 +1894,7 @@ Function Parse-While{
             }
         }Else{
             If(!$WhatIf){
+                #Write-Host 'NEW LINE IN WHILE'
                 [Void](Parse-IfEl $X)
             }Else{
                 [Void](Parse-IfEl $X -WhatIf)
@@ -2033,6 +2049,7 @@ Function GO{
                                     [Void]$Stream.Write([Text.Encoding]::UTF8.GetBytes('{KEEPALIVE}'),0,11)
                                 }Else{
                                     If(!$WhatIf){
+                                        #Write-Host 'NEW LINE IN GO'
                                         [Void](Parse-While $Line)
                                     }Else{
                                         [Void](Parse-While $Line -WhatIf)
@@ -2603,44 +2620,17 @@ $ClickHelperParent = [HashTable]::Synchronized(@{})
 
 $AutoChange = $False
 
-$Pow = [Powershell]::Create()
-$Run = [RunspaceFactory]::CreateRunspace()
-$Run.Open()
-$Pow.Runspace = $Run
-$Pow.AddScript({
+$MutexPow = [Powershell]::Create()
+$MutexRun = [RunspaceFactory]::CreateRunspace()
+$MutexRun.Open()
+$MutexPow.Runspace = $MutexRun
+$MutexPow.AddScript({
     Param($SyncHash)
 
     Add-Type -Name Win32 -Namespace API -IgnoreWarnings -MemberDefinition '
     [DllImport("user32.dll")]
     public static extern short GetAsyncKeyState(int virtualKeyCode);
     ' -ErrorAction SilentlyContinue
-
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-
-    #[System.Windows.Forms.Application]::SetCompatibleTextRenderingDefault($True)
-
-    $MouseForm = New-Object System.Windows.Forms.Form
-    $MouseForm.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
-    $MouseForm.Text = 'Mouse Indicator'
-
-    $Red = [System.Drawing.Color]::Red
-    $DarkRed = [System.Drawing.Color]::DarkRed
-
-    $Pointer = (New-Object System.Windows.Forms.Label)
-    $Pointer.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
-    $Pointer.Location = (New-Object System.Drawing.Size -ArgumentList (-10,0))
-    $Pointer.BackColor = $DarkRed
-    $Pointer.ForeColor = $Red
-    $Pointer.Font = (New-Object System.Drawing.Font -ArgumentList ('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
-    $Pointer.Text = '←'
-    $Pointer.Parent = $MouseForm
-
-    $MouseForm.BackColor = $DarkRed
-    $MouseForm.TransparencyKey = $DarkRed
-    $MouseForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
-    $MouseForm.TopMost = $True
-    $MouseForm.Update()
 
     $PHCMDS = '{CMDS_START}'+($NL*2)+'{SERVERSTOP}'+($NL*2)+'{CMDS_END}'
     $StopSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
@@ -2668,26 +2658,71 @@ $Pow.AddScript({
 
             [System.Threading.Thread]::Sleep(500)
         }
-
-        If($SyncHash.ShowMouse){
-            If($SyncHash.ShowMouse -ne $PrevShowMouse){
-                $MouseForm.Visible = $SyncHash.ShowMouse
-            }
-            $Loc = [System.Windows.Forms.Cursor]::Position
-            $Loc.X+=5
-            $Loc.Y-=35
-            $MouseForm.Location = $Loc
-            $PrevMouseShow = $SyncHash.ShowMouse
-        }Else{
-            If($SyncHash.ShowMouse -ne $PrevShowMouse){
-                $MouseForm.Visible = $SyncHash.ShowMouse
-            }
-        }
-        $MouseForm.Update()
     }
 }) | Out-Null
-$Pow.AddParameter('SyncHash', $SyncHash) | Out-Null
-$Pow.BeginInvoke() | Out-Null
+$MutexPow.AddParameter('SyncHash', $SyncHash) | Out-Null
+$MutexPow.BeginInvoke() | Out-Null
+
+$MouseIndPow = [Powershell]::Create()
+$MouseIndRun = [RunspaceFactory]::CreateRunspace()
+$MouseIndRun.Open()
+$MouseIndPow.Runspace = $MouseIndRun
+$MouseIndPow.AddScript({
+    Param($SyncHash)
+
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+
+    $MouseForm = New-Object System.Windows.Forms.Form
+    $MouseForm.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
+    $MouseForm.Text = 'Mouse Indicator'
+
+    $Red = [System.Drawing.Color]::Red
+    $DarkRed = [System.Drawing.Color]::DarkRed
+
+    $Pointer = (New-Object System.Windows.Forms.Label)
+    $Pointer.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
+    $Pointer.Location = (New-Object System.Drawing.Size -ArgumentList (-10,0))
+    $Pointer.BackColor = $DarkRed
+    $Pointer.ForeColor = $Red
+    $Pointer.Font = (New-Object System.Drawing.Font -ArgumentList ('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
+    $Pointer.Text = '←'
+    $Pointer.Parent = $MouseForm
+
+    $MouseForm.BackColor = $DarkRed
+    $MouseForm.TransparencyKey = $DarkRed
+    $MouseForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
+    $MouseForm.TopMost = $True
+    $MouseForm.Update()
+
+    [System.Action[System.Windows.Forms.Form,HashTable]]$Act = {
+        Param($F,$Sync)
+        $PrevMouseShow = $False
+        While(!$Sync.Kill){
+            If($Sync.ShowMouse){
+                If($Sync.ShowMouse -ne $PrevShowMouse){
+                    $F.Visible = $True
+                }
+                $Loc = [System.Windows.Forms.Cursor]::Position
+                $Loc.X+=5
+                $Loc.Y-=35
+                $F.Location = $Loc
+                $PrevMouseShow = $Sync.ShowMouse
+            }Else{
+                If($Sync.ShowMouse -ne $PrevShowMouse){
+                    $F.Visible = $False
+                }
+            }
+            $F.Update()
+        }
+    }
+    $MouseForm.Show()
+    $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
+    $MouseForm.Hide()
+    [Void]$MouseForm.ShowDialog()
+}) | Out-Null
+$MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
+$MouseIndPow.BeginInvoke() | Out-Null
 
 $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
