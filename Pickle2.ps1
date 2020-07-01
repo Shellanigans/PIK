@@ -2714,7 +2714,9 @@ $MouseIndPow.AddScript({
                 }
             }
             $F.Update()
+            [System.Threading.Thread]::Sleep(10)
         }
+        $F.Close()
     }
     $MouseForm.Show()
     $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
