@@ -2723,7 +2723,7 @@ $MouseIndPow.AddScript({
     $MouseForm.Show()
     $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
-    [Void]$MouseForm.ShowDialog()
+    [System.Windows.Forms.Application]::Run($MouseForm)
 }) | Out-Null
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $MouseIndPow.BeginInvoke() | Out-Null
