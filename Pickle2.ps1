@@ -3038,7 +3038,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                                 $TapeForm.TransparencyKey = $Green
                                 $TapeForm.BackColor = $DarkGray
                                 $TapeForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::SizableToolWindow
-                                [Void]$TapeForm.ShowDialog()
+                                [System.Windows.Forms.Application]::Run($TapeForm)
                             })
                             $TapePow.BeginInvoke() | Out-Null
                         })
