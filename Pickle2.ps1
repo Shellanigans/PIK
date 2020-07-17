@@ -1108,6 +1108,12 @@ Function Interpret{
             If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}
         }
 
+        #Replace the path with a result for Test-Path
+        $PHSplitX | ?{$_ -match 'TESTPATH \S+'} | %{
+            $X = ($X.Replace(('{'+$_+'}'),(Test-Path ($_.Substring(9))).ToString().ToUpper()))
+            If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'TESTPATH RESULT: '+$X)}
+        }
+
         #Replace the keyword with the dimension of all screens separated by semi-colons
         $PHSplitX | ?{$_ -match 'GETSCREEN'} | %{
             $X = ($X.Replace(('{'+$_+'}'),(([GUI.ScreenInfo]::All | %{$PH = $_.Bounds; [String]$PH.X+','+$PH.Y+','+$PH.Width+','+$PH.Height}) -join ';').TrimEnd(';')))
