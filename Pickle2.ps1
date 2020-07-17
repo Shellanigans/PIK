@@ -340,6 +340,7 @@ public class Parser{
             }
             if(Regex.IsMatch(X, "{[DSR][PA][TAN]")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
+		X = (X.Replace("{DATETIMEUTC}",DateTime.Now.ToFileTimeUtc().ToString()));
                 while(Regex.IsMatch(X, "{SPACE")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
                         if(Regex.IsMatch(SubString, "SPACE")){
