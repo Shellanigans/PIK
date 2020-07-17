@@ -4000,9 +4000,10 @@ $FindForm.Visible = $False
     $Replacer.Parent = $FindForm
     $FRGO = [GUI.B]::New(95,25,25,75,'Replace All')
         $FRGO.Add_Click({
-            $Commands.Text = ((($Commands.Text.Split($NL) | ?{$_ -ne ''}) | %{
-                $_ -replace ($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,30)).Text),($This.Parent.GetChildAtPoint([GUI.SP]::PO(30,55)).Text.Replace('(NEWLINE)',$NL))
-            }) -join $NL)
+            Switch($TabControllerComm.SelectedTab.Text){
+                'Commands'  {$Commands.Text     = ($Commands.Text -replace $Finder.Text.Replace('(NEWLINE)',$NL),$Replacer.Text)}
+                'Functions' {$FunctionsBox.Text = ($FunctionsBox.Text -replace $Finder.Text.Replace('(NEWLINE)',$NL),$Replacer.Text)}
+            }
         })
     $FRGO.Parent = $FindForm
     $FRClose = [GUI.B]::New(95,25,130,75,'Close')
