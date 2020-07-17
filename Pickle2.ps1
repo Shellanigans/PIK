@@ -2668,7 +2668,7 @@ $MutexPow.AddScript({
     }
 }) | Out-Null
 $MutexPow.AddParameter('SyncHash', $SyncHash) | Out-Null
-$MutexPow.BeginInvoke() | Out-Null
+$MutexHandle = $MutexPow.BeginInvoke()
 
 $MouseIndPow = [Powershell]::Create()
 $MouseIndRun = [RunspaceFactory]::CreateRunspace()
@@ -2728,12 +2728,13 @@ $MouseIndPow.AddScript({
         $F.Close()
     }
     $MouseForm.Show()
-    $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
+    $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
+
     [System.Windows.Forms.Application]::Run($MouseForm)
 }) | Out-Null
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
-$MouseIndPow.BeginInvoke() | Out-Null
+$MouseIndHandle = $MouseIndPow.BeginInvoke()
 
 $Form = [GUI.F]::New(470, 500, 'Pickle')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
@@ -4223,6 +4224,14 @@ $UndoHash.KeyList | %{
 }
 
 $SyncHash.Kill = $True
+
+$MutexPow.EndInvoke($MutexHandle)
+$MutexRun.Close()
+$MutexPow.Dispose()
+
+$MouseIndPow.EndInvoke($MouseIndHandle)
+$MouseIndRun.Close()
+$MouseIndPow.Dispose()
 
 If($Host.Name -match 'Console'){Exit}
 }
