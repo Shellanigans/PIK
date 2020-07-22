@@ -2644,11 +2644,11 @@ $MutexPow.AddScript({
 
     While(!$SyncHash.Kill){
         [System.Threading.Thread]::Sleep(10)
-        If([API.Win32]::GetAsyncKeyState(145)){
-            $SyncHash.Stop = $True
-            $SyncHash.Restart = $False
+	Try{
+            If([API.Win32]::GetAsyncKeyState(145)){
+                $SyncHash.Stop = $True
+                $SyncHash.Restart = $False
 
-            Try{
                 $IP = [String]$SyncHash.SrvIP
                 If($IP -match '0\.0\.0\.0'){$IP = '127.0.0.1'}
                 $Port = [Int]$SyncHash.SrvPort
@@ -2661,10 +2661,10 @@ $MutexPow.AddScript({
                 
                 $TmpCli.Close
                 $TmpCli.Dispose
-            }Catch{}
 
-            [System.Threading.Thread]::Sleep(500)
-        }
+                [System.Threading.Thread]::Sleep(500)
+            }
+        }Catch{}
     }
 }) | Out-Null
 $MutexPow.AddParameter('SyncHash', $SyncHash) | Out-Null
@@ -2708,24 +2708,27 @@ $MouseIndPow.AddScript({
         Param($F,$Sync)
         $PrevMouseShow = $False
         While(!$Sync.Kill){
-            If($Sync.ShowMouse){
-                If($Sync.ShowMouse -ne $PrevShowMouse){
-                    $F.Visible = $True
+            Try{
+	        If($Sync.ShowMouse){
+                    If($Sync.ShowMouse -ne $PrevShowMouse){
+                        $F.Visible = $True
+                    }
+                    $Loc = [System.Windows.Forms.Cursor]::Position
+                    $Loc.X+=5
+                    $Loc.Y-=35
+                    $F.Location = $Loc
+                    $PrevMouseShow = $Sync.ShowMouse
+                }Else{
+                    If($Sync.ShowMouse -ne $PrevShowMouse){
+                        $F.Visible = $False
+                    }
                 }
-                $Loc = [System.Windows.Forms.Cursor]::Position
-                $Loc.X+=5
-                $Loc.Y-=35
-                $F.Location = $Loc
-                $PrevMouseShow = $Sync.ShowMouse
-            }Else{
-                If($Sync.ShowMouse -ne $PrevShowMouse){
-                    $F.Visible = $False
-                }
-            }
-            $F.Update()
+                $F.Update()
+	    }Catch{}
             [System.Threading.Thread]::Sleep(10)
         }
         $F.Close()
+	$F.Dispose()
     }
     $MouseForm.Show()
     $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
