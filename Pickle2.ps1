@@ -2702,16 +2702,18 @@ $MouseIndPow.AddScript({
     $MouseForm.TransparencyKey = $DarkRed
     $MouseForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::None
     $MouseForm.TopMost = $True
-    $MouseForm.Update()
+    $MouseForm.Add_Closing({[system.Windows.Forms.Application]::Exit()})
 
     [System.Action[System.Windows.Forms.Form,HashTable]]$Act = {
         Param($F,$Sync)
+	$Activated = $False
         $PrevMouseShow = $False
         While(!$Sync.Kill){
             Try{
 	        If($Sync.ShowMouse){
                     If($Sync.ShowMouse -ne $PrevShowMouse){
-                        $F.Visible = $True
+                        $F.Show()
+			If(!$Activated){$F.Activate();$Activated = $True}
                     }
                     $Loc = [System.Windows.Forms.Cursor]::Position
                     $Loc.X+=5
@@ -2720,7 +2722,7 @@ $MouseIndPow.AddScript({
                     $PrevMouseShow = $Sync.ShowMouse
                 }Else{
                     If($Sync.ShowMouse -ne $PrevShowMouse){
-                        $F.Visible = $False
+                        $F.Hide()
                     }
                 }
                 $F.Update()
@@ -2734,7 +2736,8 @@ $MouseIndPow.AddScript({
     $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
 
-    [System.Windows.Forms.Application]::Run($MouseForm)
+    $MouseAppContext = [System.Windows.Forms.ApplicationContext]::New()
+    [System.Windows.Forms.Application]::Run($MouseAppContext)
 }) | Out-Null
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $MouseIndHandle = $MouseIndPow.BeginInvoke()
@@ -4074,8 +4077,8 @@ Try{
     }
 
     $MousePosCheck.Checked = $False
-    #Something fucky is going on here, when the form starts with this property set, there's like a three second pause and a copy of the indicator gets like "stamped" onto the screen. This odesn't happen if the form is made visible AFTER the parent form though
-    #$MousePosCheck.Checked = $LoadedConfig.ShowMousePos
+    #Something fucky is going on here, when the form starts with this property set, there's like a three second pause and a copy of the indicator gets like "stamped" onto the screen. This doesn't happen if the form is made visible AFTER the parent form though
+    $MousePosCheck.Checked = $LoadedConfig.ShowMousePos
 
     $SyncHash.ShowMouse = $False
     $SyncHash.ShowMouse = $MousePosCheck.Checked
@@ -4158,9 +4161,7 @@ If($CommandLine){
     $TempTextBox = $TabController.SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0)).SelectedTab.GetChildAtPoint([GUI.SP]::PO(0,0))
 
     [Void]$TempTextBox.Focus()
-    $TempTextBox.SelectionStart = $TempTextBox.Text.Length
-
-    $Form.Visible = $False
+    $TempTextBox.SelectionStart = $TempTextBox.Text.Length   
 
     $Form.Add_Closing({
         $Config.ShowConsCheck = $ShowCons.Checked
@@ -4216,7 +4217,11 @@ If($CommandLine){
         }
     })
 
-    [System.Windows.Forms.Application]::Run($Form)
+    #$Form.Show()
+    $Form.Activate()
+    
+    $AppContext = [System.Windows.Forms.ApplicationContext]::New()
+    [System.Windows.Forms.Application]::Run($AppContext)
 }
 
 $UndoHash.KeyList | %{
