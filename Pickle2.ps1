@@ -4215,6 +4215,8 @@ If($CommandLine){
                 [System.Threading.Thread]::Sleep(3000)
             }
         }
+	
+	[System.Windows.Forms.Application]::Exit()
     })
 
     #$Form.Show()
