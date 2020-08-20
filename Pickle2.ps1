@@ -4271,7 +4271,7 @@ $MouseIndPow.Dispose()
 If($(Try{[Void][PSObject]::New()}Catch{$True})){
     $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne ''} | %{
         If($_ -match ']::New\('){
-            (($_.Split('[')[0]+'[Activator]::CreateInstance(['+$_.Split('[')[-1]+')') -replace ']::New','], @').Replace(', @()','')
+            (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
         }Else{
             $_
         }
