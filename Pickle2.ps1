@@ -4218,8 +4218,13 @@ If($CommandLine){
 
         $Config.ShowMousePos  = $MousePosCheck.Checked
 
-        $Config.LastLoc       = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
-        $Config.SavedSize     = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
+        If($this.WindowState.ToString() -eq 'Normal'){
+            $Config.LastLoc   = ([String]$Form.Location.X + ',' + [String]$Form.Location.Y)
+            $Config.SavedSize = ([String]$Form.Size.Width + ',' + [String]$Form.Size.Height)
+        }Else{
+            $Config.LastLoc   = $LoadedConfig.LastLoc
+            $Config.SavedSize = $LoadedConfig.SavedSize
+        }
 
         Try{
             $Config | ConvertTo-JSON | Out-File ($env:APPDATA+'\Macro\_Config_.json') -Width 10000 -Force
