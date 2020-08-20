@@ -409,6 +409,7 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
                              |
                              ---> "Actions" is called to check each line as it comes in and is the collection of keywords for performing actual actions on the machine (i.e. not just simple substitution or "Get" style keywords)
 #>
+
 Function Actions{
     Param([String]$X,[Switch]$WhatIf)
 
@@ -2587,7 +2588,7 @@ Function Save-Profile{
 If($Host.Name -match 'Console'){
     [Console]::Title = 'Pickle'
 
-    [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+    #[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
     [Void][Cons.WindowDisp]::Visual()
 }
 
@@ -4030,7 +4031,7 @@ $FindForm.Visible = $False
     $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
 
-If($Host.Name -match 'Console'){Cls}
+#If($Host.Name -match 'Console'){Cls}
 
 $Config = New-Object PSObject
 $Config = ($Config | Select `
@@ -4259,13 +4260,13 @@ $MouseIndPow.EndInvoke($MouseIndHandle)
 $MouseIndRun.Close()
 $MouseIndPow.Dispose()
 
-If($Host.Name -match 'Console'){Exit}
+#If($Host.Name -match 'Console'){Exit}
 }
 
 If($(Try{[Void][PSObject]::New()}Catch{$True})){
     $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne ''} | %{
         If($_ -match ']::New\('){
-            (($_.Split('[')[0]+'(New-Object '+$_.Split('[')[-1]+')') -replace ']::New',' -ArgumentList ').Replace(' -ArgumentList ()','')
+            (($_.Split('[')[0]+'[Activator]::CreateInstance(['+$_.Split('[')[-1]+')') -replace ']::New','], @').Replace(', @()','')
         }Else{
             $_
         }
