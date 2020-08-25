@@ -539,8 +539,8 @@ Function Actions{
                     $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
                     If($ShowCons.Checked){
                         If($Host.Name -match 'Console'){
-                            [System.Console]::CursorLeft = 4
                             [System.Console]::Write($PHMsg)
+                            [System.Console]::CursorLeft = 4
                         }Else{
                             [System.Console]::WriteLine($Tab+$PHMsg)
                         }
@@ -552,7 +552,15 @@ Function Actions{
                 $PH = ($PH - ($PH % 3000))
                 For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
                     $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$PHMsg)}
+                    If($ShowCons.Checked){
+                        If($Host.Name -match 'Console'){
+                            [System.Console]::Write((' '*$PHMsg.Length))
+                            [System.Console]::CursorLeft = 4
+                            [System.Console]::Write($PHMsg)
+                        }Else{
+                            [System.Console]::WriteLine($Tab+$PHMsg)
+                        }
+                    }
                     [System.Threading.Thread]::Sleep(3000)
                 }
             }
@@ -756,7 +764,15 @@ Function Actions{
                     $PHResp = ''
                     $Timeout = 1
                     While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt $MaxTime) -AND ($PHSendString -ne '{SERVERSTOP}')){
-                        If($ShowCons.Checked -AND !($Timeout % 6)){[System.Console]::WriteLine($Tab+'WAITING FOR REMOTE END COMPLETION... '+($Timeout/2))}
+                        $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+($Timeout/2)+'/'+$MaxTime)
+                        If($ShowCons.Checked -AND !($Timeout % 6)){
+                            If($Host.Name -match 'Console'){
+                                [System.Console]::CursorLeft = 4
+                                [System.Console]::Write($PHMsg)
+                            }Else{
+                                [System.Console]::WriteLine($PHMsg)
+                            }
+                        }
 
                         $Buff = New-Object Byte[] 1024
                         While($PHStream.DataAvailable){
@@ -770,6 +786,7 @@ Function Actions{
                         If($PHResp -eq '{KEEPALIVE}'){$Timeout = 0}
                     }
 
+                    [System.Console]::WriteLine('')
                     If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
                     If($Timeout -ge $MaxTime){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
 
