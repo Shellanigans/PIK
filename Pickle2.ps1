@@ -1,4 +1,4 @@
-############################################################################################################################################################################################################################################################################################################
+########################################################################################################################
              ###                                                                    #       #####     # #   
               #   #    #  #  #####  #    ##    #       #  ######  ######           #       #     #    # #   
               #   ##   #  #    #    #   #  #   #       #      #   #               #        #        ####### 
@@ -6,7 +6,7 @@
               #   #  # #  #    #    #  ######  #       #    #     #             #          #        ####### 
               #   #   ##  #    #    #  #    #  #       #   #      #            #           #     #    # #   
              ###  #    #  #    #    #  #    #  ######  #  ######  ######      #             #####     # #   
-############################################################################################################################################################################################################################################################################################################                                                                                                
+########################################################################################################################
 
 #Read in either a specific profile to run or a single line command
 Param([String]$Macro = $Null,[String]$CLICMD = '')
@@ -386,7 +386,7 @@ public class Parser{
 
 Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef
 
-############################################################################################################################################################################################################################################################################################################
+###########################################################################################
              #######                                                           
              #        #    #  #    #   ####   #####  #   ####   #    #   ####  
              #        #    #  ##   #  #    #    #    #  #    #  ##   #  #      
@@ -394,7 +394,7 @@ Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.Vis
              #        #    #  #  # #  #         #    #  #    #  #  # #       # 
              #        #    #  #   ##  #    #    #    #  #    #  #   ##  #    # 
              #         ####   #    #   ####     #    #   ####   #    #   ####  
-############################################################################################################################################################################################################################################################################################################
+###########################################################################################
 #Major functions are located here the all call each other and are organized like so:
 <#
     "GO" is the main function called to action on button click or F-Key press, contains a lot of instancing and cleanup prior to each run as well as macro function parsing
@@ -536,14 +536,23 @@ Function Actions{
                 }
 
                 If(!$SyncHash.Stop -AND ($PH % 3000)){
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')}
+                    $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
+                    If($ShowCons.Checked){
+                        If($Host.Name -match 'Console'){
+                            [System.Console]::CursorLeft = 4
+                            [System.Console]::Write($PHMsg)
+                        }Else{
+                            [System.Console]::WriteLine($Tab+$PHMsg)
+                        }
+                    }
                     [System.Threading.Thread]::Sleep($PH % 3000)
                 }
                 
                 $MaxWait = [Int]([Math]::Floor($PH / 3000))
                 $PH = ($PH - ($PH % 3000))
                 For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')}
+                    $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$PHMsg)}
                     [System.Threading.Thread]::Sleep(3000)
                 }
             }
@@ -2103,7 +2112,7 @@ Function GO{
     [System.Console]::WriteLine((($Results | Select Hours,Minutes,Seconds,Milliseconds,Ticks | Out-String) -replace '^\s*'))
 }
 
-############################################################################################################################################################################################################################################################################################################
+###############################################
               #####   #     #  ### 
              #     #  #     #   #  
              #        #     #   #  
@@ -2111,7 +2120,7 @@ Function GO{
              #     #  #     #   #  
              #     #  #     #   #  
               #####    #####   ### 
-############################################################################################################################################################################################################################################################################################################
+###############################################
 Function Handle-RMenuExit($MainObj){
     $PHObj = $MainObj
     
@@ -3455,51 +3464,51 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $Temp+=('$NL = [System.Environment]::NewLine'+$NL)
                             $Temp+=('$Script:Refocus = $False'+$NL)
                             $Temp+=('$Script:Inside_If = $False'+$NL)
-							$Temp+=('$Script:IfElDepth = 0'+$NL)
-							$Temp+=('$Script:IfElEval = $False'+$NL)
-							$Temp+=('$Script:Inside_While = $False'+$NL)
-							$Temp+=('$Script:WhileDepth = 0'+$NL)
-							$Temp+=('$Script:WhileEval = $False'+$NL)
-							$Temp+=('$Script:BufferedCommandsIfEl = ""'+$NL)
-							$Temp+=('$Script:BufferedCommandsWhile = ""'+$NL)
+                            $Temp+=('$Script:IfElDepth = 0'+$NL)
+                            $Temp+=('$Script:IfElEval = $False'+$NL)
+                            $Temp+=('$Script:Inside_While = $False'+$NL)
+                            $Temp+=('$Script:WhileDepth = 0'+$NL)
+                            $Temp+=('$Script:WhileEval = $False'+$NL)
+                            $Temp+=('$Script:BufferedCommandsIfEl = ""'+$NL)
+                            $Temp+=('$Script:BufferedCommandsWhile = ""'+$NL)
                             $Temp+=('$UndoHash = @{KeyList=[String[]]@()}'+$NL)
-							$Temp+=('$Script:VarsHash = @{}'+$NL)
-							$Temp+=('$Script:FuncHash = @{}'+$NL)
-							$Temp+=('$Script:HiddenWindows = @{}'+$NL)
-							$Temp+=('$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP="0.0.0.0"})'+$NL)
-							$Temp+=('$ClickHelperParent = [HashTable]::Synchronized(@{})'+$NL)
-							$Temp+=('$AutoChange = $False'+$NL)
-							$Temp+=('$Pow = [Powershell]::Create()'+$NL)
-							$Temp+=('$Run = [RunspaceFactory]::CreateRunspace()'+$NL)
-							$Temp+=('$Run.Open()'+$NL)
-							$Temp+=('$Pow.Runspace = $Run'+$NL)
-							$Temp+=('$Pow.AddScript({'+$NL)
-							$Temp+=('    Param($SyncHash)'+$NL)
-							$Temp+=('    Add-Type -Name Win32 -Namespace API -IgnoreWarnings -MemberDefinition '+"'"+$NL)
-							$Temp+=('    [DllImport("user32.dll")]'+$NL)
-							$Temp+=('    public static extern short GetAsyncKeyState(int virtualKeyCode);'+$NL)
-							$Temp+=('    '+"'"+' -ErrorAction SilentlyContinue'+$NL)
-							$Temp+=('    While(!$SyncHash.Kill){'+$NL)
-							$Temp+=('        [System.Threading.Thread]::Sleep(50)'+$NL)
-							$Temp+=('        If([API.Win32]::GetAsyncKeyState(145)){'+$NL)
-							$Temp+=('            $SyncHash.Stop = $True'+$NL)
-							$Temp+=('            $SyncHash.Restart = $False'+$NL)
-							$Temp+=('            Try{'+$NL)
-							$Temp+=('                $IP = [String]$SyncHash.SrvIP'+$NL)
-							$Temp+=('                If($IP -match "0\.0\.0\.0"){$IP = "127.0.0.1"}'+$NL)
-							$Temp+=('                $Port = [Int]$SyncHash.SrvPort'+$NL)
-							$Temp+=('                $TmpCli = [System.Net.Sockets.TCPClient]')#This is split here to avoid regex for the backwards compatibility
+                            $Temp+=('$Script:VarsHash = @{}'+$NL)
+                            $Temp+=('$Script:FuncHash = @{}'+$NL)
+                            $Temp+=('$Script:HiddenWindows = @{}'+$NL)
+                            $Temp+=('$SyncHash = [HashTable]::Synchronized(@{Stop=$False;Kill=$False;Restart=$False;SrvPort=42069;SrvIP="0.0.0.0"})'+$NL)
+                            $Temp+=('$ClickHelperParent = [HashTable]::Synchronized(@{})'+$NL)
+                            $Temp+=('$AutoChange = $False'+$NL)
+                            $Temp+=('$Pow = [Powershell]::Create()'+$NL)
+                            $Temp+=('$Run = [RunspaceFactory]::CreateRunspace()'+$NL)
+                            $Temp+=('$Run.Open()'+$NL)
+                            $Temp+=('$Pow.Runspace = $Run'+$NL)
+                            $Temp+=('$Pow.AddScript({'+$NL)
+                            $Temp+=('    Param($SyncHash)'+$NL)
+                            $Temp+=('    Add-Type -Name Win32 -Namespace API -IgnoreWarnings -MemberDefinition '+"'"+$NL)
+                            $Temp+=('    [DllImport("user32.dll")]'+$NL)
+                            $Temp+=('    public static extern short GetAsyncKeyState(int virtualKeyCode);'+$NL)
+                            $Temp+=('    '+"'"+' -ErrorAction SilentlyContinue'+$NL)
+                            $Temp+=('    While(!$SyncHash.Kill){'+$NL)
+                            $Temp+=('        [System.Threading.Thread]::Sleep(50)'+$NL)
+                            $Temp+=('        If([API.Win32]::GetAsyncKeyState(145)){'+$NL)
+                            $Temp+=('            $SyncHash.Stop = $True'+$NL)
+                            $Temp+=('            $SyncHash.Restart = $False'+$NL)
+                            $Temp+=('            Try{'+$NL)
+                            $Temp+=('                $IP = [String]$SyncHash.SrvIP'+$NL)
+                            $Temp+=('                If($IP -match "0\.0\.0\.0"){$IP = "127.0.0.1"}'+$NL)
+                            $Temp+=('                $Port = [Int]$SyncHash.SrvPort'+$NL)
+                            $Temp+=('                $TmpCli = [System.Net.Sockets.TCPClient]')#This is split here to avoid regex for the backwards compatibility
                             $Temp+=('::New($IP,$Port)'+$NL)
-							$Temp+=('                $TmpCli | %{'+$NL)
-							$Temp+=('                    $_.Close'+$NL)
-							$Temp+=('                    $_.Dispose'+$NL)
-							$Temp+=('                }'+$NL)
-							$Temp+=('            }Catch{}'+$NL)
-							$Temp+=('            [System.Threading.Thread]::Sleep(500)'+$NL)
-							$Temp+=('        }'+$NL)
-							$Temp+=('    }'+$NL)
-							$Temp+=('}) | Out-Null'+$NL)
-							$Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
+                            $Temp+=('                $TmpCli | %{'+$NL)
+                            $Temp+=('                    $_.Close'+$NL)
+                            $Temp+=('                    $_.Dispose'+$NL)
+                            $Temp+=('                }'+$NL)
+                            $Temp+=('            }Catch{}'+$NL)
+                            $Temp+=('            [System.Threading.Thread]::Sleep(500)'+$NL)
+                            $Temp+=('        }'+$NL)
+                            $Temp+=('    }'+$NL)
+                            $Temp+=('}) | Out-Null'+$NL)
+                            $Temp+=('$Pow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
                             $Temp+=('$Pow.BeginInvoke() | Out-Null'+$NL)
                             $Temp+=('$ShowCons = @{Checked=$True}'+$NL)
                             $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
@@ -3815,7 +3824,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $CliTimeOut = [GUI.NUD]::New(150, 25, 25, 220)
                 $CliTimeOut.Maximum = 999999999
-                $CliTimeOut.Value = 99999
+		$CliTimeOut.Minimum = 1
+                $CliTimeOut.Value = 3600
                 $CliTimeOut.Parent = $TabPageServer
 
                 $SrvTimeOutLabel = [GUI.L]::New(172, 15, 25, 275, 'Listener Timeout (s):')
@@ -3823,7 +3833,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                 $SrvTimeOut = [GUI.NUD]::New(150, 25, 25, 295)
                 $SrvTimeOut.Maximum = 999999999
-                $SrvTimeOut.Value = 99999
+		$SrvTimeOut.Minimum = 1
+                $SrvTimeOut.Value = 3600
                 $SrvTimeOut.Parent = $TabPageServer
 
                 $IPFormattingLabel1 = [GUI.L]::New(50,20,25,32,'    .')
