@@ -770,7 +770,7 @@ Function Actions{
                                 [System.Console]::CursorLeft = 4
                                 [System.Console]::Write($PHMsg)
                             }Else{
-                                [System.Console]::WriteLine($PHMsg)
+                                [System.Console]::WriteLine($Tab+$PHMsg)
                             }
                         }
 
