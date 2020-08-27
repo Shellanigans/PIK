@@ -2686,8 +2686,8 @@ $MutexPow.AddScript({
                 $TmpStr.Close()
                 $TmpStr.Dispose()
                 
-                $TmpCli.Close
-                $TmpCli.Dispose
+                $TmpCli.Close()
+                $TmpCli.Dispose()
 
                 [System.Threading.Thread]::Sleep(500)
             }
@@ -3517,8 +3517,8 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                             $Temp+=('                $TmpCli = [System.Net.Sockets.TCPClient]')#This is split here to avoid regex for the backwards compatibility
                             $Temp+=('::New($IP,$Port)'+$NL)
                             $Temp+=('                $TmpCli | %{'+$NL)
-                            $Temp+=('                    $_.Close'+$NL)
-                            $Temp+=('                    $_.Dispose'+$NL)
+                            $Temp+=('                    $_.Close()'+$NL)
+                            $Temp+=('                    $_.Dispose()'+$NL)
                             $Temp+=('                }'+$NL)
                             $Temp+=('            }Catch{}'+$NL)
                             $Temp+=('            [System.Threading.Thread]::Sleep(500)'+$NL)
