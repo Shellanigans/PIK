@@ -1376,7 +1376,7 @@ Function Interpret{
             $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
             $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
 
-            $X = $BMP.GetPixel(0,0).Name.ToUpper()
+            $X = $X.Replace(('{'+$_+'}'),($BMP.GetPixel(0,0).Name.ToUpper()))
             
             $Graphics.Dispose()
             $BMP.Dispose()
