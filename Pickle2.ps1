@@ -1365,7 +1365,7 @@ Function Interpret{
         }
 
         $PHSplitX | ?{$_ -match 'GETPIX [0-9]*,[0-9]*'} | %{
-            $PH = ($_ -replace '{GETPIX ')
+            $PH = ($_ -replace 'GETPIX ')
             $PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
 
