@@ -358,25 +358,10 @@ public class Parser{
                     }
                 }
             }
-            if(Regex.IsMatch(X, "{GETCLIP}") || Regex.IsMatch(X, "{GETMOUSE}") || Regex.IsMatch(X, "{GETPIX ")){
+            if(Regex.IsMatch(X, "{GETCLIP}") || Regex.IsMatch(X, "{GETMOUSE}")){
                 DR.Point Coords = Cons.Curs.GPos();
                 if(Regex.IsMatch(X, "{GETCLIP}")){X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));}
                 if(Regex.IsMatch(X, "{GETMOUSE}")){X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));}
-                if(Regex.IsMatch(X, "^{GETPIX [0-9]*,[0-9]*}$"))
-                {
-                    string PH = (X.Replace("{GETPIX ",""));
-                    PH = PH.Substring(0,(PH.Length - 1));
-                    string[] PHA = PH.Split(',');
-                    DR.Rectangle Bounds = DR.Rectangle.FromLTRB(Convert.ToInt32(PHA[0]),Convert.ToInt32(PHA[1]),(Convert.ToInt32(PHA[0])+1),(Convert.ToInt32(PHA[1])+1));
-                    DR.Bitmap BMP = new DR.Bitmap(Bounds.Width, Bounds.Height);
-            
-                    DR.Graphics GR = DR.Graphics.FromImage(BMP);
-                    GR.CopyFromScreen(Bounds.Location, DR.Point.Empty, Bounds.Size);
-                    X = BMP.GetPixel(0,0).Name.ToUpper();
-            
-                    GR.Dispose();
-                    BMP.Dispose();
-                }
             }
         }
         return X;
@@ -1377,6 +1362,24 @@ Function Interpret{
 
             $X = ($X.Replace(('{'+$_+'}'),($PHOut)))
             If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($X)}
+        }
+
+        $PHSplitX | ?{$_ -match 'GETPIX [0-9]*,[0-9]*'} | %{
+            $PH = ($_ -replace '{GETPIX ')
+            $PH = $PH.Substring(0,($PH.Length - 1))
+            $PH = $PH.Split(',')
+
+            $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],($PH[0]+1),($PH[1]+1))
+
+            $BMP = [System.Drawing.Bitmap]::New($Bounds.Width, $Bounds.Height)
+            
+            $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+            $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
+
+            $X = $BMP.GetPixel(0,0).Name.ToUpper()
+            
+            $Graphics.Dispose()
+            $BMP.Dispose()
         }
 
         $PHSplitX | ?{$_ -match 'FINDIMG \S+'} | %{
