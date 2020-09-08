@@ -524,8 +524,8 @@ Function Actions{
                     $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
                     If($ShowCons.Checked){
                         If($Host.Name -match 'Console'){
-                            [System.Console]::Write($PHMsg)
                             [System.Console]::CursorLeft = 4
+                            [System.Console]::Write($PHMsg)
                         }Else{
                             [System.Console]::WriteLine($Tab+$PHMsg)
                         }
@@ -539,6 +539,7 @@ Function Actions{
                     $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
                     If($ShowCons.Checked){
                         If($Host.Name -match 'Console'){
+                            [System.Console]::CursorLeft = 4
                             [System.Console]::Write((' '*$PHMsg.Length))
                             [System.Console]::CursorLeft = 4
                             [System.Console]::Write($PHMsg)
