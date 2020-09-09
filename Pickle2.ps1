@@ -1084,6 +1084,7 @@ Function Interpret{
             ($X -match '{GETCON ') -OR `
             ($X -match '{FINDVAR ') -OR `
             ($X -match '{GETPROC ') -OR `
+            ($X -match '{GETPIX ') -OR `
             ($X -match '{FINDIMG ') -OR `
             ($X -match '{GETWIND ') -OR `
             ($X -match '{GETWINDTEXT ') -OR `
@@ -1367,7 +1368,7 @@ Function Interpret{
 
         $PHSplitX | ?{$_ -match 'GETPIX [0-9]*,[0-9]*'} | %{
             $PH = ($_ -replace 'GETPIX ')
-            $PH = $PH.Substring(0,($PH.Length - 1))
+            #$PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
 
             $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],($PH[0]+1),($PH[1]+1))
