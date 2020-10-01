@@ -132,7 +132,7 @@ namespace Img{
                 for (int x = 0; x < movewidth; ++x) {
                     MyColor curcolor = GetColor(x, y, strideMain, dataMain);
 
-                    foreach (var item in possiblepos.ToArray()) {
+                    foreach (DR.Point item in possiblepos.ToArray()) {
                         int xsub = x - item.X;
                         int ysub = y - item.Y;
                         if (xsub >= subwidth || ysub >= subheight || xsub < 0)
@@ -185,6 +185,10 @@ namespace Img{
                 mc.G = g;
                 mc.B = b;
                 return mc;
+            }
+
+            public override in GetHashCode(){
+                return this.GetHashCode();
             }
 
             public override bool Equals(object obj) {
