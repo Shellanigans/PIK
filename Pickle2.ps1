@@ -514,10 +514,10 @@ Function Actions{
                 }
                 $X = ($X -replace ('{'+$_+'}'))
             }
-        }ElseIf($X -match '{WAIT ?(M )?\d*}'){
+        }ElseIf($X -match '{WAIT ?(-M )?\d*}'){
             $X -replace '{WAIT' -replace '}' | %{
-                If($_ -match 'M'){
-                    $PH = [Int]($_ -replace ' M ')
+                If($_ -match '-M'){
+                    $PH = [Int]($_ -replace ' -M ')
                 }ElseIf($_ -match ' '){
                     $PH = [Int]($_ -replace ' ')*1000
                 }Else{
