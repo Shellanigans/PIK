@@ -869,12 +869,12 @@ Function Actions{
                         }Catch{$PHProc = ''; $PHHidden = ''}
                     }
                 }Else{
-                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('}','')
+                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('{SETWINDTEXT ').Replace('{SETWIND ').Replace('{MIN ').Replace('{MAX ').Replace('{HIDE ').Replace('{SHOW ').Replace('}','')
                     If(($Script:HiddenWindows.Keys -join '')){
                         $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
-                    Try{$PHProc = (PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = ''}
-                    If(!$PHProc){$PHProc = (PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
+                    Try{$PHProc = @(PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = ''}
+                    If(!$PHProc.Count){$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
             }Catch{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
@@ -884,7 +884,7 @@ Function Actions{
 
             If($PHHidden){$PHProc+=$PHHidden}
 
-            If($PHProc){
+            If($PHProc.Count){
                 If(!$WhatIf){
                     $PHProc | %{
                         If($TrueHand){
