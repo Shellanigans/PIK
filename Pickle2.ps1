@@ -187,7 +187,7 @@ namespace Img{
                 return mc;
             }
 
-            public override in GetHashCode(){
+            public override int GetHashCode(){
                 return this.GetHashCode();
             }
 
@@ -656,7 +656,7 @@ Function Actions{
                             While(($j -ne $PHTMPCoords.X -OR $k -ne $PHTMPCoords.Y) -AND !$SyncHash.Stop){
                                 If($j -lt $PHTMPCoords.X){$j++}ElseIf($j -gt $PHTMPCoords.X){$j--}
                                 If($k -lt $PHTMPCoords.Y){$k++}ElseIf($k -gt $PHTMPCoords.Y){$k--}
-                                [Cons.Curs]::SPos($j,$k)[Cons.Curs]::SPos($j,$k)
+                                [Cons.Curs]::SPos($j,$k)
                             }
 
                             $RemainderX = $OffsetX - [Math]::Round($OffsetX)
@@ -665,7 +665,7 @@ Function Actions{
                         }
 
                         If(!$SyncHash.Stop){
-                            While(($j -ne [Math]::Round($MoveCoords[0]) -OR $k -ne [Math]::Round($MoveCoords[1)]) -AND !$SyncHash.Stop){
+                            While(($j -ne [Math]::Round($MoveCoords[0]) -OR $k -ne [Math]::Round($MoveCoords[1])) -AND !$SyncHash.Stop){
                                 If($j -lt [Math]::Round($MoveCoords[0])){$j++}ElseIf($j -gt [Math]::Round($MoveCoords[0])){$j--}
                                 If($k -lt [Math]::Round($MoveCoords[1])){$k++}ElseIf($k -gt [Math]::Round($MoveCoords[1])){$k--}
                                 [Cons.Curs]::SPos($j,$k)
