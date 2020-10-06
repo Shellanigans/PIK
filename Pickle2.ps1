@@ -1164,14 +1164,14 @@ Function Interpret{
                     $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
                     $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_'+$LastHiddenTime+'$')})
                 }
-                $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
+                $PHProc = @(PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
             }ElseIf($_ -match ' -HAND '){
                 $PHProcHand = $PHProc
                 #If(($Script:HiddenWindows.Keys -join '')){
                 #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
                 #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
                 #}
-                $PHProc = (PS | ?{[String]($_.MainWindowHandle) -eq $PHProcHand})
+                $PHProc = @(PS | ?{[String]($_.MainWindowHandle) -eq $PHProcHand})
 
                 If($PHProc){
                     $PHHidden = ''
@@ -1194,7 +1194,7 @@ Function Interpret{
                 If(($Script:HiddenWindows.Keys -join '')){
                     $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProc+'_')}) | %{$Script:HiddenWindows.$_})
                 }
-                $PHProc = (PS $PHProc | ?{$_.MainWindowHandle -ne 0})
+                $PHProc = @(PS $PHProc | ?{$_.MainWindowHandle -ne 0})
             }
             If($PHHidden){$PHProc+=$PHHidden}
 
