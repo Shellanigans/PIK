@@ -645,22 +645,18 @@ Function Actions{
                                     $OffsetY = $Dist*$Random.Next(1,($Weight+1))/$DistX
                                 }
                             }
+                            $Coords = [Cons.Curs]::GPos()
+                            $PHTMPCoords = $Coords
+                            
                             If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+$OffsetX)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-$OffsetX)}
                             If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+$OffsetY)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-$OffsetY)}
                                 
                             $j = $Coords.X
                             $k = $Coords.Y
-                            While($j -ne $PHTMPCoords.X){
-                                #Write-Host 'TEST3'
-                                [Cons.Curs]::SPos($j,$k)
-                                #Write-Host 'TEST4'
-                                If($j -lt $PHTMPCoords.X){$j++}Else{$j--}
-                            }
-                            While($k -ne $PHTMPCoords.Y){
-                                #Write-Host 'TEST5'
-                                [Cons.Curs]::SPos($j,$k)
-                                #Write-Host 'TEST6'
-                                If($k -lt $PHTMPCoords.Y){$k++}Else{$k--}
+                            While(($j -ne $PHTMPCoords.X -OR $k -ne $PHTMPCoords.Y) -AND !$SyncHash.Stop){
+                                If($j -lt $PHTMPCoords.X){$j++}ElseIf($j -gt $PHTMPCoords.X){$j--}
+                                If($k -lt $PHTMPCoords.Y){$k++}ElseIf($k -gt $PHTMPCoords.Y){$k--}
+                                [Cons.Curs]::SPos($j,$k)[Cons.Curs]::SPos($j,$k)
                             }
 
                             $RemainderX = $OffsetX - [Math]::Round($OffsetX)
@@ -669,13 +665,10 @@ Function Actions{
                         }
 
                         If(!$SyncHash.Stop){
-                            While($j -ne [Math]::Round($MoveCoords[0]) -AND !$SyncHash.Stop){
+                            While(($j -ne [Math]::Round($MoveCoords[0]) -OR $k -ne [Math]::Round($MoveCoords[1)]) -AND !$SyncHash.Stop){
+                                If($j -lt [Math]::Round($MoveCoords[0])){$j++}ElseIf($j -gt [Math]::Round($MoveCoords[0])){$j--}
+                                If($k -lt [Math]::Round($MoveCoords[1])){$k++}ElseIf($k -gt [Math]::Round($MoveCoords[1])){$k--}
                                 [Cons.Curs]::SPos($j,$k)
-                                If($j -lt [Math]::Round($MoveCoords[0])){$j++}Else{$j--}
-                            }
-                            While($k -ne [Math]::Round($MoveCoords[1])){
-                                [Cons.Curs]::SPos($j,$k)
-                                If($k -lt [Math]::Round($MoveCoords[1]) -AND !$SyncHash.Stop){$k++}Else{$k--}
                             }
                             If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
                         }
