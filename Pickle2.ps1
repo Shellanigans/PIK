@@ -2663,28 +2663,30 @@ $MutexPow.Runspace = $MutexRun
 $MutexPow.AddScript({
     Param($SyncHash)
 
-    Add-Type -Name Win32 -Namespace API -IgnoreWarnings -MemberDefinition '
-    [DllImport("user32.dll")]
-    public static extern short GetAsyncKeyState(int virtualKeyCode);
-    ' -ErrorAction SilentlyContinue
+    Add-Type -Name KeyState -Namespace Keyboard -IgnoreWarnings -MemberDefinition '
+    [DllImport("C:\Windows\System32\user32.dll")]
+    public static extern short GetAsyncKeyState(int KCode);
+    '
 
     $PHCMDS = '{CMDS_START}'+($NL*2)+'{SERVERSTOP}'+($NL*2)+'{CMDS_END}'
-    $StopSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
+    $SSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
 
     While(!$SyncHash.Kill){
         [System.Threading.Thread]::Sleep(10)
-	Try{
-            If([API.Win32]::GetAsyncKeyState(145)){
+	    Try{
+            If([Keyboard.KeyState]::GetAsyncKeyState(145)){
                 $SyncHash.Stop = $True
                 $SyncHash.Restart = $False
 
                 $IP = [String]$SyncHash.SrvIP
-                If($IP -match '0\.0\.0\.0'){$IP = '127.0.0.1'}
+                If($IP -match '0\.0\.0\.0'){
+                    $IP = '127.0.0.1'
+                }
                 $Port = [Int]$SyncHash.SrvPort
                 $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)
                 
                 $TmpStr = $TmpCli.GetStream()
-                $TmpStr.Write($StopSrv,0,$StopSrv.Count)
+                $TmpStr.Write($SSrv,0,$SSrv.Count)
                 $TmpStr.Close()
                 $TmpStr.Dispose()
                 
