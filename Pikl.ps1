@@ -2531,7 +2531,7 @@ Function Check-Saved{
             If($Response -eq 'Yes'){
                 $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
                 If($PH){
-                    $Form.Text = ('Pickle - ' + $PH)
+                    $Form.Text = ('Pikl - ' + $PH)
                     $Profile.Text = ('Working Profile: ' + $PH)
                     $Script:LoadedProfile = $PH
                     #$TempName = $SaveAsProfText.Text
@@ -2585,7 +2585,7 @@ Function Save-Profile{
         If([System.Windows.Forms.MessageBox]::Show('You have not saved this profile yet. Would you like to create a new save?','Create New Save?','YesNoCancel') -eq 'Yes'){
             $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
             If($PH){
-                $Form.Text = ('Pickle - ' + $PH)
+                $Form.Text = ('Pikl - ' + $PH)
                 $Profile.Text = ('Working Profile: ' + $PH)
                 $Script:LoadedProfile = $PH
                 #$TempName = $SaveAsProfText.Text
@@ -2614,7 +2614,7 @@ Function Save-Profile{
 }
 
 If($Host.Name -match 'Console'){
-    [Console]::Title = 'Pickle'
+    [Console]::Title = 'Pikl'
 
     #[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
     [Void][Cons.WindowDisp]::Visual()
@@ -2773,7 +2773,7 @@ $MouseIndPow.AddScript({
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $MouseIndHandle = $MouseIndPow.BeginInvoke()
 
-$Form = [GUI.F]::New(470, 500, 'Pickle')
+$Form = [GUI.F]::New(470, 500, 'Pikl')
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
 
 $TabController = [GUI.TC]::New(405, 400, 25, 7)
@@ -3283,7 +3283,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                             $Script:Saved = $True
 
-                            $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
+                            $Form.Text = ('Pikl - ' + $SavedProfiles.SelectedItem)
                         }
                     }
                 })
@@ -3302,7 +3302,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                 $SaveProfile.Add_Click({
                     $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
                     If($PH){
-                        $Form.Text = ('Pickle - ' + $PH)
+                        $Form.Text = ('Pikl - ' + $PH)
                         $Profile.Text = ('Working Profile: ' + $PH)
                         $Script:LoadedProfile = $PH
                         #$TempName = $SaveAsProfText.Text
@@ -3342,7 +3342,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                         $Script:Saved = $True
 
-                        $Form.Text = 'Pickle'
+                        $Form.Text = 'Pikl'
                     }
                 })
                 $BlankProfile.Parent = $TabPageProfiles
@@ -3384,7 +3384,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                                 $Script:Saved = $False
 
-                                $Form.Text = 'Pickle*'
+                                $Form.Text = 'Pikl*'
                             }Else{
                                 $ImportedName = ($DialogO.FileName.Split('\')[-1] -replace '\.pik$')
                                 $Profile.Text = ('Working Profile: ' + $ImportedName)
@@ -3435,7 +3435,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
 
                                 $Script:Saved = $True
 
-                                $Form.Text = ('Pickle - ' + $ImportedName)
+                                $Form.Text = ('Pikl - ' + $ImportedName)
                             }
                         }
                     }
@@ -3587,7 +3587,7 @@ $TabController = [GUI.TC]::New(405, 400, 25, 7)
                         $SavedProfiles.SelectedItem = $Null
                         $Script:LoadedProfile = $Null
 
-                        $Form.Text = ('Pickle')
+                        $Form.Text = ('Pikl')
 
                         $Script:Saved = $True
                     }
@@ -4133,7 +4133,7 @@ Try{
         If($Macro){
             If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$Macro)){
                 $Profile.Text = ('Working Profile: ' + $Macro)
-                $Form.Text = ('Pickle - ' + $Macro)
+                $Form.Text = ('Pikl - ' + $Macro)
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($Macro)
             }Else{
                 [System.Console]::WriteLine('No macro by that name!')
@@ -4145,7 +4145,7 @@ Try{
         }Else{
             If(Test-Path ($env:APPDATA+'\Macro\Profiles\'+$LoadedConfig.PrevProfile+'\'+$LoadedConfig.PrevProfile+'.pik')){
                 $Profile.Text = ('Working Profile: ' + $LoadedConfig.PrevProfile)
-                $Form.Text = ('Pickle - ' + $LoadedConfig.PrevProfile)
+                $Form.Text = ('Pikl - ' + $LoadedConfig.PrevProfile)
                 $Script:LoadedProfile = $LoadedConfig.PrevProfile
                 $SavedProfiles.SelectedIndex = $SavedProfiles.Items.IndexOf($LoadedConfig.PrevProfile)
 
@@ -4174,7 +4174,7 @@ Try{
 
                 $Script:Saved = $True
 
-                $Form.Text = ('Pickle - ' + $SavedProfiles.SelectedItem)
+                $Form.Text = ('Pikl - ' + $SavedProfiles.SelectedItem)
             }
         }
     }
