@@ -67,4 +67,4 @@ My PID is: {PID}~
 I am running as: {WHOAMI}~
 The currently focussed window is: {GETFOCUS}~
 Which has a PID of: {GETFOCUS -ID}
-{WAIT M 3500}
+{WAIT -M 3500}
