@@ -862,7 +862,7 @@ Function Actions{
                         }Catch{$PHProc = ''; $PHHidden = ''}
                     }
                 }Else{
-                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('{SETWINDTEXT ').Replace('{SETWIND ').Replace('{MIN ').Replace('{MAX ').Replace('{HIDE ').Replace('{SHOW ').Replace('}','')
+                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('{SETWINDTEXT ','').Replace('{SETWIND ','').Replace('{MIN ','').Replace('{MAX ','').Replace('{HIDE ','').Replace('{SHOW ','').Replace('}','')
                     If(($Script:HiddenWindows.Keys -join '')){
                         $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
