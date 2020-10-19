@@ -877,7 +877,7 @@ Function Actions{
 
             If($PHHidden){$PHProc+=$PHHidden}
 
-            If($PHProc.Count){
+            If(@($PHProc).Count){
                 If(!$WhatIf){
                     $PHProc | %{
                         If($TrueHand){
@@ -1199,7 +1199,7 @@ Function Interpret{
             If($PHHidden){$PHProc+=$PHHidden}
 
             $PHOut = ''
-            If($PHProc.Count -ge 1){
+            If($PHProc.Count -OR $PHProc -match 'GETFOCUS'){
                 $PHProc | %{
                     If($TrueHand){
                         $PHTMPProcHand = $_
