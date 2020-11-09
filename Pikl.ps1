@@ -866,8 +866,8 @@ Function Actions{
                     If(($Script:HiddenWindows.Keys -join '')){
                         $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
                     }
-                    Try{$PHProc = @(PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = ''}
-                    If(!$PHProc.Count){$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
+                    Try{$PHProc = @(PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = $False}
+                    If(!$PHProc){$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
             }Catch{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
@@ -896,7 +896,7 @@ Function Actions{
                                 Try{
                                     If(!$TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
                                 }Catch{
-                                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT TRUE HAND STATUS: '+([Boolean]$TrueHand).ToString().ToUpper()+', PROC TITLE: '+$PHTMPProcTitle+', HANDLE: '+$PHTMPProcHand)}
+                                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT FIND TRUE HAND STATUS: '+([Boolean]$TrueHand).ToString().ToUpper()+', PROC TITLE: '+$PHTMPProcTitle+', HANDLE: '+$PHTMPProcHand)}
                                 }
                             }
                             'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
