@@ -2664,7 +2664,7 @@ $MutexPow.AddScript({
     Param($SyncHash)
 
     Add-Type -Name KeyState -Namespace Keyboard -IgnoreWarnings -MemberDefinition '
-    [DllImport("C:\Windows\System32\user32.dll")]
+    [DllImport("C:\\Windows\\System32\\user32.dll")]
     public static extern short GetAsyncKeyState(int KCode);
     '
 
