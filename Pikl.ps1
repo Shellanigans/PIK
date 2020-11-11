@@ -747,8 +747,8 @@ Function Actions{
                     $PHResp = ''
                     $Timeout = 1
                     While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt $MaxTime) -AND ($PHSendString -ne '{SERVERSTOP}')){
-                        $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+($Timeout/2)+'/'+$MaxTime)
-                        If($ShowCons.Checked -AND !($Timeout % 6)){
+                        $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+$Timeout+'/'+$MaxTime)
+                        If($ShowCons.Checked -AND !($Timeout % 3)){
                             If($Host.Name -match 'Console'){
                                 [System.Console]::CursorLeft = 4
                                 [System.Console]::Write($PHMsg)
@@ -763,7 +763,7 @@ Function Actions{
                             [Void]$PHStream.Read($Buff, 0, 1024)
                             $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
                         }
-                        [System.Threading.Thread]::Sleep(500)
+                        [System.Threading.Thread]::Sleep(1000)
                         $Timeout++
 
                         If($PHResp -eq '{KEEPALIVE}'){$Timeout = 0}
