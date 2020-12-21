@@ -25,6 +25,7 @@ using System;
 using System.IO;
 using System.Text;
 using System.Diagnostics;
+using System.Configuration;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -83,6 +84,8 @@ namespace Cons{
         public static void SPos (int x, int y) {SWF.Cursor.Position = new DR.Point(x, y);}
     }
     public class Send{
+    	public static void SetConfig ()        {System.Configuration.ConfigurationManager.AppSettings.Set("SendKeys","SendInput");}
+	public static string Check ()          {return System.Configuration.ConfigurationManager.AppSettings["SendKeys"].toString();}
         public static void Keys (string Keys)  {SWF.SendKeys.SendWait(Keys);}
     }
 
@@ -373,7 +376,7 @@ public class Parser{
 }
 '@
 
-Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic -IgnoreWarnings -TypeDefinition $CSharpDef
+Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic,System.Configuration -IgnoreWarnings -TypeDefinition $CSharpDef
 
 ###########################################################################################
              #######                                                           
@@ -4064,6 +4067,7 @@ $FindForm.Visible = $False
 $FindForm.Parent = $Form
 
 #If($Host.Name -match 'Console'){Cls}
+If(Test-Path ($env:APPDATA+'\Macro\LegacySendKeys.txt')){[Cons.Send]::SetConfig()}
 
 $Config = New-Object PSObject
 $Config = ($Config | Select `
