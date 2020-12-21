@@ -85,7 +85,7 @@ namespace Cons{
     }
     public class Send{
     	public static void SetConfig ()        {System.Configuration.ConfigurationManager.AppSettings.Set("SendKeys","SendInput");}
-	public static string Check ()          {return System.Configuration.ConfigurationManager.AppSettings["SendKeys"].toString();}
+	public static string Check ()          {return System.Configuration.ConfigurationManager.AppSettings["SendKeys"].ToString();}
         public static void Keys (string Keys)  {SWF.SendKeys.SendWait(Keys);}
     }
 
