@@ -2080,18 +2080,26 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectionColor = [System.Drawing.Color]::Black
         
         $DetectedFunctions = @()
-        $Commands.Text.Split($NL) | ?{($_ -ne '') -AND $_ -match '{FUNCTION NAME '} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
-        $FunctionsBox.Text.Split($NL) | ?{($_ -ne '') -AND ($_ -match '{FUNCTION NAME ')} | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
-        $MainObj.Lines | %{$LineCount = 0; $Commented = $False}{
-            If($_ -match '<\\\\#'){$Commented = $True}
-            If($_ -match '\\\\#>'){$Commented = $False}
+        #$Commands.Text.Split($NL).Where({$_ -match '{FUNCTION NAME '}) | %{$DetectedFunctions+=$_.Replace('FUNCTION NAME ','').Trim()}
+        ForEach($Func in $Commands.Text.Split($NL).Where({$_ -match '{FUNCTION NAME '})){
+            $DetectedFunctions+=$Func.Replace('FUNCTION NAME ','').Trim()
+        }
+        ForEach($Func in $FunctionsBox.Text.Split($NL).Where({$_ -match '{FUNCTION NAME '})){
+            $DetectedFunctions+=$Func.Replace('FUNCTION NAME ','').Trim()
+        }
+        
+        $LineCount = 0
+        $Commented = $False
+        ForEach($Line in $MainObj.Lines){
+            If($Line -match '<\\\\#'){$Commented = $True}
+            If($Line -match '\\\\#>'){$Commented = $False}
             $PreviousLineStart = $MainObj.GetFirstCharIndexFromLine($LineCount)
             $MainObj.SelectionStart = $PreviousLineStart
             
-            $PreviousLength = $_.Length
+            $PreviousLength = $Line.Length
             $MainObj.SelectionLength = $PreviousLength
-            $TrimmedLine = $_.Trim()
-            If($Commented -OR (($_ -replace '^\s*?') -match '\\\\#')){
+            $TrimmedLine = $Line.Trim()
+            If($Commented -OR (($Line -replace '^\s*?') -match '\\\\#')){
                 $MainObj.SelectionColor = [System.Drawing.Color]::DarkGray
             }ElseIf(!$Commented){
                 If($TrimmedLine -match '{VAR \S*?='){
@@ -2134,13 +2142,16 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                 }
                 $DepthCount = 0
                 $StartedParse = $False
-                $_.ToCharArray() | %{$CurrentCount = 0;$StrBldr = ''}{
+
+                $CurrentCount = 0
+                $StrBldr = ''
+                ForEach($Char in $Line.ToCharArray()){
                     $CurrentCount++
-                    $StrBldr+=$_
+                    $StrBldr+=$Char
                     If($_ -match '{' -AND !$StartedParse){$StrBldr = '{'}
                     If($StartedParse){
                         $MainObj.SelectionLength++
-                        If($_ -match '{'){
+                        If($Char -match '{'){
                             $DepthCount++
                         }ElseIf($_ -match '}'){
                             $DepthCount--
@@ -2191,17 +2202,18 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
                         $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFF008080", 16))
                     }
                 }
-                $_.Split('{}') | %{$CharCount = $PreviousLineStart}{
-                    $CharCount+=($_.Length+1)
+                $CharCount = $PreviousLineStart
+                ForEach($SplitLine in $Line.Split('{}')){
+                    $CharCount+=($SplitLine.Length+1)
                     $MainObj.SelectionStart = $PreviousLineStart
                     $MainObj.SelectionLength = $PreviousLength
                     If(
-                        ($_ -match 'VAR [\w\d_:]*?$') -OR `
-                        ($_ -match 'VAR [\w\d_:]*?\+\+$') -OR `
-                        ($_ -match 'VAR [\w\d_:]*?--$')
+                        ($SplitLine -match 'VAR [\w\d_:]*?$') -OR `
+                        ($SplitLine -match 'VAR [\w\d_:]*?\+\+$') -OR `
+                        ($SplitLine -match 'VAR [\w\d_:]*?--$')
                     ){
-                        $MainObj.SelectionStart=($CharCount-($_.Length+2))
-                        $MainObj.SelectionLength=($_.Length+2)
+                        $MainObj.SelectionStart=($CharCount-($SplitLine.Length+2))
+                        $MainObj.SelectionLength=($SplitLine.Length+2)
                         $MainObj.SelectionColor = [System.Drawing.Color]::FromArgb([Convert]::ToInt32("0xFFFF4500", 16))
                     }
                 }
