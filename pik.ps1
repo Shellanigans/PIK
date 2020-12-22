@@ -2373,6 +2373,7 @@ $ClickHelperParent = [HashTable]::Synchronized(@{})
 $AutoChange = $False
 $MutexPow = [Powershell]::Create()
 $MutexRun = [RunspaceFactory]::CreateRunspace()
+$MutexRun.ApartmentState = [System.Threading.ApartmentState]::STA
 $MutexRun.Open()
 $MutexPow.Runspace = $MutexRun
 $MutexPow.AddScript({
@@ -2412,6 +2413,7 @@ $MutexPow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $MutexHandle = $MutexPow.BeginInvoke()
 $MouseIndPow = [Powershell]::Create()
 $MouseIndRun = [RunspaceFactory]::CreateRunspace()
+$MouseIndRun.ApartmentState = [System.Threading.ApartmentState]::STA
 $MouseIndRun.Open()
 $MouseIndPow.Runspace = $MouseIndRun
 $MouseIndPow.AddScript({
@@ -2681,6 +2683,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                         $Tape.Add_Click({
                             $TapePow = [Powershell]::Create()
                             $TapeRun = [RunspaceFactory]::CreateRunspace()
+                            $TapeRun.ApartmentState = [System.Threading.ApartmentState]::STA
                             $TapeRun.Open()
                             $TapePow.Runspace = $TapeRun
                             $TapePow.AddScript({
