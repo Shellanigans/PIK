@@ -4,13 +4,21 @@ $CSharpDef = @'
 using System;
 using System.IO;
 using System.Text;
+using System.Reflection;
 using System.Diagnostics;
 using System.Configuration;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
+
 namespace Cons{
+    public class Act{
+        public static Object CrI (Type type, params Object[] args){
+            return System.Activator.CreateInstance(type, args);
+        }
+    }
+
     public class MouseEvnt{
         [DllImport("user32.dll")]
         public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
@@ -327,7 +335,7 @@ public class Parser{
     }
 }
 '@
-Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic,System.Configuration -IgnoreWarnings -TypeDefinition $CSharpDef
+Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic,System.Configuration,System.Reflection -IgnoreWarnings -TypeDefinition $CSharpDef
 ###########################################################################################
              #######                                                           
              #        #    #  #    #   ####   #####  #   ####   #    #   ####  
@@ -561,7 +569,7 @@ Function Actions{
                             
                         $Dist = [Math]::Sqrt(([Math]::Pow($DistX,2)+[Math]::Pow($DistY,2)))
                         $Dist = [Math]::Round($Dist)
-                        $Random = ([Activator]::CreateInstance([System.Random],@()))
+                        $Random = ([Cons.Act]::CrI([System.Random],@()))
                             
                         $RemainderX = 0
                         $RemainderY = 0
@@ -668,7 +676,7 @@ Function Actions{
                     }
                     $PHCMDS = '{CMDS_START}'+($NL*2)+$PHSendString+($NL*2)+'{CMDS_END}'
                     $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
-                    $PHClient = ([Activator]::CreateInstance([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                    $PHClient = ([Cons.Act]::CrI([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
                     $PHStream = $PHClient.GetStream()
                     $PHStream.Write($Buffer, 0, $Buffer.Length)
                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
@@ -716,7 +724,7 @@ Function Actions{
             $PH = $PH.Split(',')
             If(!$WhatIf){
                 $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
-                $BMP = ([Activator]::CreateInstance([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
+                $BMP = ([Cons.Act]::CrI([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
             
                 $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
                 $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
@@ -774,7 +782,7 @@ Function Actions{
                         Try{
                             $PHProcHand = [IntPtr][Int]$PHProcHand
                             $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
-                            $PHString = ([Activator]::CreateInstance([System.Text.StringBuilder],@(($PHTextLength + 1))))
+                            $PHString = ([Cons.Act]::CrI([System.Text.StringBuilder],@(($PHTextLength + 1))))
                             [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
                             If(!$PHString){
                                 $PHProc = ''
@@ -910,7 +918,7 @@ Function Actions{
                     }
                     
                     If($DelayCheck.Checked){
-                        $PH = ((([Activator]::CreateInstance([Random],@()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))))
+                        $PH = ((([Cons.Act]::CrI([Random],@()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))))
                     }Else{
                         $PH = 0
                     }
@@ -948,7 +956,7 @@ Function Actions{
         }
         If($CommandDelayTimer.Value -ne 0 -OR ($CommDelayCheck.Checked -AND ($CommRandTimer.Value -gt 0))){
             If($CommDelayCheck.Checked){
-                $PH = ((([Activator]::CreateInstance([Random],@()).Next((-1*$CommRandTimer.Value),($CommRandTimer.Value)))))
+                $PH = ((([Cons.Act]::CrI([Random],@()).Next((-1*$CommRandTimer.Value),($CommRandTimer.Value)))))
             }Else{
                 $PH = 0
             }
@@ -1081,7 +1089,7 @@ Function Interpret{
                     $PHProcHand = [IntPtr][Int]$PHProcHand
                     Try{
                         $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
-                        $PHString = ([Activator]::CreateInstance([System.Text.StringBuilder],@(($PHTextLength + 1))))
+                        $PHString = ([Cons.Act]::CrI([System.Text.StringBuilder],@(($PHTextLength + 1))))
                         [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
                         If(!$PHString){
                             $PHProc = ''
@@ -1122,7 +1130,7 @@ Function Interpret{
                         }
                         'GETWINDTEXT' {
                             $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProcHand)
-                            $PHString = ([Activator]::CreateInstance([System.Text.StringBuilder],@(($PHTextLength + 1))))
+                            $PHString = ([Cons.Act]::CrI([System.Text.StringBuilder],@(($PHTextLength + 1))))
                             [Void]([Cons.WindowDisp]::GetWindowText($PHTMPProcHand, $PHString, $PHString.Capacity))
                             $PHOut+=($PHString.ToString()+';')
                         }
@@ -1258,7 +1266,7 @@ Function Interpret{
             #$PH = $PH.Substring(0,($PH.Length - 1))
             $PH = $PH.Split(',')
             $Bounds = [System.Drawing.Rectangle]::FromLTRB($PH[0],$PH[1],($PH[0]+1),($PH[1]+1))
-            $BMP = ([Activator]::CreateInstance([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
+            $BMP = ([Cons.Act]::CrI([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
             
             $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
             $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
@@ -1276,7 +1284,7 @@ Function Interpret{
                 $PHIndex = ($_.Split(',')[-1] -replace '\D')
             }
             $Bounds = [GUI.Rect]::R($PHCoords[0],$PHCoords[1],$PHCoords[2],$PHCoords[3])
-            $BMP1 = ([Activator]::CreateInstance([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
+            $BMP1 = ([Cons.Act]::CrI([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
             
             $Graphics = [System.Drawing.Graphics]::FromImage($BMP1)
             $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
@@ -1991,7 +1999,7 @@ Function Handle-MousePosGet{
     $MouseCoordsBox.Text = ('{MOUSE '+$PH.X+','+$PH.Y+'}')
             
     $Bounds = [GUI.Rect]::R($PH.X-8,$PH.Y-8,16,16)
-    $BMP = ([Activator]::CreateInstance([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
+    $BMP = ([Cons.Act]::CrI([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
     ([System.Drawing.Graphics]::FromImage($BMP)).CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.Size)
     
     $PHPix = $BMP.GetPixel(8,8)
@@ -2009,7 +2017,7 @@ Function Handle-MousePosGet{
         $PixColorBox.ForeColor = [System.Drawing.Color]::White
         $CenterDot.BackColor = [System.Drawing.Color]::White
     }
-    $BMPBig = ([Activator]::CreateInstance([System.Drawing.Bitmap],@(120, 106)    ))
+    $BMPBig = ([Cons.Act]::CrI([System.Drawing.Bitmap],@(120, 106)))
     $GraphicsBig = [System.Drawing.Graphics]::FromImage($BMPBig)
     $GraphicsBig.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::NearestNeighbor
     $GraphicsBig.DrawImage($BMP,0,0,120,106)
@@ -2407,7 +2415,7 @@ $MutexPow.AddScript({
                     $IP = '127.0.0.1'
                 }
                 $Port = [Int]$SyncHash.SrvPort
-                $TmpCli = ([Activator]::CreateInstance([System.Net.Sockets.TCPClient],@($IP,$Port)))
+                $TmpCli = ([Cons.Act]::CrI([System.Net.Sockets.TCPClient],@($IP,$Port)))
                 
                 $TmpStr = $TmpCli.GetStream()
                 $TmpStr.Write($SSrv,0,$SSrv.Count)
@@ -2482,16 +2490,16 @@ $MouseIndPow.AddScript({
     $MouseForm.Show()
     $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
-    $MouseAppContext = ([Activator]::CreateInstance([System.Windows.Forms.ApplicationContext],@()))
+    $MouseAppContext = ([Cons.Act]::CrI([System.Windows.Forms.ApplicationContext],@()))
     [System.Windows.Forms.Application]::Run($MouseAppContext)
 }) | Out-Null
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
 $MouseIndHandle = $MouseIndPow.BeginInvoke()
-$Form = ([Activator]::CreateInstance([GUI.F],@(470, 500, 'Pikl')))
+$Form = ([Cons.Act]::CrI([GUI.F],@(470, 500, 'Pikl')))
 $Form.MinimumSize = [GUI.SP]::SI(470,500)
-$TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
-    $TabPageComm = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0,'Main')))
-        $TabControllerComm = ([Activator]::CreateInstance([GUI.TC],@(0, 0, 0, 0)))
+$TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
+    $TabPageComm = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0,'Main')))
+        $TabControllerComm = ([Cons.Act]::CrI([GUI.TC],@(0, 0, 0, 0)))
         $TabControllerComm.Dock = 'Fill'
         $TabControllerComm.Add_SelectedIndexChanged({
             Switch($This.SelectedTab.Text){
@@ -2499,8 +2507,8 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                 'Functions' {$FunctionsBox.Focus()}
             }
         })
-            $TabPageCommMain = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Commands')))
-                $Commands = ([Activator]::CreateInstance([GUI.RTB],@(0, 0, 0, 0, '')))
+            $TabPageCommMain = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Commands')))
+                $Commands = ([Cons.Act]::CrI([GUI.RTB],@(0, 0, 0, 0, '')))
                 $Commands.Dock = 'Fill'
                 $Commands.Multiline = $True
                 $Commands.WordWrap = $False
@@ -2544,8 +2552,8 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                 $Commands.Parent = $TabPageCommMain
                 $Commands.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Commands' -Shift $_.Shift -Control $_.Control -Alt $_.Alt})
             $TabPageCommMain.Parent = $TabControllerComm
-            $TabPageFunctMain = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Functions')))
-                $FunctionsBox = ([Activator]::CreateInstance([GUI.RTB],@(0, 0, 0, 0, '')))
+            $TabPageFunctMain = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Functions')))
+                $FunctionsBox = ([Cons.Act]::CrI([GUI.RTB],@(0, 0, 0, 0, '')))
                 $FunctionsBox.Multiline = $True
                 $FunctionsBox.WordWrap = $False
                 $FunctionsBox.Scrollbars = 'Both'
@@ -2589,8 +2597,8 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                 $FunctionsBox.Parent = $TabPageFunctMain
                 $FunctionsBox.Add_KeyDown({Handle-TextBoxKey -KeyCode ($_.KeyCode.ToString()) -MainObj $This -BoxType 'Functions' -Shift $_.Shift -Control $_.Control -Alt $_.Alt})
             $TabPageFunctMain.Parent = $TabControllerComm
-            $TabPageHelper = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Helpers')))
-                $TabHelperSub = ([Activator]::CreateInstance([GUI.TC],@(0, 0, 0, 0)))
+            $TabPageHelper = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Helpers')))
+                $TabHelperSub = ([Cons.Act]::CrI([GUI.TC],@(0, 0, 0, 0)))
                 $TabHelperSub.Dock = 'Fill'
                 $TabHelperSub.SizeMode = 'Fixed'
                 $TabHelperSub.DrawMode = 'OwnerDrawFixed'
@@ -2598,31 +2606,35 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     $PHText = $This.TabPages[$_.Index].Text
                     
                     $PHRect = $This.GetTabRect($_.Index)
-                    $PHRect = ([Activator]::CreateInstance([System.Drawing.RectangleF],@($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)))
-                    $PHBrush = ([Activator]::CreateInstance([System.Drawing.SolidBrush],@('Black')))
-                    $PHStrForm = ([Activator]::CreateInstance([System.Drawing.StringFormat],@()))
+                    $PHRect = ([Cons.Act]::CrI([System.Drawing.RectangleF],@($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)))
+                    $PHBrush = ([Cons.Act]::CrI([System.Drawing.SolidBrush],@([System.Drawing.Color]::Black)))
+                    $PHStrForm = ([Cons.Act]::CrI([System.Drawing.StringFormat],@()))
                     $PHStrForm.Alignment = [System.Drawing.StringAlignment]::Center
                     $PHStrForm.LineAlignment = [System.Drawing.StringAlignment]::Center
                     $_.Graphics.DrawString($PHText, $This.Font, $PHBrush, $PHRect, $PHStrForm)
                 })
                 $TabHelperSub.ItemSize = [GUI.SP]::SI(25,75)
                 $TabHelperSub.Alignment = [System.Windows.Forms.TabAlignment]::Left
-                    $TabHelperSubMouse = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Mouse/Pix')))
-                        $GetMouseCoords = ([Activator]::CreateInstance([GUI.B],@(110, 25, 10, 25, 'Mouse Inf')))
+                    $TabHelperSubMouse = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Mouse/Pix')))
+                        $GetMouseCoords = ([Cons.Act]::CrI([GUI.B],@(110, 25, 10, 25, 'Mouse Inf')))
                         $GetMouseCoords.Add_MouseDown({$This.Text = 'Drag Mouse'})
                         $GetMouseCoords.Add_MouseUp({$This.Text = 'Mouse Inf'})
-                        $GetMouseCoords.Add_MouseMove({If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){Handle-MousePosGet; $Form.Refresh()}})
+                        $GetMouseCoords.Add_MouseMove({
+                            If([System.Windows.Forms.UserControl]::MouseButtons.ToString() -match 'Left'){
+                                Handle-MousePosGet; $Form.Refresh()
+                            }
+                        })
                         $GetMouseCoords.Parent = $TabHelperSubMouse
-                        $MouseCoordLabel = ([Activator]::CreateInstance([GUI.L],@(110, 10, 130, 10, 'Mouse Coords:')))
+                        $MouseCoordLabel = ([Cons.Act]::CrI([GUI.L],@(110, 10, 130, 10, 'Mouse Coords:')))
                         $MouseCoordLabel.Parent = $TabHelperSubMouse
-                        $MouseCoordsBox = ([Activator]::CreateInstance([GUI.TB],@(140, 25, 130, 25, '')))
+                        $MouseCoordsBox = ([Cons.Act]::CrI([GUI.TB],@(140, 25, 130, 25, '')))
                         $MouseCoordsBox.ReadOnly = $True
                         $MouseCoordsBox.Multiline = $True
                         $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                         $MouseCoordsBox.Parent = $TabHelperSubMouse
-                        $MouseManualLabel = ([Activator]::CreateInstance([GUI.L],@(100, 10, 10, 60, 'Manual Move:')))
+                        $MouseManualLabel = ([Cons.Act]::CrI([GUI.L],@(100, 10, 10, 60, 'Manual Move:')))
                         $MouseManualLabel.Parent = $TabHelperSubMouse
-                        $XCoord = ([Activator]::CreateInstance([GUI.NUD],@(50, 25, 10, 75)))
+                        $XCoord = ([Cons.Act]::CrI([GUI.NUD],@(50, 25, 10, 75)))
                         $XCoord.Maximum = 99999
                         $XCoord.Minimum = -99999
                         $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value);Handle-MousePosGet})
@@ -2634,7 +2646,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                         })
                         $XCoord.Parent = $TabHelperSubMouse
                 
-                        $YCoord = ([Activator]::CreateInstance([GUI.NUD],@(50, 25, 70, 75)))
+                        $YCoord = ([Cons.Act]::CrI([GUI.NUD],@(50, 25, 70, 75)))
                         $YCoord.Maximum = 99999
                         $YCoord.Minimum = -99999
                         $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value);Handle-MousePosGet})
@@ -2645,14 +2657,14 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             }
                         })
                         $YCoord.Parent = $TabHelperSubMouse
-                        $PixColorLabel = ([Activator]::CreateInstance([GUI.L],@(110, 10, 130, 60, 'HexVal (ARGB):')))
+                        $PixColorLabel = ([Cons.Act]::CrI([GUI.L],@(110, 10, 130, 60, 'HexVal (ARGB):')))
                         $PixColorLabel.Parent = $TabHelperSubMouse
-                        $PixColorBox = ([Activator]::CreateInstance([GUI.TB],@(140, 25, 130, 75, '')))
+                        $PixColorBox = ([Cons.Act]::CrI([GUI.TB],@(140, 25, 130, 75, '')))
                         $PixColorBox.ReadOnly = $True
                         $PixColorBox.Multiline = $True
                         $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
                         $PixColorBox.Parent = $TabHelperSubMouse
-                        $LeftMouseBox = ([Activator]::CreateInstance([GUI.B],@(135,25,10,110,'Left Click')))
+                        $LeftMouseBox = ([Cons.Act]::CrI([GUI.B],@(135,25,10,110,'Left Click')))
                         $LeftMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(2, 0, 0, 0, 0)
@@ -2661,7 +2673,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             $_.SuppressKeyPress = $True
                         })
                         $LeftMouseBox.Parent = $TabHelperSubMouse
-                        $MiddleMouseBox = ([Activator]::CreateInstance([GUI.B],@(135,25,10,152,'Middle Click')))
+                        $MiddleMouseBox = ([Cons.Act]::CrI([GUI.B],@(135,25,10,152,'Middle Click')))
                         $MiddleMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
@@ -2670,7 +2682,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             $_.SuppressKeyPress = $True
                         })
                         $MiddleMouseBox.Parent = $TabHelperSubMouse
-                        $RightMouseBox = ([Activator]::CreateInstance([GUI.B],@(135,25,10,194,'Right Click')))
+                        $RightMouseBox = ([Cons.Act]::CrI([GUI.B],@(135,25,10,194,'Right Click')))
                         $RightMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
                                 [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
@@ -2679,19 +2691,19 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             $_.SuppressKeyPress = $True
                         })
                         $RightMouseBox.Parent = $TabHelperSubMouse
-                        $ZoomPanel = ([Activator]::CreateInstance([GUI.GB],@(115,115,155,105,'')))
+                        $ZoomPanel = ([Cons.Act]::CrI([GUI.GB],@(115,115,155,105,'')))
                         $ZoomPanel.BackgroundImageLayout = [System.Windows.Forms.ImageLayout]::Stretch
                         $ZoomPanel.Parent = $TabHelperSubMouse
-                        $GraphicFixPanel = ([Activator]::CreateInstance([GUI.P],@(115,5,155,105)))
+                        $GraphicFixPanel = ([Cons.Act]::CrI([GUI.P],@(115,5,155,105)))
                         $GraphicFixPanel.BackColor = $Form.BackColor
                         $GraphicFixPanel.Parent = $TabHelperSubMouse
                         $GraphicFixPanel.BringToFront()
                         
-                        $CenterDot = ([Activator]::CreateInstance([GUI.P],@(8,8,209,159)))
+                        $CenterDot = ([Cons.Act]::CrI([GUI.P],@(8,8,209,159)))
                         $CenterDot.BackColor = [System.Drawing.Color]::Black
                         $CenterDot.Parent = $TabHelperSubMouse
                         $CenterDot.BringToFront()
-                        $Tape = ([Activator]::CreateInstance([GUI.B],@(260, 25, 10, 240, 'Measuring Tape')))
+                        $Tape = ([Cons.Act]::CrI([GUI.B],@(260, 25, 10, 240, 'Measuring Tape')))
                         $Tape.Add_Click({
                             $TapePow = [Powershell]::Create()
                             $TapeRun = [RunspaceFactory]::CreateRunspace()
@@ -2771,10 +2783,10 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                         })
                         $Tape.Parent = $TabHelperSubMouse
                     $TabHelperSubMouse.Parent = $TabHelperSub
-                    $TabHelperSubSystem = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Sys/Proc')))
-                        $ScreenInfoLabel = ([Activator]::CreateInstance([GUI.L],@(110, 15, 10, 8, 'Display Info:')))
+                    $TabHelperSubSystem = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Sys/Proc')))
+                        $ScreenInfoLabel = ([Cons.Act]::CrI([GUI.L],@(110, 15, 10, 8, 'Display Info:')))
                         $ScreenInfoLabel.Parent = $TabHelperSubSystem
-                        $ScreenInfoBox = ([Activator]::CreateInstance([GUI.RTB],@(285, 95, 10, 25, '')))
+                        $ScreenInfoBox = ([Cons.Act]::CrI([GUI.RTB],@(285, 95, 10, 25, '')))
                         $ScreenInfoBox.Multiline = $True
                         $ScreenInfoBox.ScrollBars = 'Both'
                         $ScreenInfoBox.WordWrap = $False
@@ -2785,9 +2797,9 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             $Count++
                         }) -join $NL).TrimEnd($NL)
                         $ScreenInfoBox.Parent = $TabHelperSubSystem
-                        $ProcInfoLabel = ([Activator]::CreateInstance([GUI.L],@(110,15,10,136,'Process Info:')))
+                        $ProcInfoLabel = ([Cons.Act]::CrI([GUI.L],@(110,15,10,136,'Process Info:')))
                         $ProcInfoLabel.Parent = $TabHelperSubSystem
-                        $GetProcInfo = ([Activator]::CreateInstance([GUI.B],@(140, 23, 125, 129, 'Get Proc Inf')))
+                        $GetProcInfo = ([Cons.Act]::CrI([GUI.B],@(140, 23, 125, 129, 'Get Proc Inf')))
                         $GetProcInfo.Add_MouseDown({If($_.Button.ToString() -eq 'Left'){$This.Text = 'Click on Proc'}ElseIf($_.Button.ToString() -eq 'Right'){$ProcInfoBox.Text = ''}})
                         $GetProcInfo.Add_LostFocus({
                             If($This.Text -ne 'Get Proc Inf'){
@@ -2795,7 +2807,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                                 $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
                                 $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle})
                                 $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHFocussedHandle)
-                                $PHString = ([Activator]::CreateInstance([System.Text.StringBuilder],@(($PHTextLength + 1))))
+                                $PHString = ([Cons.Act]::CrI([System.Text.StringBuilder],@(($PHTextLength + 1))))
                                 [Void]([Cons.WindowDisp]::GetWindowText($PHFocussedHandle, $PHString, $PHString.Capacity))
                                 $PHRect = [GUI.Rect]::E
                                 [Void]([Cons.WindowDisp]::GetWindowRect($PHFocussedHandle,[Ref]$PHRect))
@@ -2814,7 +2826,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             }
                         })
                         $GetProcInfo.Parent = $TabHelperSubSystem
-                        $ProcInfoBox = ([Activator]::CreateInstance([GUI.RTB],@(285, 160, 10, 155, '')))
+                        $ProcInfoBox = ([Cons.Act]::CrI([GUI.RTB],@(285, 160, 10, 155, '')))
                         $ProcInfoBox.Multiline = $True
                         $ProcInfoBox.ScrollBars = 'Both'
                         $ProcInfoBox.WordWrap = $False
@@ -2822,8 +2834,8 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                         $ProcInfoBox.Text = ''
                         $ProcInfoBox.Parent = $TabHelperSubSystem
                     $TabHelperSubSystem.Parent = $TabHelperSub
-                    $TabPageDebug = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Debug')))
-                        $GetFuncts = ([Activator]::CreateInstance([GUI.B],@(150, 25, 10, 10, 'Display Functions')))
+                    $TabPageDebug = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Debug')))
+                        $GetFuncts = ([Cons.Act]::CrI([GUI.B],@(150, 25, 10, 10, 'Display Functions')))
                         $GetFuncts.Add_Click({
                             $Script:FuncHash.Keys | Sort | %{
                                 [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:FuncHash.$_ + $NL + $NL)
@@ -2831,7 +2843,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             }
                         })
                         $GetFuncts.Parent = $TabPageDebug
-                        $GetVars = ([Activator]::CreateInstance([GUI.B],@(150, 25, 10, 35, 'Display Variables')))
+                        $GetVars = ([Cons.Act]::CrI([GUI.B],@(150, 25, 10, 35, 'Display Variables')))
                         $GetVars.Add_Click({
                             $Script:VarsHash.Keys | Sort -Unique | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
                                 [System.Console]::WriteLine($NL + $_ + $NL + '-------------------------' + $NL + $Script:VarsHash.$_ + $NL + $NL)
@@ -2839,19 +2851,19 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                             }
                         })
                         $GetVars.Parent = $TabPageDebug
-                        $ClearCons = ([Activator]::CreateInstance([GUI.B],@(150, 25, 10, 60, 'Clear Console')))
+                        $ClearCons = ([Cons.Act]::CrI([GUI.B],@(150, 25, 10, 60, 'Clear Console')))
                         $ClearCons.Add_Click({Cls; $PseudoConsole.Text = ''})
                         $ClearCons.Parent = $TabPageDebug
-                        $PseudoConsole = ([Activator]::CreateInstance([GUI.RTB],@(285, 165, 10, 110, '')))
+                        $PseudoConsole = ([Cons.Act]::CrI([GUI.RTB],@(285, 165, 10, 110, '')))
                         $PseudoConsole.ReadOnly = $True
                         $PseudoConsole.ScrollBars = 'Both'
                         #$PseudoConsole.ForeColor = [System.Drawing.Color]::FromArgb(0xFFF5F5F5)
                         #$PseudoConsole.BackColor = [System.Drawing.Color]::FromArgb(0xFF012456)
                         $pseudoConsole.Parent = $TabPageDebug
-                        $SingleCMD = ([Activator]::CreateInstance([GUI.RTB],@(185, 20, 10, 300, '')))
+                        $SingleCMD = ([Cons.Act]::CrI([GUI.RTB],@(185, 20, 10, 300, '')))
                         $SingleCMD.AcceptsTab = $True
                         $SingleCMD.Parent = $TabPageDebug
-                        $SingleGO = ([Activator]::CreateInstance([GUI.B],@(90, 22, 205, 298, 'Run Line')))
+                        $SingleGO = ([Cons.Act]::CrI([GUI.B],@(90, 22, 205, 298, 'Run Line')))
                         $SingleGO.Add_Click({
                             If(!$WhatIfCheck.Checked -AND $SingleCMD.Text){
                                 $PrevConsCheck = $ShowCons.Checked
@@ -2871,8 +2883,8 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
             $TabPageHelper.Parent = $TabControllerComm
         $TabControllerComm.Parent = $TabPageComm
     $TabPageComm.Parent = $TabController
-    $TabPageAdvanced = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0,'File')))
-        $TabControllerAdvanced = ([Activator]::CreateInstance([GUI.TC],@(0, 0, 10, 10)))
+    $TabPageAdvanced = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0,'File')))
+        $TabControllerAdvanced = ([Cons.Act]::CrI([GUI.TC],@(0, 0, 10, 10)))
         $TabControllerAdvanced.Dock = 'Fill'
         $TabControllerAdvanced.SizeMode = 'Fixed'
         $TabControllerAdvanced.DrawMode = 'OwnerDrawFixed'
@@ -2880,27 +2892,27 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
             $PHText = $This.TabPages[$_.Index].Text
                     
             $PHRect = $This.GetTabRect($_.Index)
-            $PHRect = ([Activator]::CreateInstance([System.Drawing.RectangleF],@($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)))
-            $PHBrush = ([Activator]::CreateInstance([System.Drawing.SolidBrush],@('Black')))
-            $PHStrForm = ([Activator]::CreateInstance([System.Drawing.StringFormat],@()))
+            $PHRect = ([Cons.Act]::CrI([System.Drawing.RectangleF],@($PHRect.X,$PHRect.Y,$PHRect.Width,$PHRect.Height)))
+            $PHBrush = ([Cons.Act]::CrI([System.Drawing.SolidBrush],@([System.Drawing.Color]::Black)))
+            $PHStrForm = ([Cons.Act]::CrI([System.Drawing.StringFormat],@()))
             $PHStrForm.Alignment = [System.Drawing.StringAlignment]::Center
             $PHStrForm.LineAlignment = [System.Drawing.StringAlignment]::Center
             $_.Graphics.DrawString($PHText, $This.Font, $PHBrush, $PHRect, $PHStrForm)
         })
         $TabControllerAdvanced.ItemSize = [GUI.SP]::SI(25,75)
         $TabControllerAdvanced.Alignment = [System.Windows.Forms.TabAlignment]::Left
-            $TabPageProfiles = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0,'Save/Load')))
-                $Profile = ([Activator]::CreateInstance([GUI.L],@(275, 15, 10, 10, 'Working Profile: None/Prev Text')))
+            $TabPageProfiles = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0,'Save/Load')))
+                $Profile = ([Cons.Act]::CrI([GUI.L],@(275, 15, 10, 10, 'Working Profile: None/Prev Text')))
                 $Profile.Parent = $TabPageProfiles
-                $SavedProfilesLabel = ([Activator]::CreateInstance([GUI.L],@(75, 15, 85, 36, 'Profiles:')))
+                $SavedProfilesLabel = ([Cons.Act]::CrI([GUI.L],@(75, 15, 85, 36, 'Profiles:')))
                 $SavedProfilesLabel.Parent = $TabPageProfiles
-                $RefreshProfiles = ([Activator]::CreateInstance([GUI.B],@(75, 21, 186, 32, 'Refresh')))
+                $RefreshProfiles = ([Cons.Act]::CrI([GUI.B],@(75, 21, 186, 32, 'Refresh')))
                 $RefreshProfiles.Add_Click({
                     $SavedProfiles.Items.Clear()
                     [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
                     $SavedProfiles.SelectedItem = $Script:LoadedProfile})
                 $RefreshProfiles.Parent = $TabPageProfiles
-                $LoadProfile = ([Activator]::CreateInstance([GUI.B],@(75, 21, 10, 54, 'Load')))
+                $LoadProfile = ([Cons.Act]::CrI([GUI.B],@(75, 21, 10, 54, 'Load')))
                 $LoadProfile.Add_Click({
                     If((Get-ChildItem ($env:APPDATA+'\Macro\Profiles\'+$SavedProfiles.SelectedItem)).Count -gt 0 -AND $SavedProfiles.SelectedIndex -ne -1){
                         $PHChosenLoad = $SavedProfiles.SelectedItem
@@ -2941,14 +2953,14 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $LoadProfile.Parent = $TabPageProfiles
-                $SavedProfiles = ([Activator]::CreateInstance([GUI.CoB],@(175, 21, 85, 55)))
+                $SavedProfiles = ([Cons.Act]::CrI([GUI.CoB],@(175, 21, 85, 55)))
                 $SavedProfiles.DropDownStyle = [System.Windows.Forms.ComboBoxStyle]::DropDownList
                 [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
                 $SavedProfiles.Parent = $TabPageProfiles
-                $QuickSave = ([Activator]::CreateInstance([GUI.B],@(75, 21, 10, 75, 'Save')))
+                $QuickSave = ([Cons.Act]::CrI([GUI.B],@(75, 21, 10, 75, 'Save')))
                 $QuickSave.Add_Click({[Void](Save-Profile)})
                 $QuickSave.Parent = $TabPageProfiles
-                $SaveProfile = ([Activator]::CreateInstance([GUI.B],@(75, 21, 10, 96, 'Save As')))
+                $SaveProfile = ([Cons.Act]::CrI([GUI.B],@(75, 21, 10, 96, 'Save As')))
                 $SaveProfile.Add_Click({
                     $PH = [Microsoft.VisualBasic.Interaction]::InputBox('Choose a name for this profile.'+($NL*2)+'It will be saved in:'+$NL+'%APPDATA%\Roaming\Macro\Profiles','Save As')
                     If($PH){
@@ -2973,7 +2985,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $SaveProfile.Parent = $TabPageProfiles
-                $BlankProfile = ([Activator]::CreateInstance([GUI.B],@(75, 21, 10, 132, 'New')))
+                $BlankProfile = ([Cons.Act]::CrI([GUI.B],@(75, 21, 10, 132, 'New')))
                 $BlankProfile.Add_Click({
                     If((Check-Saved) -ne 'Cancel'){
                         $Profile.Text = 'Working Profile: None/Prev Text'
@@ -2987,10 +2999,10 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $BlankProfile.Parent = $TabPageProfiles
-                $ImportProfile = ([Activator]::CreateInstance([GUI.B],@(75,21,186,85,'Import')))
+                $ImportProfile = ([Cons.Act]::CrI([GUI.B],@(75,21,186,85,'Import')))
                 $ImportProfile.Add_Click({
                     If((Check-Saved) -ne 'Cancel'){
-                        $DialogO = ([Activator]::CreateInstance([System.Windows.Forms.OpenFileDialog],@()))
+                        $DialogO = ([Cons.Act]::CrI([System.Windows.Forms.OpenFileDialog],@()))
                         $DialogO.InitialDirectory = (PWD).Path
                         $DialogO.Filter = 'pik files (*.pik)|*.pik|ps1 files (*.ps1)|*.ps1'
                         $DialogO.MultiSelect = $True
@@ -3067,11 +3079,11 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $ImportProfile.Parent = $TabPageProfiles
-                $ExportProfile = ([Activator]::CreateInstance([GUI.B],@(75,21,186,115,'Export')))
+                $ExportProfile = ([Cons.Act]::CrI([GUI.B],@(75,21,186,115,'Export')))
                 $ExportProfile.Add_Click({
                     $PIK_PS1 = ([System.Windows.Forms.MessageBox]::Show('Export as executable script? Select "No" or close to save as a PIK file instead.','Export Type','YesNo') -eq 'Yes')
                     
-                    $DialogS = ([Activator]::CreateInstance([System.Windows.Forms.SaveFileDialog],@()))
+                    $DialogS = ([Cons.Act]::CrI([System.Windows.Forms.SaveFileDialog],@()))
                     $DialogS.InitialDirectory = (PWD).Path
                     If($PIK_PS1){
                         $DialogS.Filter = 'ps1 files (*.ps1)|*.ps1'
@@ -3193,13 +3205,13 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $ExportProfile.Parent = $TabPageProfiles
-                #$SaveNewProfLabel = ([Activator]::CreateInstance([GUI.L],@(170, 20, 10, 190, 'Save Current Profile As:')))
+                #$SaveNewProfLabel = ([Cons.Act]::CrI([GUI.L],@(170, 20, 10, 190, 'Save Current Profile As:')))
                 #$SaveNewProfLabel.Parent = $TabPageProfiles
-                #$SaveAsProfText = ([Activator]::CreateInstance([GUI.TB],@(165, 25, 10, 210, '')))
+                #$SaveAsProfText = ([Cons.Act]::CrI([GUI.TB],@(165, 25, 10, 210, '')))
                 #$SaveAsProfText.Parent = $TabPageProfiles
-                <#$DelProfLabel = ([Activator]::CreateInstance([GUI.L],@(170, 20, 10, 260, 'Delete Profile:')))
+                <#$DelProfLabel = ([Cons.Act]::CrI([GUI.L],@(170, 20, 10, 260, 'Delete Profile:')))
                 $DelProfLabel.Parent = $TabPageProfiles
-                $DelProfile = ([Activator]::CreateInstance([GUI.B],@(75, 20, 186, 279, 'Delete')))
+                $DelProfile = ([Cons.Act]::CrI([GUI.B],@(75, 20, 186, 279, 'Delete')))
                 $DelProfile.Add_Click({
                     If($Script:LoadedProfile -eq $DelProfText.Text){
                         $Profile.Text = ('Working Profile: None/Prev Text')
@@ -3214,16 +3226,16 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     $DelProfText.Text = ''
                 })
                 $DelProfile.Parent = $TabPageProfiles
-                $DelProfText = ([Activator]::CreateInstance([GUI.TB],@(165, 25, 10, 280, '')))
+                $DelProfText = ([Cons.Act]::CrI([GUI.TB],@(165, 25, 10, 280, '')))
                 $DelProfText.Parent = $TabPageProfiles#>
-                $OpenFolder = ([Activator]::CreateInstance([GUI.B],@(250, 25, 10, 330, 'Open Profile Folder')))
+                $OpenFolder = ([Cons.Act]::CrI([GUI.B],@(250, 25, 10, 330, 'Open Profile Folder')))
                 $OpenFolder.Add_Click({Explorer ($env:APPDATA+'\Macro\Profiles')})
                 $OpenFolder.Parent = $TabPageProfiles
             $TabPageProfiles.Parent = $TabControllerAdvanced
-            $TabPageServer = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Comms')))
-                $ListenerLabel = ([Activator]::CreateInstance([GUI.L],@(300,15,22,10,'Listening IP/Port:')))
+            $TabPageServer = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Comms')))
+                $ListenerLabel = ([Cons.Act]::CrI([GUI.L],@(300,15,22,10,'Listening IP/Port:')))
                 $ListenerLabel.Parent = $TabPageServer
-                $ServerIPOct1 = ([Activator]::CreateInstance([GUI.TB],@(30,25,25,25,'0')))
+                $ServerIPOct1 = ([Cons.Act]::CrI([GUI.TB],@(30,25,25,25,'0')))
                 $ServerIPOct1.Add_GotFocus({$This.SelectAll()})
                 $ServerIPOct1.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
                 $ServerIPOct1.Add_TextChanged({
@@ -3241,7 +3253,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     If($_.KeyCode -match 'OemPeriod' -OR $_.KeyCode -match 'Decimal'){$ServerIPOct2.Focus()}
                 })
                 $ServerIPOct1.Parent = $TabPageServer
-                $ServerIPOct2 = ([Activator]::CreateInstance([GUI.TB],@(30,25,65,25,'0')))
+                $ServerIPOct2 = ([Cons.Act]::CrI([GUI.TB],@(30,25,65,25,'0')))
                 $ServerIPOct2.Add_GotFocus({$This.SelectAll()})
                 $ServerIPOct2.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
                 $ServerIPOct2.Add_TextChanged({
@@ -3262,7 +3274,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct1.Focus()}
                 })
                 $ServerIPOct2.Parent = $TabPageServer
-                $ServerIPOct3 = ([Activator]::CreateInstance([GUI.TB],@(30,25,105,25,'0')))
+                $ServerIPOct3 = ([Cons.Act]::CrI([GUI.TB],@(30,25,105,25,'0')))
                 $ServerIPOct3.Add_GotFocus({$This.SelectAll()})
                 $ServerIPOct3.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
                 $ServerIPOct3.Add_TextChanged({
@@ -3283,7 +3295,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct2.Focus()}
                 })
                 $ServerIPOct3.Parent = $TabPageServer
-                $ServerIPOct4 = ([Activator]::CreateInstance([GUI.TB],@(30,25,145,25,'0')))
+                $ServerIPOct4 = ([Cons.Act]::CrI([GUI.TB],@(30,25,145,25,'0')))
                 $ServerIPOct4.Add_GotFocus({$This.SelectAll()})
                 $ServerIPOct4.Add_LostFocus({If(!$This.Text){$This.Text = '0'}})
                 $ServerIPOct4.Add_TextChanged({
@@ -3301,7 +3313,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '0'; $ServerIPOct3.Focus()}
                 })
                 $ServerIPOct4.Parent = $TabPageServer
-                $ServerPort = ([Activator]::CreateInstance([GUI.TB],@(75,25,190,25,'42069')))
+                $ServerPort = ([Cons.Act]::CrI([GUI.TB],@(75,25,190,25,'42069')))
                 $ServerPort.Add_TextChanged({
                     $This.Text = ($This.Text -replace '\D')
                     If($This.Text -match '^0\d'){$This.Text = ($This.Text -replace '^0')}
@@ -3314,7 +3326,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     If($_.KeyCode -match 'Back' -AND !$This.Text){$_.SuppressKeyPress = $True; $This.Text = '42069'; $ServerIPOct4.Focus()}
                 })
                 $ServerPort.Parent = $TabPageServer
-                $ServerStart = ([Activator]::CreateInstance([GUI.B],@(150, 25, 25, 50, 'Start Listener')))
+                $ServerStart = ([Cons.Act]::CrI([GUI.B],@(150, 25, 25, 50, 'Start Listener')))
                 $ServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
                     $SyncHash.SrvPort = $PHPort
@@ -3322,7 +3334,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
                     [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
                     $MaxTime = [Int]$SrvTimeOut.Value
-                    $Listener = ([Activator]::CreateInstance([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
+                    $Listener = ([Cons.Act]::CrI([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
                     $Listener.Start()
                     While(!$SyncHash.Stop){
                         $Client = $Listener.AcceptTCPClient()
@@ -3365,7 +3377,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
-                <#$RevServerStart = ([Activator]::CreateInstance([GUI.B],@(150, 25, 25, 50, 'Connect and Listen')))
+                <#$RevServerStart = ([Cons.Act]::CrI([GUI.B],@(150, 25, 25, 50, 'Connect and Listen')))
                 $RevServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
                     $SyncHash.SrvPort = $PHPort
@@ -3373,7 +3385,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
                     [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
                     $MaxTime = [Int]$SrvTimeOut.Value
-                    $Listener = ([Activator]::CreateInstance([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
+                    $Listener = ([Cons.Act]::CrI([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
                     $Listener.Start()
                     While(!$SyncHash.Stop){
                         $Client = $Listener.AcceptTCPClient()
@@ -3416,59 +3428,59 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     $SyncHash.Restart = $False
                 })
                 $RevServerStart.Parent = $TabPageServer#>
-                $CliTimeOutLabel = ([Activator]::CreateInstance([GUI.L],@(172, 15, 25, 200, 'Sender Timeout (s):')))
+                $CliTimeOutLabel = ([Cons.Act]::CrI([GUI.L],@(172, 15, 25, 200, 'Sender Timeout (s):')))
                 $CliTimeOutLabel.Parent = $TabPageServer
-                $CliTimeOut = ([Activator]::CreateInstance([GUI.NUD],@(150, 25, 25, 220)))
+                $CliTimeOut = ([Cons.Act]::CrI([GUI.NUD],@(150, 25, 25, 220)))
                 $CliTimeOut.Maximum = 999999999
                 $CliTimeOut.Minimum = 1
                 $CliTimeOut.Value = 3600
                 $CliTimeOut.Parent = $TabPageServer
-                $SrvTimeOutLabel = ([Activator]::CreateInstance([GUI.L],@(172, 15, 25, 275, 'Listener Timeout (s):')))
+                $SrvTimeOutLabel = ([Cons.Act]::CrI([GUI.L],@(172, 15, 25, 275, 'Listener Timeout (s):')))
                 $SrvTimeOutLabel.Parent = $TabPageServer
-                $SrvTimeOut = ([Activator]::CreateInstance([GUI.NUD],@(150, 25, 25, 295)))
+                $SrvTimeOut = ([Cons.Act]::CrI([GUI.NUD],@(150, 25, 25, 295)))
                 $SrvTimeOut.Maximum = 999999999
                 $SrvTimeOut.Minimum = 1
                 $SrvTimeOut.Value = 3600
                 $SrvTimeOut.Parent = $TabPageServer
-                $IPFormattingLabel1 = ([Activator]::CreateInstance([GUI.L],@(50,20,25,32,'    .')))
+                $IPFormattingLabel1 = ([Cons.Act]::CrI([GUI.L],@(50,20,25,32,'    .')))
                 $IPFormattingLabel1.Parent = $TabPageServer
-                $IPFormattingLabel2 = ([Activator]::CreateInstance([GUI.L],@(50,20,65,32,'    .')))
+                $IPFormattingLabel2 = ([Cons.Act]::CrI([GUI.L],@(50,20,65,32,'    .')))
                 $IPFormattingLabel2.Parent = $TabPageServer
-                $IPFormattingLabel3 = ([Activator]::CreateInstance([GUI.L],@(50,20,105,32,'    .')))
+                $IPFormattingLabel3 = ([Cons.Act]::CrI([GUI.L],@(50,20,105,32,'    .')))
                 $IPFormattingLabel3.Parent = $TabPageServer
-                $IPFormattingLabel4 = ([Activator]::CreateInstance([GUI.L],@(50,20,147,28,'    :')))
+                $IPFormattingLabel4 = ([Cons.Act]::CrI([GUI.L],@(50,20,147,28,'    :')))
                 $IPFormattingLabel4.Parent = $TabPageServer
             $TabPageServer.Parent = $TabControllerAdvanced
-            $TabPageConfig = ([Activator]::CreateInstance([GUI.TP],@(0, 0, 0, 0, 'Config')))
-                $DelayLabel = ([Activator]::CreateInstance([GUI.L],@(175, 22, 10, 8, 'Keystroke Delay (ms):')))
+            $TabPageConfig = ([Cons.Act]::CrI([GUI.TP],@(0, 0, 0, 0, 'Config')))
+                $DelayLabel = ([Cons.Act]::CrI([GUI.L],@(175, 22, 10, 8, 'Keystroke Delay (ms):')))
                 $DelayLabel.Parent = $TabPageConfig
-                $DelayTimer = ([Activator]::CreateInstance([GUI.NUD],@(150, 25, 10, 30)))
+                $DelayTimer = ([Cons.Act]::CrI([GUI.NUD],@(150, 25, 10, 30)))
                 $DelayTimer.Maximum = 999999999
                 $DelayTimer.Parent = $TabPageConfig
                 $DelayTimer.BringToFront()
-                $DelayCheck = ([Activator]::CreateInstance([GUI.ChB],@(150, 25, 170, 25, 'Randomize')))
+                $DelayCheck = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 170, 25, 'Randomize')))
                 $DelayCheck.Parent = $TabPageConfig
-                $DelayRandLabel = ([Activator]::CreateInstance([GUI.L],@(200, 25, 25, 60, 'Random Weight (ms):')))
+                $DelayRandLabel = ([Cons.Act]::CrI([GUI.L],@(200, 25, 25, 60, 'Random Weight (ms):')))
                 $DelayRandLabel.Parent = $TabPageConfig
-                $DelayRandTimer = ([Activator]::CreateInstance([GUI.NUD],@(75, 25, 180, 55)))
+                $DelayRandTimer = ([Cons.Act]::CrI([GUI.NUD],@(75, 25, 180, 55)))
                 $DelayRandTimer.Maximum = 999999999
                 $DelayRandTimer.Parent = $TabPageConfig
                 $DelayRandTimer.BringToFront()
-                $CommDelayLabel = ([Activator]::CreateInstance([GUI.L],@(175, 22, 10, 108, 'Command Delay (ms):')))
+                $CommDelayLabel = ([Cons.Act]::CrI([GUI.L],@(175, 22, 10, 108, 'Command Delay (ms):')))
                 $CommDelayLabel.Parent = $TabPageConfig
-                $CommandDelayTimer = ([Activator]::CreateInstance([GUI.NUD],@(150, 25, 10, 130)))
+                $CommandDelayTimer = ([Cons.Act]::CrI([GUI.NUD],@(150, 25, 10, 130)))
                 $CommandDelayTimer.Maximum = 999999999
                 $CommandDelayTimer.Parent = $TabPageConfig
                 $CommandDelayTimer.BringToFront()
-                $CommDelayCheck = ([Activator]::CreateInstance([GUI.ChB],@(150, 25, 170, 125, 'Randomize')))
+                $CommDelayCheck = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 170, 125, 'Randomize')))
                 $CommDelayCheck.Parent = $TabPageConfig
-                $CommRandLabel = ([Activator]::CreateInstance([GUI.L],@(200, 25, 25, 160, 'Random Weight (ms):')))
+                $CommRandLabel = ([Cons.Act]::CrI([GUI.L],@(200, 25, 25, 160, 'Random Weight (ms):')))
                 $CommRandLabel.Parent = $TabPageConfig
-                $CommRandTimer = ([Activator]::CreateInstance([GUI.NUD],@(75, 25, 180, 155)))
+                $CommRandTimer = ([Cons.Act]::CrI([GUI.NUD],@(75, 25, 180, 155)))
                 $CommRandTimer.Maximum = 999999999
                 $CommRandTimer.Parent = $TabPageConfig
                 $CommRandTimer.BringToFront()
-                $ShowCons = ([Activator]::CreateInstance([GUI.ChB],@(150, 25, 10, 200, 'Show Console')))
+                $ShowCons = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 10, 200, 'Show Console')))
                 $ShowCons.Add_CheckedChanged({
                     If($Host.Name -match 'Console'){
                         If($This.Checked){
@@ -3479,13 +3491,13 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $ShowCons.Parent = $TabPageConfig
-                $OnTop = ([Activator]::CreateInstance([GUI.ChB],@(150, 25, 10, 225, 'Always On Top')))
+                $OnTop = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 10, 225, 'Always On Top')))
                 $OnTop.Add_CheckedChanged({
                     $Form.TopMost = !$Form.TopMost
                 })
 		        $OnTop.Parent = $TabPageConfig
 		
-		        $Bold = ([Activator]::CreateInstance([GUI.ChB],@(150, 25, 10, 250, 'Bold Font')))
+		        $Bold = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 10, 250, 'Bold Font')))
                 $Bold.Add_CheckedChanged({
                     If($This.Checked){
 		    	        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
@@ -3494,7 +3506,7 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
 		            }
                 })
                 $Bold.Parent = $TabPageConfig
-                $MousePosCheck = ([Activator]::CreateInstance([GUI.ChB],@(175, 25, 10, 275, 'Show Mouse Position')))
+                $MousePosCheck = ([Cons.Act]::CrI([GUI.ChB],@(175, 25, 10, 275, 'Show Mouse Position')))
                 $MousePosCheck.Add_CheckedChanged({
                     $SyncHash.ShowMouse = $This.Checked
                 })
@@ -3503,13 +3515,13 @@ $TabController = ([Activator]::CreateInstance([GUI.TC],@(405, 400, 25, 7)))
         $TabControllerAdvanced.Parent = $TabPageAdvanced
     $TabPageAdvanced.Parent = $TabController
 $TabController.Parent = $Form
-$Help = ([Activator]::CreateInstance([GUI.B],@(25, 25, 430, -1, '?')))
+$Help = ([Cons.Act]::CrI([GUI.B],@(25, 25, 430, -1, '?')))
 $Help.Add_Click({Notepad ($env:APPDATA+'\Macro\Help.txt')})
 $Help.Parent = $Form
-$GO = ([Activator]::CreateInstance([GUI.B],@(200, 25, 25, 415, 'Run')))
+$GO = ([Cons.Act]::CrI([GUI.B],@(200, 25, 25, 415, 'Run')))
 $GO.Add_Click({If(!$WhatIfCheck.Checked){GO}Else{GO -WhatIf}})
 $GO.Parent = $Form
-$GOSel = ([Activator]::CreateInstance([GUI.B],@(125, 25, 230, 415, 'Run Selection')))
+$GOSel = ([Cons.Act]::CrI([GUI.B],@(125, 25, 230, 415, 'Run Selection')))
 $GOSel.Add_Click({
     If(!$WhatIfCheck.Checked){
         GO -Selection
@@ -3518,7 +3530,7 @@ $GOSel.Add_Click({
     }
 })
 $GOSel.Parent = $Form
-$WhatIfCheck = ([Activator]::CreateInstance([GUI.ChB],@(80,27,365,415,'WhatIf?')))
+$WhatIfCheck = ([Cons.Act]::CrI([GUI.ChB],@(80,27,365,415,'WhatIf?')))
 $WhatIfCheck.Parent = $Form
 $Form.Add_SizeChanged({
     $TabController.Size         = [GUI.SP]::SI((([Int]$This.Width)-65),(([Int]$This.Height)-100))
@@ -3546,7 +3558,7 @@ $Form.Add_SizeChanged({
 })
 
 $Height = 22
-$RightClickMenu = ([Activator]::CreateInstance([GUI.P],@(0,0,-1000,-1000)))
+$RightClickMenu = ([Cons.Act]::CrI([GUI.P],@(0,0,-1000,-1000)))
     $RClickMenuArr = (
         (
             'Cut',`
@@ -3570,7 +3582,7 @@ $RightClickMenu = ([Activator]::CreateInstance([GUI.P],@(0,0,-1000,-1000)))
         }{
             $Text = $_
             $Offset = ($Height*$Index)
-            $PH = ([Activator]::CreateInstance([GUI.B],@()))
+            $PH = ([Cons.Act]::CrI([GUI.B],@()))
             $PH.Size = [GUI.SP]::SI(135,$Height)
             $PH.Location = [GUI.SP]::PO(0,$Offset)
             $PH.Text = $Text
@@ -3589,22 +3601,22 @@ $RightClickMenu.Visible = $False
 $RightClickMenu.BorderStyle = 'FixedSingle'
 $RightClickMenu.Add_MouseLeave({Handle-RMenuExit $This})
 $RightClickMenu.Parent = $Form
-$FindForm = ([Activator]::CreateInstance([GUI.P],@(250,110,(($Form.Width - 250) / 2),(($Form.Height - 90) / 2))))
+$FindForm = ([Cons.Act]::CrI([GUI.P],@(250,110,(($Form.Width - 250) / 2),(($Form.Height - 90) / 2))))
 $FindForm.BorderStyle = 'FixedSingle'
 $FindForm.Visible = $False
-    $FRTitle = ([Activator]::CreateInstance([GUI.L],@(300,18,25,7,'Find and Replace (RegEx):')))
+    $FRTitle = ([Cons.Act]::CrI([GUI.L],@(300,18,25,7,'Find and Replace (RegEx):')))
     $FRTitle.Parent = $FindForm
-    $FLabel = ([Activator]::CreateInstance([GUI.L],@(20,20,4,28,'F:')))
+    $FLabel = ([Cons.Act]::CrI([GUI.L],@(20,20,4,28,'F:')))
     $FLabel.Parent = $FindForm
-    $Finder = ([Activator]::CreateInstance([GUI.RTB],@(200,20,25,25,'')))
+    $Finder = ([Cons.Act]::CrI([GUI.RTB],@(200,20,25,25,'')))
     $Finder.AcceptsTab = $True
     $Finder.Parent = $FindForm
-    $RLabel = ([Activator]::CreateInstance([GUI.L],@(20,20,4,53,'R:')))
+    $RLabel = ([Cons.Act]::CrI([GUI.L],@(20,20,4,53,'R:')))
     $RLabel.Parent = $FindForm
-    $Replacer = ([Activator]::CreateInstance([GUI.RTB],@(200,20,25,50,'')))
+    $Replacer = ([Cons.Act]::CrI([GUI.RTB],@(200,20,25,50,'')))
     $Replacer.AcceptsTab = $True
     $Replacer.Parent = $FindForm
-    $FRGO = ([Activator]::CreateInstance([GUI.B],@(95,25,25,75,'Replace All')))
+    $FRGO = ([Cons.Act]::CrI([GUI.B],@(95,25,25,75,'Replace All')))
         $FRGO.Add_Click({
             Switch($TabControllerComm.SelectedTab.Text){
                 'Commands'  {$Commands.Text     = ($Commands.Text -replace $Finder.Text.Replace('(NEWLINE)',$NL),$Replacer.Text)}
@@ -3612,7 +3624,7 @@ $FindForm.Visible = $False
             }
         })
     $FRGO.Parent = $FindForm
-    $FRClose = ([Activator]::CreateInstance([GUI.B],@(95,25,130,75,'Close')))
+    $FRClose = ([Cons.Act]::CrI([GUI.B],@(95,25,130,75,'Close')))
         $FRClose.Add_Click({$This.Parent.Visible = $False})
     $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
@@ -3790,7 +3802,7 @@ If($CommandLine){
     #$Form.Show()
     $Form.Activate()
     
-    $AppContext = ([Activator]::CreateInstance([System.Windows.Forms.ApplicationContext],@()))
+    $AppContext = ([Cons.Act]::CrI([System.Windows.Forms.ApplicationContext],@()))
     [System.Windows.Forms.Application]::Run($AppContext)
 }
 $UndoHash.KeyList | %{
