@@ -3758,7 +3758,7 @@ If($CommandLine){
                 $result = [System.Windows.Forms.MessageBox]::Show('Save before exiting?' , "Info" , 4)
                 If($result -eq 'Yes'){
                     $TempDir = ($env:APPDATA+'\Macro\Profiles\'+$Script:LoadedProfile+'\')
-                    [Void](MKDIR $TempDir)
+                    [Void](MKDIR $TempDir -ErrorAction SilentlyContinue)
                     $Script:Saved = $True
                     Try{
                         '' | Select @{Name='Commands';Expression={$Commands.Text}},@{Name='Functions';Expression={$FunctionsBox.Text}} | ConvertTo-JSON | Out-File ($TempDir+$Script:LoadedProfile+'.pik') -Width 10000 -Force
