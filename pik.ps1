@@ -2456,7 +2456,7 @@ $MouseIndPow.AddScript({
     '
     $MouseForm = [N.e]::w([System.Windows.Forms.Form],@())
     $MouseForm.Size = [N.e]::w([System.Drawing.Size],@(50,50))
-    $MouseForm.Text = 'Mouse Indicator'
+    #$MouseForm.Text = 'Mouse Indicator'
     $Red = [System.Drawing.Color]::Red
     $DarkRed = [System.Drawing.Color]::DarkRed
     $Pointer = [N.e]::w([System.Windows.Forms.Label],@())
@@ -2474,14 +2474,15 @@ $MouseIndPow.AddScript({
     $MouseForm.Add_Closing({[system.Windows.Forms.Application]::Exit()})
     [System.Action[System.Windows.Forms.Form,HashTable]]$Act = {
         Param($F,$Sync)
-        $Activated = $False
+        #$Activated = $False
         $PrevMouseShow = $False
         While(!$Sync.Kill){
             Try{
 	        If($Sync.ShowMouse){
                 If($Sync.ShowMouse -ne $PrevShowMouse){
                     $F.Show()
-			        If(!$Activated){$F.Activate();$Activated = $True}
+                    $F.Update()
+			        #If(!$Activated){$F.Activate();$Activated = $True}
                 }
                 $Loc = [System.Windows.Forms.Cursor]::Position
                 $Loc.X+=5
@@ -2493,7 +2494,6 @@ $MouseIndPow.AddScript({
                     $F.Hide()
                 }
             }
-            $F.Update()
 	    }Catch{}
             [System.Threading.Thread]::Sleep(10)
         }
@@ -2501,8 +2501,8 @@ $MouseIndPow.AddScript({
 	    $F.Dispose()
     }
     $MouseForm.Show()
-    $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
+    $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseAppContext = [N.e]::w([System.Windows.Forms.ApplicationContext],@())
     [System.Windows.Forms.Application]::Run($MouseAppContext)
 }) | Out-Null
