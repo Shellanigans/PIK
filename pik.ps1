@@ -886,7 +886,7 @@ Function Actions{
                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
             }
         }ElseIf($X -match '{ECHO .*?}'){
-            If($X -match '{ECHO -GUI \S+' -OR !$ShowCons.Checked){
+            If($X -match '{ECHO -GUI \S+'){
                 [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO ' -replace '^-GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
             }Else{
                 [System.Console]::WriteLine($Tab+'ECHO: '+($X -replace '^{ECHO ' -replace '}$'))
