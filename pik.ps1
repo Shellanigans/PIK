@@ -694,9 +694,9 @@ Function Actions{
                                 [System.Console]::WriteLine($Tab+$PHMsg)
                             }
                         }
-                        $Buff = New-Object Byte[] 1024
+                        $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                         While($PHStream.DataAvailable){
-                            $Buff = New-Object Byte[] 1024
+                            $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                             [Void]$PHStream.Read($Buff, 0, 1024)
                             $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
                         }
@@ -2402,6 +2402,12 @@ $MutexPow.AddScript({
     [DllImport("C:\\Windows\\System32\\user32.dll")]
     public static extern short GetAsyncKeyState(int KCode);
     '
+
+    Add-Type -Name Act -Namespace Cons -MemberDefinition '
+    public static Object CrI (Type type, params Object[] args){
+        return System.Activator.CreateInstance(type, args);
+    }
+    '
     $PHCMDS = '{CMDS_START}'+($NL*2)+'{SERVERSTOP}'+($NL*2)+'{CMDS_END}'
     $SSrv = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
     While(!$SyncHash.Kill){
@@ -2441,17 +2447,22 @@ $MouseIndPow.AddScript({
     $SyncHash.MouseIndPid = $PID
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
-    $MouseForm = New-Object System.Windows.Forms.Form
-    $MouseForm.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
+    Add-Type -Name Act -Namespace Cons -MemberDefinition '
+    public static Object CrI (Type type, params Object[] args){
+        return System.Activator.CreateInstance(type, args);
+    }
+    '
+    $MouseForm = [Cons.Act]::CrI([System.Windows.Forms.Form],@())
+    $MouseForm.Size = [Cons.Act]::CrI([System.Drawing.Size],@(50,50))
     $MouseForm.Text = 'Mouse Indicator'
     $Red = [System.Drawing.Color]::Red
     $DarkRed = [System.Drawing.Color]::DarkRed
-    $Pointer = (New-Object System.Windows.Forms.Label)
-    $Pointer.Size = (New-Object System.Drawing.Size -ArgumentList (50,50))
-    $Pointer.Location = (New-Object System.Drawing.Size -ArgumentList (-10,0))
+    $Pointer = [Cons.Act]::CrI([System.Windows.Forms.Label],@())
+    $Pointer.Size = [Cons.Act]::CrI([System.Drawing.Size],@(50,50))
+    $Pointer.Location = [Cons.Act]::CrI([System.Drawing.Size],@(-10,0))
     $Pointer.BackColor = $DarkRed
     $Pointer.ForeColor = $Red
-    $Pointer.Font = (New-Object System.Drawing.Font -ArgumentList ('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
+    $Pointer.Font = [Cons.Act]::CrI([System.Drawing.Font],@('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
     $Pointer.Text = '←'
     $Pointer.Parent = $MouseForm
     $MouseForm.BackColor = $DarkRed
@@ -2461,36 +2472,36 @@ $MouseIndPow.AddScript({
     $MouseForm.Add_Closing({[system.Windows.Forms.Application]::Exit()})
     [System.Action[System.Windows.Forms.Form,HashTable]]$Act = {
         Param($F,$Sync)
-	$Activated = $False
+        $Activated = $False
         $PrevMouseShow = $False
         While(!$Sync.Kill){
             Try{
 	        If($Sync.ShowMouse){
-                    If($Sync.ShowMouse -ne $PrevShowMouse){
-                        $F.Show()
-			If(!$Activated){$F.Activate();$Activated = $True}
-                    }
-                    $Loc = [System.Windows.Forms.Cursor]::Position
-                    $Loc.X+=5
-                    $Loc.Y-=35
-                    $F.Location = $Loc
-                    $PrevMouseShow = $Sync.ShowMouse
-                }Else{
-                    If($Sync.ShowMouse -ne $PrevShowMouse){
-                        $F.Hide()
-                    }
+                If($Sync.ShowMouse -ne $PrevShowMouse){
+                    $F.Show()
+			        If(!$Activated){$F.Activate();$Activated = $True}
                 }
-                $F.Update()
+                $Loc = [System.Windows.Forms.Cursor]::Position
+                $Loc.X+=5
+                $Loc.Y-=35
+                $F.Location = $Loc
+                $PrevMouseShow = $Sync.ShowMouse
+            }Else{
+                If($Sync.ShowMouse -ne $PrevShowMouse){
+                    $F.Hide()
+                }
+            }
+            $F.Update()
 	    }Catch{}
             [System.Threading.Thread]::Sleep(10)
         }
         $F.Close()
-	$F.Dispose()
+	    $F.Dispose()
     }
     $MouseForm.Show()
     $MouseFormHandle = $MouseForm.BeginInvoke($Act,$MouseForm,$SyncHash)
     $MouseForm.Hide()
-    $MouseAppContext = ([Cons.Act]::CrI([System.Windows.Forms.ApplicationContext],@()))
+    $MouseAppContext = [Cons.Act]::CrI([System.Windows.Forms.ApplicationContext],@())
     [System.Windows.Forms.Application]::Run($MouseAppContext)
 }) | Out-Null
 $MouseIndPow.AddParameter('SyncHash', $SyncHash) | Out-Null
@@ -2713,25 +2724,30 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                             $TapePow.AddScript({
                                 Add-Type -AssemblyName System.Windows.Forms
                                 Add-Type -AssemblyName System.Drawing
-                                $TapeForm = New-Object System.Windows.Forms.Form
-                                $TapeForm.Size = New-Object System.Drawing.Size -ArgumentList (5000,5000)
+                                Add-Type -Name Act -Namespace Cons -MemberDefinition '
+                                public static Object CrI (Type type, params Object[] args){
+                                    return System.Activator.CreateInstance(type, args);
+                                }
+                                '
+                                $TapeForm = [Cons.Act]::CrI([System.Windows.Forms.Form],@())
+                                $TapeForm.Size = [Cons.Act]::CrI([System.Drawing.Size],@(5000,5000))
                                 $TapeForm.Text = 'Measuring Tape'
                                 $Black = [System.Drawing.Color]::Black
                                 $Red = [System.Drawing.Color]::Red
                                 $Blue = [System.Drawing.Color]::Blue
                                 $Green = [System.Drawing.Color]::LimeGreen
                                 $DarkGray = [System.Drawing.Color]::DarkGray
-                                $BlackPen = (New-Object System.Drawing.Pen -ArgumentList ($Black))
-                                $RedPen = (New-Object System.Drawing.Pen -ArgumentList ($Red))
-                                $BluePen = (New-Object System.Drawing.Pen -ArgumentList ($Blue))
-                                $GreenBrush = (New-Object System.Drawing.SolidBrush -ArgumentList ($Green))
+                                $BlackPen = [Cons.Act]::CrI([System.Drawing.Pen],@($Black))
+                                $RedPen = [Cons.Act]::CrI([System.Drawing.Pen],@($Red))
+                                $BluePen = [Cons.Act]::CrI([System.Drawing.Pen],@($Blue))
+                                $GreenBrush = [Cons.Act]::CrI([System.Drawing.SolidBrush],@($Green))
                                 $Graphics = [System.Drawing.Graphics]::FromHwnd($TapeForm.Handle)
                                 $TapeForm.Add_Paint({$Graphics.FillRectangle($GreenBrush, 70, 70, 5000, 5000)})
                                 #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 5000, 40)})
                                 #$TapeForm.Add_Paint({$Graphics.DrawLine($BlackPen, 40, 40, 40, 5000)})
-                                $OriginLabel = (New-Object System.Windows.Forms.Label)
-                                $OriginLabel.Size = (New-Object System.Drawing.Size(70,25))
-                                $OriginLabel.Location = (New-Object System.Drawing.Size(10,10))
+                                $OriginLabel = [Cons.Act]::CrI([System.Windows.Forms.Label],@())
+                                $OriginLabel.Size = [Cons.Act]::CrI([System.Drawing.Size],@(70,25))
+                                $OriginLabel.Location = [Cons.Act]::CrI([System.Drawing.Size],@(10,10))
                                 $OriginLabel.BackColor = [System.Drawing.Color]::Transparent
                                 $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($TapeForm.Location.X+83)+','+[String]($TapeForm.Location.Y+106))
                                 $OriginLabel.Parent = $TapeForm
@@ -2739,15 +2755,15 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                                 0..5000 | ?{!($_ % ($OffSet)) -OR !($_ % (($OffSet)/2)) -OR !($_ % (($OffSet)/10))} | %{
                                     $PH = ($_+75)
                                     If(!($_ % ($OffSet))){
-                                        $LocationLabel = (New-Object System.Windows.Forms.Label)
-                                        $LocationLabel.Size = (New-Object System.Drawing.Size(30,15))
-                                        $LocationLabel.Location = (New-Object System.Drawing.Size(($PH-5), 40))
+                                        $LocationLabel = [Cons.Act]::CrI([System.Windows.Forms.Label],@())
+                                        $LocationLabel.Size = [Cons.Act]::CrI([System.Drawing.Size],@(30,15))
+                                        $LocationLabel.Location = [Cons.Act]::CrI([System.Drawing.Size],@(($PH-5),40))
                                         #$LocationLabel.BackColor = [System.Drawing.Color]::Transparent
                                         $LocationLabel.Text = $_
                                         $LocationLabel.Parent = $TapeForm
-                                        $LocationLabel = (New-Object System.Windows.Forms.Label)
-                                        $LocationLabel.Size = (New-Object System.Drawing.Size(30,15))
-                                        $LocationLabel.Location = (New-Object System.Drawing.Size(22, ($PH-5)))
+                                        $LocationLabel = [Cons.Act]::CrI([System.Windows.Forms.Label],@())
+                                        $LocationLabel.Size = [Cons.Act]::CrI([System.Drawing.Size],@(30,15))
+                                        $LocationLabel.Location = [Cons.Act]::CrI([System.Drawing.Size],@(22,($PH-5)))
                                         $LocationLabel.RightToLeft  = [System.Windows.Forms.RightToLeft]::Yes
                                         $LocationLabel.Text = $_
                                         $LocationLabel.Parent = $TapeForm
@@ -2761,15 +2777,15 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                                         #$TapeForm.Add_Paint({$Graphics.DrawLine($BluePen, 67, $PH, 5000, $PH)}.GetNewClosure())
                                     }
                                 }
-                                $TapeForm.Size = (New-Object System.Drawing.Size(500,500))
+                                $TapeForm.Size = [Cons.Act]::CrI([System.Drawing.Size],@(500,500))
                                 
-                                $Box = (New-Object System.Windows.Forms.Panel)
-                                $Box.Size = (New-Object System.Drawing.Size -ArgumentList (25,25))
-                                $Box.Location = (New-Object System.Drawing.Size -ArgumentList (($TapeForm.Width-41),($TapeForm.Height-64)))
+                                $Box = [Cons.Act]::CrI([System.Windows.Forms.Panel],@())
+                                $Box.Size = [Cons.Act]::CrI([System.Drawing.Size],@(25,25))
+                                $Box.Location = [Cons.Act]::CrI([System.Drawing.Size],@(($TapeForm.Width-41),($TapeForm.Height-64)))
                                 $Box.BackColor = $DarkGray
                                 $Box.Parent = $TapeForm
                                 $TapeForm.Add_SizeChanged({
-                                    $Box.Location = (New-Object System.Drawing.Size -ArgumentList (($This.Width-41),($This.Height-64)))
+                                    $Box.Location = [Cons.Act]::CrI([System.Drawing.Size],@(($This.Width-41),($This.Height-64)))
                                 })
                                 $TapeForm.Add_LocationChanged({
                                     $OriginLabel.Text = '0x0 Loc:'+[System.Environment]::NewLine+([String]($This.Location.X+83)+','+[String]($This.Location.Y+106))
@@ -3097,7 +3113,6 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                     If($DialogS.ShowDialog() -eq 'OK'){
                         #$SavePath = $DialogS.FileName
                         If($PIK_PS1){
-                            $Temp = ('$MainBlock = {'+$NL)
                             $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
                             $Temp+=($CSharpDef+$NL)
                             $Temp+=("'"+[Char]64+$NL)
@@ -3154,8 +3169,7 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                             $Temp+=('                $IP = [String]$SyncHash.SrvIP'+$NL)
                             $Temp+=('                If($IP -match "0\.0\.0\.0"){$IP = "127.0.0.1"}'+$NL)
                             $Temp+=('                $Port = [Int]$SyncHash.SrvPort'+$NL)
-                            $Temp+=('                $TmpCli = [System.Net.Sockets.TCPClient]')#This is split here to avoid regex for the backwards compatibility
-                            $Temp+=('::New($IP,$Port)'+$NL)
+                            $Temp+=('                $TmpCli = [System.Net.Sockets.TCPClient]::New($IP,$Port)'+$NL)
                             $Temp+=('                $TmpCli | %{'+$NL)
                             $Temp+=('                    $_.Close()'+$NL)
                             $Temp+=('                    $_.Dispose()'+$NL)
@@ -3181,19 +3195,6 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                             $Temp+=('    }'+$NL)
                             $Temp+=('}'+$NL)
                             $Temp+=('$SyncHash.Kill = $True'+$NL)
-                            $Temp+=('}'+$NL)
-                            $Temp+=('If($(Try{[Void][PSObject]')#This is split here to avoid regex for the backwards compatibility
-                            $Temp+=('::New()}Catch{$True})){'+$NL)
-                            $Temp+=('    $MainBlock = ($MainBlock.toString().Split([System.Environment]::NewLine) | ?{$_ -ne '+"'"+''+"'"+'} | %{'+$NL)
-                            $Temp+=('        If($_ -match '+"'"+']::New\('+"'"+'){'+$NL)
-                            $Temp+=('            (($_.Split('+"'"+'['+"'"+')[0]+'+"'"+'(New-Object '+"'"+'+$_.Split('+"'"+'['+"'"+')[-1]+'+"'"+')'+"'"+') -replace '+"'"+']::New'+"'"+','+"'"+' -ArgumentList '+"'"+').Replace('+"'"+' -ArgumentList ()'+"'"+','+"'"+''+"'"+')'+$NL)
-                            $Temp+=('        }Else{'+$NL)
-                            $Temp+=('            $_'+$NL)
-                            $Temp+=('        }'+$NL)
-                            $Temp+=('    }) -join [System.Environment]::NewLine'+$NL)
-                            $Temp+=('}'+$NL)
-                            $Temp+=('$MainBlock = [ScriptBlock]::Create($MainBlock)'+$NL)
-                            $Temp+=('$MainBlock.Invoke($Macro)'+$NL)
                             $Temp | Out-File $DialogS.FileName -Width 10000 -Encoding UTF8
                         }Else{
                             Try{
@@ -3340,12 +3341,12 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                         $Client = $Listener.AcceptTCPClient()
                         $Listener.Stop()
                         $Stream = $Client.GetStream()
-                        $Buff = New-Object Byte[] 1024
+                        $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                         $CMDsIn = ''
                         $Timeout = 1
                         While(!(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt $MaxTime)){
                             While($Stream.DataAvailable){
-                                $Buff = New-Object Byte[] 1024
+                                $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                                 [Void]$Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
@@ -3391,12 +3392,12 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
                         $Client = $Listener.AcceptTCPClient()
                         $Listener.Stop()
                         $Stream = $Client.GetStream()
-                        $Buff = New-Object Byte[] 1024
+                        $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                         $CMDsIn = ''
                         $Timeout = 1
                         While(!(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt $MaxTime)){
                             While($Stream.DataAvailable){
-                                $Buff = New-Object Byte[] 1024
+                                $Buff = [Cons.Act]::CrI([Byte[]],@(1024))
                                 [Void]$Stream.Read($Buff, 0, 1024)
                                 $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
                             }
@@ -3500,9 +3501,9 @@ $TabController = ([Cons.Act]::CrI([GUI.TC],@(405, 400, 25, 7)))
 		        $Bold = ([Cons.Act]::CrI([GUI.ChB],@(150, 25, 10, 250, 'Bold Font')))
                 $Bold.Add_CheckedChanged({
                     If($This.Checked){
-		    	        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+		    	        $Form.Controls | %{$_.Font = [Cons.Act]::CrI([System.Drawing.Font],@('Lucida Console',9,[System.Drawing.FontStyle]::Bold))}
 		            }Else{
-		    	        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+		    	        $Form.Controls | %{$_.Font = [Cons.Act]::CrI([System.Drawing.Font],@('Lucida Console',9,[System.Drawing.FontStyle]::Regular))}
 		            }
                 })
                 $Bold.Parent = $TabPageConfig
@@ -3630,8 +3631,8 @@ $FindForm.Visible = $False
 $FindForm.Parent = $Form
 #If($Host.Name -match 'Console'){Cls}
 If(Test-Path ($env:APPDATA+'\Macro\LegacySendKeys.txt')){[Cons.Send]::SetConfig()}
-$Config = New-Object PSObject
-$Config = ($Config | Select `
+
+$Config = ('' | Select `
     @{NAME='DelayTimeVal';EXPRESSION={0}},`
     @{NAME='DelayChecked';EXPRESSION={$False}},`
     @{NAME='DelayRandVal';EXPRESSION={0}},`
@@ -3670,9 +3671,9 @@ Try{
     Sleep -Milliseconds 40
     $OnTop.Checked = !$OnTop.Checked
     If($Bold.Checked){
-        $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Bold)}
+        $Form.Controls | %{$_.Font = [Cons.Act]::CrI([System.Drawing.Font],@('Lucida Console',9,[System.Drawing.FontStyle]::Bold))}
     }Else{
-	    $Form.Controls | %{$_.Font = New-Object System.Drawing.Font('Lucida Console',9,[System.Drawing.FontStyle]::Regular)}
+	    $Form.Controls | %{$_.Font = [Cons.Act]::CrI([System.Drawing.Font],@('Lucida Console',9,[System.Drawing.FontStyle]::Regular))}
     }
     $MousePosCheck.Checked = $False
     #Something fucky is going on here, when the form starts with this property set, there's like a three second pause and a copy of the indicator gets like "stamped" onto the screen. This doesn't happen if the form is made visible AFTER the parent form though
