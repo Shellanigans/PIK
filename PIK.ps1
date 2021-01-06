@@ -1090,6 +1090,7 @@ Function Interpret{
             ($X -match '{GETWINDTEXT ') -OR `
             ($X -match '{GETFOCUS') -OR `
             ($X -match '{GETSCREEN') -OR `
+            ($X -match '{TESTPATH') -OR `
             ($X -match '{READIN '))
         ){
         
