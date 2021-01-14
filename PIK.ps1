@@ -1,3 +1,4 @@
+
 #Some C# code that I use as wrapper class for System.Windows.Forms (for easy instantiation) as well as a collection of imported functions from other dlls
 #Eventually should move to entirely C# invoked by Powershell and some of the migration is done below (the interpret method in the parser class)
 $CSharpDef = @'
@@ -95,7 +96,26 @@ namespace Cons{
         }
         
         public static void Keys (string Keys)  {
-            SWF.SendKeys.SendWait(Keys);
+            if(Regex.IsMatch(Keys, "WINDOWS ")){
+                string WinKeys = Keys.Replace("{","").Replace("WINDOWS","").Replace("}","").Replace(" ","");
+                
+                int WinKeyCount = 1;
+                if(Regex.IsMatch(WinKeys, "\\d")){
+                    WinKeyCount = Convert.ToInt32(Regex.Replace(WinKeys, "\\D", ""));
+                }
+                
+                if(Regex.IsMatch(WinKeys, "R")){
+                    Cons.KeyEvnt.keybd_event(0x5C, 0, 0x02, 0);
+                    System.Threading.Thread.Sleep(40);
+                    Cons.KeyEvnt.keybd_event(0x5C, 0, 0, 0);
+                }else{
+                    Cons.KeyEvnt.keybd_event(0x5B, 0, 0x02, 0);
+                    System.Threading.Thread.Sleep(40);
+                    Cons.KeyEvnt.keybd_event(0x5B, 0, 0, 0);
+                }
+            }else{
+                SWF.SendKeys.SendWait(Keys);
+            }
         }
     }
 
@@ -125,8 +145,17 @@ namespace Img{
             int movewidth = mainwidth - subwidth;
             int moveheight = mainheight - subheight;
             
-            DR.Imaging.BitmapData bmMainData = main.LockBits(new DR.Rectangle(0, 0, mainwidth, mainheight), DR.Imaging.ImageLockMode.ReadWrite, DR.Imaging.PixelFormat.Format32bppArgb);
-            DR.Imaging.BitmapData bmSubData = sub.LockBits(new DR.Rectangle(0, 0, subwidth, subheight), DR.Imaging.ImageLockMode.ReadWrite, DR.Imaging.PixelFormat.Format32bppArgb);
+            DR.Imaging.BitmapData bmMainData = main.LockBits(
+                new DR.Rectangle(0, 0, mainwidth, mainheight),
+                DR.Imaging.ImageLockMode.ReadWrite,
+                DR.Imaging.PixelFormat.Format32bppArgb
+            );
+
+            DR.Imaging.BitmapData bmSubData = sub.LockBits(
+                new DR.Rectangle(0, 0, subwidth, subheight),
+                DR.Imaging.ImageLockMode.ReadWrite,
+                DR.Imaging.PixelFormat.Format32bppArgb
+            );
             
             int bytesMain = Math.Abs(bmMainData.Stride) * mainheight;
             int strideMain = bmMainData.Stride;
@@ -390,7 +419,10 @@ public class Parser{
                 while(Regex.IsMatch(X, "{SPACE")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
                         if(Regex.IsMatch(SubString, "SPACE")){
-                            X = X.Replace(("{"+SubString+"}"),(new string (' ', Convert.ToInt32(Regex.Replace(SubString, "^SPACE$", "SPACE 1").Split(' ')[1]))));
+                            X = X.Replace(
+                                ("{"+SubString+"}"),
+                                (new string (' ', Convert.ToInt32(Regex.Replace(SubString, "^SPACE$", "SPACE 1").Split(' ')[1])))
+                            );
                             System.Console.WriteLine(X);
                         }
                     }
@@ -399,7 +431,11 @@ public class Parser{
                 while(Regex.IsMatch(X, "{RAND ")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
                         if(Regex.IsMatch(SubString, "RAND ") && Regex.IsMatch(SubString, ",")){
-                            X = X.Replace(("{"+SubString+"}"),(Convert.ToString((new Random()).Next(Convert.ToInt32(SubString.Split(' ')[1].Split(',')[0]),Convert.ToInt32(SubString.Split(' ')[1].Split(',')[1])))));
+                            X = X.Replace(
+                                ("{"+SubString+"}"),
+                                (Convert.ToString((new Random()).Next(Convert.ToInt32(SubString.Split(' ')[1].Split(',')[0]),
+                                Convert.ToInt32(SubString.Split(' ')[1].Split(',')[1]))))
+                            );
                             System.Console.WriteLine(X);
                         }
                     }
@@ -417,7 +453,13 @@ public class Parser{
     }
 }
 '@
-Add-Type -ReferencedAssemblies System.Windows.Forms,System.Drawing,Microsoft.VisualBasic,System.Configuration,System.Reflection -IgnoreWarnings -TypeDefinition $CSharpDef
+Add-Type -ReferencedAssemblies `
+    System.Windows.Forms,`
+    System.Drawing,`
+    Microsoft.VisualBasic,`
+    System.Configuration,`
+    System.Reflection `
+-IgnoreWarnings -TypeDefinition $CSharpDef
 
 ###########################################################################################
              #######                                                           
@@ -458,319 +500,157 @@ Function Actions{
         }
         $X = $X.Replace('{FI}','').Replace('{END WHILE}','').Replace('{ELSE}','')
         
-        If($X -match '^{POWER .*}$'){
-            If(!$WhatIf){
-                [Void]([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
-                $X = ''
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))}
+        Switch -regex ($X){
+            '^{POWER .*}$'{
+                If(!$WhatIf){
+                    [Void]([ScriptBlock]::Create(($X -replace '^{POWER ' -replace '}$'))).Invoke()
+                    $X = ''
+                }Else{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{POWER ' -replace '}$'))
+                    }
+                }
             }
-        }ElseIf($X -match '^{CMD .*}$'){
-            If(!$WhatIf){
-                [Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()
-                $X = ''
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))}
+        
+            '^{CMD .*}$'{
+                If(!$WhatIf){
+                    [Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()
+                    $X = ''
+                }Else{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'WHATIF: CREATE A SCRIPTBLOCK OF '+($X -replace '^{CMD ' -replace '}$'))
+                    }
+                }
             }
-        }ElseIf($X -match '{PAUSE'){
-            If($CommandLine -OR ($ShowCons.Checked -AND ($X -notmatch '{PAUSE -GUI}'))){
-                If($ShowCons.Checked){[System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')}
-                [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
-            }Else{
-                [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
-            }
+        
+            '{PAUSE'{
+                If($CommandLine -OR ($ShowCons.Checked -AND ($X -notmatch '{PAUSE -GUI}'))){
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine('PRESS ANY KEY TO CONTINUE...')
+                    }
+                    [Void]$Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown')
+                }Else{
+                    [Void][System.Windows.Forms.MessageBox]::Show('PAUSED - Close this box to continue...','PAUSED',0,64)
+                }
             
-            $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -GUI}','')
-        }ElseIf($X -match '^{FOREACH '){
-            $PH = ($X.Substring(0, $X.Length - 1) -replace '^{FOREACH ').Split(',')
-            $Script:VarsHash.Keys.Clone() | ?{$_ -match ('^[0-9]*_' + $PH[1])} | Group Length | Select *,@{NAME='IntName';EXPRESSION={[Int]$_.Name}} | Sort IntName | %{$_.Group | Sort} | %{
-                $Script:VarsHash.Remove($PH[0])
-                $Script:VarsHash.Add($PH[0],$Script:VarsHash.$_)
-                    
-                If(!$WhatIf){
-                    [Void](Parse-While $PH[2])
-                }Else{
-                    [Void](Parse-While $PH[2] -WhatIf)
-                }
+                $X = $X.Replace('{PAUSE}','').Replace('{PAUSE -GUI}','')
             }
-            $Script:VarsHash.Remove($PH[0])
-        }ElseIf($X -match '^{SETCON'){
-            $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
-            $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
-            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WRITING '+$PHFileContent+' TO FILE '+$PHFileName)}
-            If(!$WhatIf){
-                If($X -notmatch '^{SETCONA '){
-                    $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Force
-                }Else{
-                    $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Append -Force
-                }
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WRITE '+$PHFileContent+' TO FILE '+$PHFileName)}
-            }
-        }ElseIf($X -match '{SETCLIP '){
-            $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
-                If(!$WhatIf){[Cons.Clip]::SetT($_.Substring(8))}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO '+$_.Substring(8))}}
-                $X = ($X -replace ('{'+$_+'}'))
-            }
-        }ElseIf($X -match '{BEEP '){
-            $X.Split('{}') | ?{$_ -match 'BEEP '} | %{
-                $Tone = [Int](($_ -replace 'BEEP ').Split(',')[0])
-                $Time = [Int](($_ -replace 'BEEP ').Split(',')[1])
-                If(!$WhatIf){[System.Console]::Beep($Tone,$Time)}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: BEEP FOR '+$Time+' AT '+$Tone)}}
-                $X = ($X -replace ('{'+$_+'}'))
-            }
-        }ElseIf($X -match '{FLASH'){
-            $X.Split('{}') | ?{$_ -match 'FLASH$' -OR $_ -match 'FLASH '} | %{
-                $Flashes  = $(If($_ -match ' '){[Int]($_ -replace 'FLASH ')}Else{3})
-                If(!$WhatIf){
-                    [System.Console]::WriteLine('')
-                    1..$Flashes | %{
-                        $Coords = $Host.UI.RawUI.WindowSize
-                        $Origin = $Host.UI.RawUI.CursorPosition
-    
-                        $Blank = (' '*($Coords.Width*$Coords.Height))
-                        [System.Console]::WriteLine($Blank)
-                    }{
-                        If($_ % 2){
-                            $Host.UI.RawUI.CursorPosition = $Origin
-                            Write-Host -BackgroundColor White $Blank -NoNewline
-                            [System.Threading.Thread]::Sleep(100)
-                        }Else{
-                            $Host.UI.RawUI.CursorPosition = $Origin
-                            Write-Host -BackgroundColor Black $Blank -NoNewline
-                            [System.Threading.Thread]::Sleep(100)
-                        }
-                    }{
-                        $Host.UI.RawUI.CursorPosition = $Origin
-                        [System.Console]::WriteLine($Blank)
-                        $Host.UI.RawUI.CursorPosition = $Origin
-                    }
-                }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: FLASH '+$Flashes+' TIMES')}
-                }
-                $X = ($X -replace ('{'+$_+'}'))
-            }
-        }ElseIf($X -match '{WAIT ?(-M )?\d*}'){
-            $X -replace '{WAIT' -replace '}' | %{
-                If($_ -match '-M'){
-                    $PH = [Int]($_ -replace ' -M ')
-                }ElseIf($_ -match ' '){
-                    $PH = [Int]($_ -replace ' ')*1000
-                }Else{
-                    $PH = 1000
-                }
-                If(!$SyncHash.Stop -AND ($PH % 3000)){
-                    $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
-                    If($ShowCons.Checked){
-                        If($Host.Name -match 'Console'){
-                            [System.Console]::CursorLeft = 4
-                            [System.Console]::Write($PHMsg)
-                        }Else{
-                            [System.Console]::WriteLine($Tab+$PHMsg)
-                        }
-                    }
-                    [System.Threading.Thread]::Sleep($PH % 3000)
-                }
+        
+            '^{FOREACH '{
+                $PH = ($X -replace '^{FOREACH ').Split(',')
                 
-                $MaxWait = [Int]([Math]::Floor($PH / 3000))
-                $PH = ($PH - ($PH % 3000))
-                For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
-                    $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
-                    If($ShowCons.Checked){
-                        If($Host.Name -match 'Console'){
-                            [System.Console]::CursorLeft = 4
-                            [System.Console]::Write((' '*$PHMsg.Length))
-                            [System.Console]::CursorLeft = 4
-                            [System.Console]::Write($PHMsg)
-                        }Else{
-                            [System.Console]::WriteLine($Tab+$PHMsg)
-                        }
-                    }
-                    [System.Threading.Thread]::Sleep(3000)
-                }
-            }
-        }ElseIf($X -match '{[/\\]?HOLD'){
-            $Rel = ($X -match '[/\\]')
-            If(!$WhatIf){
-                If($X -match 'MOUSE'){
-                    $Temp = ($X.Split()[-1] -replace '}')
-                    $UndoHash.KeyList+=([String]$Temp)
-                    [Int]($X.Split()[-1] -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{[Cons.MouseEvnt]::mouse_event(($(If($Rel){$_*2}Else{$_})), 0, 0, 0, 0)}
-                }Else{
-                    $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
-                    $UndoHash.KeyList+=([String]$Temp)
-                    [Cons.KeyEvnt]::keybd_event($Temp, 0, $(If($Rel){'&H2'}Else{0}), 0)
-                }
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine(($Tab+'WHATIF: '+$(If($Rel){'RELEASE'}ELSE{'HOLD'})+' '+($X.Split()[-1] -replace '}')))}
-            }
-        }ElseIf($X -match '^{[LRM]?MOUSE'){
-            #Write-Host 'INSIDE MOUSE'
-            #Write-Host $X
-            If(!$WhatIf){
-                If($X -match ','){
-                    $PHX = $X
-                    $PHMoveType = 'NONE'
-                    If($PHX -match ' -LINEAR'){
-                        $PHX = ($PHX -replace '-LINEAR')
-                        $PHMoveType = 'LINEAR'
-                    }ElseIf($PHX -match ' -SINE'){
-                        $PHX = ($PHX -replace '-SINE')
-                        $PHMoveType = 'SINE'
-                    }ElseIf($PHX -match ' -RANDOM'){
-                        $PHX = ($PHX -replace '-RANDOM')
-                        $PHMoveType = 'RANDOM'
-                    }
-                    $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
-                    #Write-Host 'TEST1'
-                    $Coords = [Cons.Curs]::GPos()
-                    #Write-Host 'TEST2'
-                    $PHTMPCoords = $Coords
-                            
-                    If(($PHX -match '\+') -OR ($PHX -match '-\d+')){
-                        $MoveCoords[0] = [Int]($MoveCoords[0])+$Coords.X
-                        $MoveCoords[1] = [Int]($MoveCoords[1])+$Coords.Y
-                    }
-                    If($X -match '\(.*\)'){
-                        If($X -match '\(.*,.*\)'){
-                            $PHDelay = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-').Split(',')[0]
-                            $Weight = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-').Split(',')[-1]
-                        }Else{
-                            $PHDelay = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-')
-                            $Weight = 1
-                        }
+                $Keys = ($Script:VarsHash.Keys | ?{$_ -match ('^[0-9]+_' + $PH[1])})
+                $Keys = ($Keys | Group Length | Sort {[Int]$_.Name} | %{$_.Group | Sort})
+                
+                ForEach($Key in $Keys){
+                    $Script:VarsHash.Remove($PH[0])
+                    $Script:VarsHash.Add($PH[0],$Script:VarsHash.$Key)
+                    
+                    If(!$WhatIf){
+                        [Void](Parse-While $PH[2])
                     }Else{
-                        $PHDelay = 0
-                        $Weight = 1
-                    }
-                    If($PHMoveType -notmatch 'NONE'){
-                        $Right = $True
-                        $Down = $True
-                        $DistX = ($MoveCoords[0]-$Coords.X)
-                        $DistY = ($MoveCoords[1]-$Coords.Y)
-                        If($DistX -lt 0){$DistX = ($Coords.X-$MoveCoords[0]);$Right = $False}
-                        If($DistY -lt 0){$DistY = ($Coords.Y-$MoveCoords[1]);$Down = $False}
-                            
-                        $Dist = [Math]::Sqrt(([Math]::Pow($DistX,2)+[Math]::Pow($DistY,2)))
-                        $Dist = [Math]::Round($Dist)
-                        $Random = ([N.e]::w([System.Random],@()))
-                            
-                        $RemainderX = 0
-                        $RemainderY = 0
-                        For($i = 0; $i -lt $Dist -AND !$SyncHash.Stop; $i+=[Math]::Sqrt([Math]::Pow($OffsetX,2)+[Math]::Pow($OffsetY,2))){
-                            If($DistX -eq 0){$DistX = 1}
-                            If($DistY -eq 0){$DistY = 1}
-                                
-                            Switch($PHMoveType){
-                                'LINEAR'{
-                                    $OffsetX = $Dist/$DistY + $RemainderX
-                                    $OffsetY = $Dist/$DistX + $RemainderY
-                                }
-                                'SINE'{
-                                    $OffsetX = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistY
-                                    $OffsetY = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistX
-                                }
-                                'RANDOM'{
-                                    $OffsetX = $Dist*$Random.Next(1,($Weight+1))/$DistY
-                                    $OffsetY = $Dist*$Random.Next(1,($Weight+1))/$DistX
-                                }
-                            }
-                            $Coords = [Cons.Curs]::GPos()
-                            $PHTMPCoords = $Coords
-                            
-                            If($Right) {$PHTMPCoords.X = ($PHTMPCoords.X+$OffsetX)}Else{$PHTMPCoords.X = ($PHTMPCoords.X-$OffsetX)}
-                            If($Down)  {$PHTMPCoords.Y = ($PHTMPCoords.Y+$OffsetY)}Else{$PHTMPCoords.Y = ($PHTMPCoords.Y-$OffsetY)}
-                                
-                            $j = $Coords.X
-                            $k = $Coords.Y
-                            While(($j -ne $PHTMPCoords.X -OR $k -ne $PHTMPCoords.Y) -AND !$SyncHash.Stop){
-                                If($j -lt $PHTMPCoords.X){$j++}ElseIf($j -gt $PHTMPCoords.X){$j--}
-                                If($k -lt $PHTMPCoords.Y){$k++}ElseIf($k -gt $PHTMPCoords.Y){$k--}
-                                [Cons.Curs]::SPos($j,$k)
-                            }
-                            $RemainderX = $OffsetX - [Math]::Round($OffsetX)
-                            $RemainderY = $OffsetY - [Math]::Round($OffsetY)
-                            If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
-                        }
-                        If(!$SyncHash.Stop){
-                            While(($j -ne [Math]::Round($MoveCoords[0]) -OR $k -ne [Math]::Round($MoveCoords[1])) -AND !$SyncHash.Stop){
-                                If($j -lt [Math]::Round($MoveCoords[0])){$j++}ElseIf($j -gt [Math]::Round($MoveCoords[0])){$j--}
-                                If($k -lt [Math]::Round($MoveCoords[1])){$k++}ElseIf($k -gt [Math]::Round($MoveCoords[1])){$k--}
-                                [Cons.Curs]::SPos($j,$k)
-                            }
-                            If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
-                        }
-                    }Else{
-                        [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
-                    }
-                }ElseIf($X -match ' '){
-                    0..([Int](($X -replace '}').Split(' ')[-1])) | %{
-                        [Int]($X.Split(' ')[0] -replace '{' -replace 'MOUSE' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
-                            [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
-                        }
-                    }
-                }Else{
-                    [Int]($X -replace '{' -replace 'MOUSE}' -replace 'L',2 -replace 'R',8 -replace 'M',32) | %{$_,$($_*2)} | %{
-                        [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                        [Void](Parse-While $PH[2] -WhatIf)
                     }
                 }
-            }Else{
-                If($X -match ','){
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: MOVE MOUSE TO '+($X -replace '{MOUSE ' -replace '}'))}
-                }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: CLICK '+($X -replace '{MOUSE ' -replace '}'))}
+                $Script:VarsHash.Remove($PH[0])
+            }
+        
+            '^{SETCON'{
+                $PHFileName = ($X.Substring(8)).Split(',')[0].TrimStart(' ')
+                $PHFileContent = (($X -replace '^{SETCONA? ').Replace(($PHFileName+','),'') -replace '}$')
+                
+                If($ShowCons.Checked){
+                    [System.Console]::WriteLine($Tab+'WRITING "'+$PHFileContent+'" TO FILE '+$PHFileName)
                 }
-            }
-        }ElseIf($X -match 'WINDOWS}'){
-            If(!$WhatIf){
-                Switch($X){
-                    '{WINDOWS}'  {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
-                    '{LWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5B', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
-                    '{RWINDOWS}' {0..1 | %{[Cons.KeyEvnt]::keybd_event('&H5C', 0, $(If($_){'&H2'}Else{0}), 0)}; [System.Threading.Thread]::Sleep(40)}
-                }
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: PRESS WINDOWS KEY')}
-            }
-        }ElseIf($X -match '^{RESTART}$'){
-            $SyncHash.Restart = $True
-        }ElseIf($X -match '^{REFOCUS}$'){
-            $Script:Refocus = $True
-        }ElseIf($X -match '^{CLEARVAR'){
-            If($X -match '^{CLEARVARS}$'){
-                $Script:VarsHash = @{}
-            }Else{
-                $Script:VarsHash.Remove(($X.Substring(0, $X.Length - 1) -replace '^{CLEARVAR '))
-            }
-        }ElseIf($X -match '^{QUIT}$'){
-            $SyncHash.Stop = $True
-        }ElseIf($X -match '^{EXIT}$'){
-            $SyncHash.Stop = $True
-        }ElseIf($X -match '^{CD '){
-            CD ($X -replace '{CD ' -replace '}$')
-            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'CHANGING DIRECTORY TO '+($X -replace '{CD ' -replace '}$'))}
-        }ElseIf($X -match '^{REMOTE '){
-            Try{
                 If(!$WhatIf){
-                    $PH = ($X -replace '{REMOTE ' -replace '}$')
-                    $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
-                    $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
-                    $PHSendString = (($PH.Split(',') | Select -Skip 1) -join ',')
-                    If($Script:FuncHash.($PHSendString -replace '^{' -replace '}$')){
-                        $PHSendString = $Script:FuncHash.($PHSendString -replace '^{' -replace '}$')
+                    If($X -notmatch '^{SETCONA '){
+                        $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Force
+                    }Else{
+                        $PHFileContent | Out-File $PHFileName -Encoding UTF8 -Append -Force
                     }
-                    $PHCMDS = '{CMDS_START}'+($NL*2)+$PHSendString+($NL*2)+'{CMDS_END}'
-                    $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
-                    $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
-                    $PHStream = $PHClient.GetStream()
-                    $PHStream.Write($Buffer, 0, $Buffer.Length)
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                    If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine(($Tab*2)+$_)};$FlipFlop=!$FlipFlop}}
-                    $MaxTime = [Int]$CliTimeOut.Value
-                    $PHResp = ''
-                    $Timeout = 1
-                    While(($PHResp -notmatch '{COMPLETE}') -AND !$SyncHash.Stop -AND ($Timeout -lt $MaxTime) -AND ($PHSendString -ne '{SERVERSTOP}')){
-                        $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+$Timeout+'/'+$MaxTime)
-                        If($ShowCons.Checked -AND !($Timeout % 3)){
+                }Else{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'WHATIF: WRITE "'+$PHFileContent+'" TO FILE '+$PHFileName)
+                    }
+                }
+            }
+        
+            '{SETCLIP '{
+                $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
+                    If(!$WhatIf){
+                        [Cons.Clip]::SetT($_.Substring(8))
+                    }Else{
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO "'+$_.Substring(8)+'"')
+                        }
+                    }
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+            }
+        
+            '{BEEP '{
+                $X.Split('{}') | ?{$_ -match 'BEEP '} | %{
+                    $Tone = [Int](($_ -replace 'BEEP ').Split(',')[0])
+                    $Time = [Int](($_ -replace 'BEEP ').Split(',')[1])
+                    
+                    If(!$WhatIf){
+                        [System.Console]::Beep($Tone,$Time)
+                    }Else{
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'WHATIF: BEEP FOR '+$Time+' AT '+$Tone)
+                        }
+                    }
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+            }
+        
+            '{FLASH'{
+                $X.Split('{}') | ?{$_ -match 'FLASH$' -OR $_ -match 'FLASH '} | %{
+                    $Flashes  = $(If($_ -match ' '){[Int]($_ -replace 'FLASH ')}Else{3})
+                    If(!$WhatIf){
+                        [System.Console]::WriteLine('')
+                        1..$Flashes | %{
+                            $Coords = $Host.UI.RawUI.WindowSize
+                            $Origin = $Host.UI.RawUI.CursorPosition
+    
+                            $Blank = (' '*($Coords.Width*$Coords.Height))
+                            [System.Console]::WriteLine($Blank)
+                        }{
+                            If($_ % 2){
+                                $Host.UI.RawUI.CursorPosition = $Origin
+                                Write-Host -BackgroundColor White $Blank -NoNewline
+                                [System.Threading.Thread]::Sleep(100)
+                            }Else{
+                                $Host.UI.RawUI.CursorPosition = $Origin
+                                Write-Host -BackgroundColor Black $Blank -NoNewline
+                                [System.Threading.Thread]::Sleep(100)
+                            }
+                        }{
+                            $Host.UI.RawUI.CursorPosition = $Origin
+                            [System.Console]::WriteLine($Blank)
+                            $Host.UI.RawUI.CursorPosition = $Origin
+                        }
+                    }Else{
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'WHATIF: FLASH '+$Flashes+' TIMES')
+                        }
+                    }
+                    $X = ($X -replace ('{'+$_+'}'))
+                }
+            }
+        
+            '{WAIT ?(-M )?\d*}'{
+                $X -replace '{WAIT' -replace '}' | %{
+                    If($_ -match '-M'){
+                        $PH = [Int]($_ -replace ' -M ')
+                    }ElseIf($_ -match ' '){
+                        $PH = [Int]($_ -replace ' ')*1000
+                    }Else{
+                        $PH = 1000
+                    }
+                    If(!$SyncHash.Stop -AND ($PH % 3000)){
+                        $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
+                        If($ShowCons.Checked){
                             If($Host.Name -match 'Console'){
                                 [System.Console]::CursorLeft = 4
                                 [System.Console]::Write($PHMsg)
@@ -778,266 +658,724 @@ Function Actions{
                                 [System.Console]::WriteLine($Tab+$PHMsg)
                             }
                         }
-                        $Buff = [N.e]::w([Byte[]],@(1024))
-                        While($PHStream.DataAvailable){
-                            $Buff = [N.e]::w([Byte[]],@(1024))
-                            [Void]$PHStream.Read($Buff, 0, 1024)
-                            $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
-                        }
-                        [System.Threading.Thread]::Sleep(1000)
-                        $Timeout++
-                        If($PHResp -eq '{KEEPALIVE}'){$Timeout = 0}
+                        [System.Threading.Thread]::Sleep($PH % 3000)
                     }
-                    [System.Console]::WriteLine('')
-                    If($PHResp -match '{COMPLETE}'){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COMPLETED!')}}
-                    If($Timeout -ge $MaxTime){If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')}}
-                    $PHStream.Close()
-                    $PHStream.Dispose()
-                    $PHClient.Close()
-                    $PHClient.Dispose()
-                }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)}
-                    If($ShowCons.Checked){$PHSendString.Split($NL) | %{$FlipFlop = $True}{If($FlipFlop){[System.Console]::WriteLine($Tab+$_)};$FlipFlop=!$FlipFlop}}
-                }
-            }Catch{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)}
-            }
-        }ElseIf($X -match '^{SCRNSHT '){
-            $PH = ($X -replace '{SCRNSHT ')
-            $PH = $PH.Substring(0,($PH.Length - 1))
-            $PH = $PH.Split(',')
-            If(!$WhatIf){
-                $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
-                $BMP = ([N.e]::w([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
-            
-                $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
-                $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
-            
-                $BMP.Save($PH[4])
-            
-                $Graphics.Dispose()
-                $BMP.Dispose()
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') TO BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')}
-            }
-        }ElseIf($Script:FuncHash.ContainsKey($X.Trim('{}').Split()[0]) -AND ($X -match '^{.*}')){
-            $(If($X -match ' '){1..([Int]($X.Split()[-1] -replace '\D'))}Else{1}) | %{
-                $Script:FuncHash.($X.Trim('{}').Split()[0]).Split($NL) | %{
-                    ($_ -replace ('`'+$NL),'' -replace '^\s*' | ?{$_ -ne ''})
-                } | %{$Commented = $False}{
-                    If($_ -match '^<\\\\#'){$Commented = $True}
-                    If($_ -match '^\\\\#>'){$Commented = $False}
-                    If($_ -notmatch '^\\\\#' -AND !$Commented){$_}Else{If($ShowCons.Checked){[System.Console]::WriteLine($Tab+$_)}}
-                } | %{
-                    If(!$SyncHash.Stop){
-                        If(!$WhatIf){
-                            [Void](Parse-While $_)
-                        }Else{
-                            [Void](Parse-While $_ -WhatIf)
-                        }
-                    }
-                }
-            }
-        }ElseIf(($X -match '{FOCUS ') -OR ($X -match '{SETWIND ') -OR ($X -match '{MIN ') -OR ($X -match '{MAX ') -OR ($X -match '{HIDE ') -OR ($X -match '{SHOW ') -OR ($X -match '{SETWINDTEXT ')){
-            $PHProc = $X
-            If($PHProc -match ','){$PHProc = $PHProc.Split(',')[0]}
                 
-            $TrueHand = $False
-            Try{
-                If($X -match ' -ID '){
-                    $PHProc = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
-                    If(($Script:HiddenWindows.Keys -join '')){
-                        $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                        $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProc+'_.*?_'+$LastHiddenTime+'$')})
-                    }
-                    $PHProc = (PS -Id $PHProc | ?{$_.MainWindowHandle -ne 0})
-                    If($PHProc){$PHHidden = ''}
-                }ElseIf($X -match ' -HAND '){
-                    $PHProcHand = ($PHProc.Split(' ') | ?{$_ -ne ''})[2].Replace('{','').Replace('}','')
-                    #If(($Script:HiddenWindows.Keys -join '')){
-                    #    $LastHiddenTime = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                    #    $PHHidden = $Script:HiddenWindows.($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHProcHand+'_'+$LastHiddenTime+'$')})
-                    #}
-                    $PHProc = (PS | ?{[String]$_.MainWindowHandle -match $PHProcHand})
-                    If($PHProc){
-                        $PHHidden = ''
-                    }Else{
-                        $TrueHand = $True
-                        Try{
-                            $PHProcHand = [IntPtr][Int]$PHProcHand
-                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
-                            $PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-                            [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
-                            If(!$PHString){
-                                $PHProc = ''
-                                $PHHidden = ''
+                    $MaxWait = [Int]([Math]::Floor($PH / 3000))
+                    $PH = ($PH - ($PH % 3000))
+                    For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
+                        $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
+                        If($ShowCons.Checked){
+                            If($Host.Name -match 'Console'){
+                                [System.Console]::CursorLeft = 4
+                                [System.Console]::Write((' '*$PHMsg.Length))
+                                [System.Console]::CursorLeft = 4
+                                [System.Console]::Write($PHMsg)
                             }Else{
-                                $PHHidden = $PHProcHand
+                                [System.Console]::WriteLine($Tab+$PHMsg)
                             }
-                        }Catch{$PHProc = ''; $PHHidden = ''}
+                        }
+                        [System.Threading.Thread]::Sleep(3000)
                     }
-                }Else{
-                    $PHProcTMPName = $PHProc.Replace('{FOCUS ','').Replace('{SETWINDTEXT ','').Replace('{SETWIND ','').Replace('{MIN ','').Replace('{MAX ','').Replace('{HIDE ','').Replace('{SHOW ','').Replace('}','')
-                    If(($Script:HiddenWindows.Keys -join '')){
-                        $PHHidden = (($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$PHProcTMPName+'_')}) | %{$Script:HiddenWindows.$_})
-                    }
-                    Try{$PHProc = @(PS $PHProcTMPName -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})}Catch{$PHProc = $False}
-                    If(!$PHProc){$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $PHProcTMPName})}
                 }
-            }Catch{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')}
-                $SyncHash.Stop = $True
-                Break
+                [System.Console]::WriteLine('')
             }
-            If($PHHidden){$PHProc+=$PHHidden}
-            If(@($PHProc).Count){
+        
+            '{[/\\]?HOLD'{
+                $Rel = ($X -match '[/\\]')
                 If(!$WhatIf){
-                    $PHProc | %{
-                        If($TrueHand){
-                            $PHTMPProcHand = $_
+                    If($X -match 'MOUSE'){
+                        $Temp = ($X.Split()[-1].Replace('}',''))
+
+                        $UndoHash.KeyList+=([String]$Temp)
+                        
+                        [Int]$X.Split()[-1].Replace('MOUSE}','').Replace('L','2').Replace('R','8').Replace('M','32') | %{
+                            If($Rel){
+                                [Cons.MouseEvnt]::mouse_event(($_*2), 0, 0, 0, 0)
+                            }Else{
+                                [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                            }
+                        }
+                    }Else{
+                        $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
+                        
+                        $UndoHash.KeyList+=([String]$Temp)
+                        
+                        If($Rel){
+                            [Cons.KeyEvnt]::keybd_event($Temp, 0, '&H2', 0)
                         }Else{
-                            $PHTMPProc = $_
-                            $PHTMPProcTitle = $_.MainWindowTitle
-                            $PHTMPProcHand = $_.MainWindowHandle
+                            [Cons.KeyEvnt]::keybd_event($Temp, 0, 0, 0)
                         }
-                        $PHTMPProcHand = [IntPtr][Int]$PHTMPProcHand
-                        $PHAction = $X.Split(' ')[0].Replace('{','')
-                        Switch($PHAction){
-                            'FOCUS'       {
-                                Try{
-                                    If(!$TrueHand){[Void][Cons.App]::Act($PHTMPProcTitle)}Else{[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
-                                }Catch{
-                                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT FIND TRUE HAND STATUS: '+([Boolean]$TrueHand).ToString().ToUpper()+', PROC TITLE: '+$PHTMPProcTitle+', HANDLE: '+$PHTMPProcHand)}
-                                }
-                            }
-                            'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
-                            'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
-                            'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
-                            'HIDE'        {
-                                [Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,0)
-                                If(!$TrueHand){
-                                    $Script:HiddenWindows.Add(($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProc)
-                                }
-                                #Else{
-                                    #$Script:HiddenWindows.Add(('UNK_UNK_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),$PHTMPProcHand)
-                                #}
-                            }
-                            'SETWIND'     {
-                                $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                [Void][Cons.WindowDisp]::MoveWindow($PHTMPProcHand,[Int]$PHCoords[0],[Int]$PHCoords[1],([Int]$PHCoords[2]-[Int]$PHCoords[0]),([Int]$PHCoords[3]-[Int]$PHCoords[1]),$True)
-                            }
-                            'SETWINDTEXT' {
-                                $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                [Void][Cons.WindowDisp]::SetWindowText($PHTMPProcHand,$PHWindText)
-                            }
+                    }
+                }Else{
+                    If($ShowCons.Checked){
+                        If($Rel){
+                            $Rel = 'RELEASE'
+                        }ELSE{
+                            $Rel = 'HOLD'
                         }
-                        If(($PHAction -match 'MIN') -OR ($PHAction -match 'MAX') -OR ($PHAction -match 'SHOW')){
-                            $PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)
-                            #If(!$PHKey){$PHKey = (($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')} | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)}
-                            If($PHKey){
-                                #$PHKey = ($_.Name+'_'+$_.Id+'_'+$PHTMPProcHand+'_'+$PHKey)
-                                Try{
-                                    $Script:HiddenWindows.Remove($PHKey)
-                                }Catch{
-                                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')}
+                        [System.Console]::WriteLine(($Tab+'WHATIF: '+$Rel+' '+($X.Split()[-1] -replace '}')))
+                    }
+                }
+            }
+        
+            '^{[LRM]?MOUSE'{
+                #Write-Host 'INSIDE MOUSE'
+                #Write-Host $X
+                If(!$WhatIf){
+                    If($X -match ','){
+                        $PHX = $X
+                        $PHMoveType = 'NONE'
+                        If($PHX -match ' -LINEAR'){
+                            $PHX = ($PHX -replace '-LINEAR')
+                            $PHMoveType = 'LINEAR'
+                        }ElseIf($PHX -match ' -SINE'){
+                            $PHX = ($PHX -replace '-SINE')
+                            $PHMoveType = 'SINE'
+                        }ElseIf($PHX -match ' -RANDOM'){
+                            $PHX = ($PHX -replace '-RANDOM')
+                            $PHMoveType = 'RANDOM'
+                        }
+                        $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
+                        #Write-Host 'TEST1'
+                        $Coords = [Cons.Curs]::GPos()
+                        #Write-Host 'TEST2'
+                        $PHTMPCoords = $Coords
+                            
+                        If(($PHX -match '\+') -OR ($PHX -match '-\d+')){
+                            $MoveCoords[0] = [Int]($MoveCoords[0])+$Coords.X
+                            $MoveCoords[1] = [Int]($MoveCoords[1])+$Coords.Y
+                        }
+                        If($X -match '\(.*\)'){
+                            If($X -match '\(.*,.*\)'){
+                                $PHDelay = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-').Split(',')[0]
+                                $Weight = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-').Split(',')[-1]
+                            }Else{
+                                $PHDelay = [Int]($X -replace '^.*?\(' -replace '\).*$' -replace '-')
+                                $Weight = 1
+                            }
+                        }Else{
+                            $PHDelay = 0
+                            $Weight = 1
+                        }
+                        If($PHMoveType -notmatch 'NONE'){
+                            $Right = $True
+                            $Down = $True
+                            $DistX = ($MoveCoords[0]-$Coords.X)
+                            $DistY = ($MoveCoords[1]-$Coords.Y)
+                            If($DistX -lt 0){$DistX = ($Coords.X-$MoveCoords[0]);$Right = $False}
+                            If($DistY -lt 0){$DistY = ($Coords.Y-$MoveCoords[1]);$Down = $False}
+                            
+                            $Dist = [Math]::Sqrt(([Math]::Pow($DistX,2)+[Math]::Pow($DistY,2)))
+                            $Dist = [Math]::Round($Dist)
+                            $Random = ([N.e]::w([System.Random],@()))
+                            
+                            $RemainderX = 0
+                            $RemainderY = 0
+                            For($i = 0; $i -lt $Dist -AND !$SyncHash.Stop; $i+=[Math]::Sqrt([Math]::Pow($OffsetX,2)+[Math]::Pow($OffsetY,2))){
+                                If($DistX -eq 0){$DistX = 1}
+                                If($DistY -eq 0){$DistY = 1}
+                                
+                                Switch($PHMoveType){
+                                    'LINEAR'{
+                                        $OffsetX = $Dist/$DistY + $RemainderX
+                                        $OffsetY = $Dist/$DistX + $RemainderY
+                                    }
+                                    'SINE'{
+                                        $OffsetX = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistY
+                                        $OffsetY = $Dist*($Weight*[Math]::Sin(([Math]::PI*$i)/$Dist) + 1)/$DistX
+                                    }
+                                    'RANDOM'{
+                                        $OffsetX = $Dist*$Random.Next(1,($Weight+1))/$DistY
+                                        $OffsetY = $Dist*$Random.Next(1,($Weight+1))/$DistX
+                                    }
+                                }
+                                $Coords = [Cons.Curs]::GPos()
+                                $PHTMPCoords = $Coords
+                            
+                                If($Right){
+                                    $PHTMPCoords.X = ($PHTMPCoords.X+$OffsetX)
+                                }Else{
+                                    $PHTMPCoords.X = ($PHTMPCoords.X-$OffsetX)
+                                }
+
+                                If($Down){
+                                    $PHTMPCoords.Y = ($PHTMPCoords.Y+$OffsetY)
+                                }Else{
+                                    $PHTMPCoords.Y = ($PHTMPCoords.Y-$OffsetY)
+                                }
+                                
+                                $j = $Coords.X
+                                $k = $Coords.Y
+                                While(($j -ne $PHTMPCoords.X -OR $k -ne $PHTMPCoords.Y) -AND !$SyncHash.Stop){
+                                    If($j -lt $PHTMPCoords.X){$j++}ElseIf($j -gt $PHTMPCoords.X){$j--}
+                                    If($k -lt $PHTMPCoords.Y){$k++}ElseIf($k -gt $PHTMPCoords.Y){$k--}
+                                    [Cons.Curs]::SPos($j,$k)
+                                }
+                                $RemainderX = $OffsetX - [Math]::Round($OffsetX)
+                                $RemainderY = $OffsetY - [Math]::Round($OffsetY)
+                                If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                            }
+                            If(!$SyncHash.Stop){
+                                While(($j -ne [Math]::Round($MoveCoords[0]) -OR $k -ne [Math]::Round($MoveCoords[1])) -AND !$SyncHash.Stop){
+                                    
+                                    If($j -lt [Math]::Round($MoveCoords[0])){
+                                        $j++
+                                    }ElseIf($j -gt [Math]::Round($MoveCoords[0])){
+                                        $j--
+                                    }
+
+                                    If($k -lt [Math]::Round($MoveCoords[1])){
+                                        $k++
+                                    }ElseIf($k -gt [Math]::Round($MoveCoords[1])){
+                                        $k--
+                                    }
+                                    
+                                    [Cons.Curs]::SPos($j,$k)
+                                }
+                                If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
+                            }
+                        }Else{
+                            [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
+                        }
+                    }Else{
+                        $ClickCount = 1
+                        
+                        If($X -match 'MOUSE \d+}'){
+                            $ClickCount = [Int](($X.Replace('}','')).Split(' ')[-1])
+                        }
+                        
+                        1..$ClickCount | %{
+                            [Int]($X.Replace('L','2').Replace('R','8').Replace('M','32') -replace '\D') | %{
+                                If($_ -eq 2 -OR $_ -eq 8 -OR $_ -eq 32){
+                                    [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                                    [System.Threading.Thread]::Sleep(40)
+                                    [Cons.MouseEvnt]::mouse_event(($_*2), 0, 0, 0, 0)
+                                }Else{
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'INVALID MOUSE VALUE!')
+                                    }
                                 }
                             }
                         }
                     }
                 }Else{
-                    $PHProc | %{
-                        #$PHTMPProc = $_
-                        Switch($X.Split(' ')[0].Replace('{','')){
-                            'FOCUS'       {If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))}}
-                            'MIN'         {If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))}}
-                            'MAX'         {If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))}}
-                            'SHOW'        {If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))}}
-                            'HIDE'        {If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))}}
-                            'SETWIND'     {
-                                $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: RESIZE WINDOW '+($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+' TO TOP-LEFT ('+$PHCoords[0]+','+$PHCoords[1]+') AND BOTTOM-RIGHT ('+$PHCoords[2]+','+$PHCoords[3]+')')}
-                            }
-                            'SETWINDTEXT' {
-                                $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SET WINDOW TEXT FOR '+($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+' TO '+$PHWindText)}
-                            }
+                    If($ShowCons.Checked){
+                        If($X -match ','){
+                            [System.Console]::WriteLine($Tab+'WHATIF: MOVE MOUSE TO '+($X.Replace('{MOUSE ','').Replace('}','')))
+                        }Else{
+                            [System.Console]::WriteLine($Tab+'WHATIF: CLICK '+$X)
                         }
                     }
                 }
-            }Else{
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
             }
-        }ElseIf($X -match '{ECHO .*?}'){
-            If($X -match '{ECHO -GUI \S+'){
-                [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO ' -replace '^-GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
-            }Else{
-                [System.Console]::WriteLine($Tab+'ECHO: '+($X -replace '^{ECHO ' -replace '}$'))
+        
+            '^{RESTART}$'{
+                $SyncHash.Restart = $True
             }
-        }Else{
-            If($Escaped){
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')}
-                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'BUT HAS BEEN CONVERTED TO KEYSTROKES!')}
-                $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
-                $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
-                $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
+        
+            '^{REFOCUS}$'{
+                $Script:Refocus = $True
             }
-            If(($X -notmatch '^\(.*\)$' -AND $X -notmatch '^{.*}$' -AND $X -notmatch '^\[.*\]$') -AND ($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0)))){
-                $X.ToCharArray() | %{
-                    $PHX = $(
-                        Switch([String]$_){
-                            '{'{'{{}'}
-                            '}'{'{}}'}
-                            '('{'{(}'}
-                            ')'{'{)}'}
-                            '['{'{[}'}
-                            ']'{'{]}'}
-                            default{$_}
-                        }
-                    )
-                    
-                    If(!$WhatIf){
-                        [Cons.Send]::Keys([String]$PHX)
-                    }Else{
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$PHX)}
-                    }
-                    
-                    If($DelayCheck.Checked){
-                        $PH = ((([N.e]::w([Random],@()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))))
-                    }Else{
-                        $PH = 0
-                    }
-                        
-                    [System.Threading.Thread]::Sleep([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
+        
+            '^{CLEARVAR'{
+                If($X -match '^{CLEARVARS}$'){
+                    $Script:VarsHash = @{}
+                }Else{
+                    $Script:VarsHash.Remove($X.Replace('{CLEARVAR ').Replace('}'))
                 }
-            }Else{
+            }
+        
+            '^{QUIT}$'{
+                $SyncHash.Stop = $True
+            }
+        
+            '^{EXIT}$'{
+                $SyncHash.Stop = $True
+            }
+
+            '^{CD '{
+                CD ($X -replace '{CD ' -replace '}$')
+                
+                If($ShowCons.Checked){
+                    [System.Console]::WriteLine($Tab+'CHANGING DIRECTORY TO '+($X -replace '{CD ' -replace '}$'))
+                }
+            }
+
+            '^{REMOTE '{
                 Try{
                     If(!$WhatIf){
-                        [Cons.Send]::Keys([String]$X)
+                        $PH = ($X -replace '{REMOTE ' -replace '}$')
+                        $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
+                        $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
+                        $PHSendString = (($PH.Split(',') | Select -Skip 1) -join ',')
+                        
+                        If($Script:FuncHash.($PHSendString -replace '^{' -replace '}$')){
+                            $PHSendString = $Script:FuncHash.($PHSendString -replace '^{' -replace '}$')
+                        }
+                        
+                        $PHCMDS = '{CMDS_START}'+($NL*2)+$PHSendString+($NL*2)+'{CMDS_END}'
+                        $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
+                        
+                        $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                        
+                        $PHStream = $PHClient.GetStream()
+                        $PHStream.Write($Buffer, 0, $Buffer.Length)
+                        
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'SENT THE FOLLOWING TO '+$PHIP+':'+$PHPort)
+                        }
+                        If($ShowCons.Checked){
+                            $PHSendString.Split($NL) | %{$FlipFlop = $True}{
+                                If($FlipFlop){
+                                    [System.Console]::WriteLine(($Tab*2)+$_)
+                                }
+
+                                $FlipFlop=!$FlipFlop
+                            }
+                        }
+                        
+                        $MaxTime = [Int]$CliTimeOut.Value
+                        $PHResp = ''
+                        $Timeout = 1
+                        
+                        While(
+                            ($PHResp -notmatch '{COMPLETE}') -AND `
+                            !$SyncHash.Stop -AND `
+                            ($Timeout -lt $MaxTime) -AND `
+                            ($PHSendString -ne '{SERVERSTOP}')
+                        ){
+                            $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+$Timeout+'/'+$MaxTime)
+                            If($ShowCons.Checked -AND !($Timeout % 3)){
+                                If($Host.Name -match 'Console'){
+                                    [System.Console]::CursorLeft = 4
+                                    [System.Console]::Write($PHMsg)
+                                }Else{
+                                    [System.Console]::WriteLine($Tab+$PHMsg)
+                                }
+                            }
+                            $Buff = [N.e]::w([Byte[]],@(1024))
+                            While($PHStream.DataAvailable){
+                                $Buff = [N.e]::w([Byte[]],@(1024))
+                                [Void]$PHStream.Read($Buff, 0, 1024)
+                                $PHResp+=([System.Text.Encoding]::UTF8.GetString($Buff))
+                            }
+                            [System.Threading.Thread]::Sleep(1000)
+                            $Timeout++
+                            If($PHResp -eq '{KEEPALIVE}'){$Timeout = 0}
+                        }
+                        [System.Console]::WriteLine('')
+                        If($PHResp -match '{COMPLETE}'){
+                            If($ShowCons.Checked){
+                                [System.Console]::WriteLine($Tab+'COMPLETED!')
+                            }
+                        }
+                        If($Timeout -ge $MaxTime){
+                            If($ShowCons.Checked){
+                                [System.Console]::WriteLine($Tab+'TIMED OUT WAITING FOR REMOTE END!')
+                            }
+                        }
+                        
+                        $PHStream.Close()
+                        $PHStream.Dispose()
+                        $PHClient.Close()
+                        $PHClient.Dispose()
                     }Else{
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)}
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)
+                        }
+                        If($ShowCons.Checked){
+                            $PHSendString.Split($NL) | %{$FlipFlop = $True}{
+                                If($FlipFlop){
+                                    [System.Console]::WriteLine($Tab+$_)
+                                }
+                                $FlipFlop=!$FlipFlop
+                            }
+                        }
+                    }
+                }Catch{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
                     }
                 }
-                Catch{
-                    If(!$Escaped){
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'POTENTIAL UNCLOSED OR BAD BRACES, POSSIBLE NON-VALID COMMAND. RE-ATTEMPTING AS KEYSTROKES...')}
-                        $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
-                        $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
-                        $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
-                        If($ShowCons.Checked){[System.Console]::WriteLine($X)}
+            }
+
+            '^{SCRNSHT '{
+                $PH = ($X -replace '{SCRNSHT ')
+                $PH = $PH.Substring(0,($PH.Length - 1))
+                $PH = $PH.Split(',')
+                If(!$WhatIf){
+                    $Bounds = [GUI.Rect]::R($PH[0],$PH[1],$PH[2],$PH[3])
+                    $BMP = ([N.e]::w([System.Drawing.Bitmap],@($Bounds.Width, $Bounds.Height)))
+            
+                    $Graphics = [System.Drawing.Graphics]::FromImage($BMP)
+                    $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
+            
+                    $BMP.Save($PH[4])
+            
+                    $Graphics.Dispose()
+                    $BMP.Dispose()
+                }Else{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'WHATIF: TAKE SCREENSHOT AT TOP-LEFT ('+$PH[0]+','+$PH[1]+') TO BOTTOM-RIGHT ('+$PH[2]+','+$PH[3]+')')
                     }
+                }
+            }
+        
+            $Script:FuncRegex{
+                If($Script:FuncRegex -ne '{}'){
+                    $FuncCount = 1
+                    If($X -match ' '){
+                        $FuncCount = [Int]($X.Split()[-1] -replace '\D')
+                    }
+                    1..$FuncCount | %{
+                        $Script:FuncHash.($X.Trim('{}').Split()[0]).Split($NL) | %{
+                            ($_ -replace ('`'+$NL),'' -replace '^\s*' | ?{$_ -ne ''})
+                        } | %{$Commented = $False}{
+                            If($_ -match '^<\\\\#'){$Commented = $True}
+                            If($_ -match '^\\\\#>'){$Commented = $False}
+
+                            If($_ -notmatch '^\\\\#' -AND !$Commented){
+                                $_
+                            }Else{
+                                If($ShowCons.Checked){
+                                    [System.Console]::WriteLine($Tab+$_)
+                                }
+                            }
+                        } | %{
+                            If(!$SyncHash.Stop){
+                                If(!$WhatIf){
+                                    [Void](Parse-While $_)
+                                }Else{
+                                    [Void](Parse-While $_ -WhatIf)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        
+            '{FOCUS |{SETWIND |{MIN |{MAX |{HIDE |{SHOW |{SETWINDTEXT '{
+				$ProcSearchTerm = ($_ -replace '}\s*$' -replace ',.*')
+				$ProcSearchTerm = ($ProcSearchTerm.Replace(' -ID ',' ').Replace(' -HAND ',' '))
+				$ProcSearchTerm = ($ProcSearchTerm.Split() | ?{$_})
+				$ProcSearchTerm = (($ProcSearchTerm | Select -Skip 1) -join ' ' -replace ' \d*$')
+				
+				$PHProc = $Null
+				$PHHidden = $Null
+				
+                $ChildHandles = $False
+				If($X -match ' -ID '){
+					Try{
+						$PHProc = @(PS -Id $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+						If(!$PHProc.Count){
+							If($Script:HiddenWindows.Keys.Count){
+								$LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
+								$LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
+								$LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_.*?_'+$LastHiddenTime+'$')
+								$KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
+								
+								$PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
+							}
+						}
+					}Catch{
+						$PHProc = $Null
+						$PHHidden = $Null
+						If($ShowCons.Checked){
+							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+							[System.Console]::WriteLine($Error[0])
+						}
+						
+						$SyncHash.Stop = $True
+						Break
+					}
+				}ElseIf($X -match ' -HAND '){
+					Try{
+						$PHProc = @(PS -ErrorAction Stop | ?{$_.MainWindowHandle -eq $ProcSearchTerm})
+						If(!$PHProc.Count){
+							If($Script:HiddenWindows.Keys.Count){
+								$LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
+								$LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
+								$LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_'+$LastHiddenTime+'$')
+								$KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
+								
+								$PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
+							}
+							
+							If(!$PHHidden){
+								$ChildHandles = $True
+								Try{
+									$ProcSearchTerm = [IntPtr][Int]$ProcSearchTerm
+									$PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($ProcSearchTerm)
+									$PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
+									[Void]([Cons.WindowDisp]::GetWindowText($ProcSearchTerm, $PHString, $PHString.Capacity))
+									If(!$PHString){
+										$PHProc = $Null
+										$PHHidden = $Null
+									}Else{
+										$PHHidden = @($ProcSearchTerm)
+									}
+								}Catch{
+									$PHProc = $Null
+									$PHHidden = $Null
+								}
+							}
+						}
+					}Catch{
+						$PHProc = $Null
+						$PHHidden = $Null
+						If($ShowCons.Checked){
+							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+							[System.Console]::WriteLine($Error[0])
+						}
+						
+						$SyncHash.Stop = $True
+						Break
+					}
+				}Else{
+					Try{
+						$PHProc = @(PS $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+						If(!$PHProc.Count){
+							$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $ProcSearchTerm})
+						}
+						If($Script:HiddenWindows.Keys.Count){
+							$PHHidden = @(($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$ProcSearchTerm+'_')}) | %{$Script:HiddenWindows.$_})
+						}
+					}Catch{
+						$PHProc = $Null
+						$PHHidden = $Null
+						If($ShowCons.Checked){
+							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+							[System.Console]::WriteLine($Error[0])
+						}
+						
+						$SyncHash.Stop = $True
+						Break
+					}
+				}
+				
+                If($PHHidden.Count){$PHProc+=$PHHidden}
+                If($PHProc.Count){
+                    If(!$WhatIf){
+                        $PHProc | %{
+                            If($ChildHandles){
+                                $PHTMPProcHand = $_
+                            }Else{
+                                $PHTMPProc = $_
+                                $PHTMPProcTitle = $_.MainWindowTitle
+                                $PHTMPProcHand = $_.MainWindowHandle
+                            }
+                            $PHTMPProcHand = [IntPtr][Int]$PHTMPProcHand
+                            $PHAction = $X.Split(' ')[0].Replace('{','')
+                            
+							Switch($PHAction){
+                                'FOCUS'       {
+                                    Try{
+                                        If(!$ChildHandles){
+											[Void][Cons.App]::Act($PHTMPProcTitle)
+										}Else{
+											[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)
+										}
+                                    }Catch{
+                                        If($ShowCons.Checked){
+											[System.Console]::WriteLine(`
+												$Tab+`
+												'COULD NOT FIND HANDLES: '+`
+												([Boolean]$ChildHandles).ToString().ToUpper()+`
+												', PROC TITLE: '+`
+												$PHTMPProcTitle+`
+												', HANDLE: '+`
+												$PHTMPProcHand
+											)
+											
+											[System.Console]::WriteLine($Error[0])
+										}
+                                    }
+                                }
+                                'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
+                                'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
+                                'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
+                                'HIDE'        {
+                                    [Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,0)
+                                    If(!$ChildHandles){
+                                        $Script:HiddenWindows.Add(
+											($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),
+											$PHTMPProc
+										)
+                                    }
+                                }
+                                'SETWIND'     {
+                                    $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+                                    [Void][Cons.WindowDisp]::MoveWindow(
+										$PHTMPProcHand,
+										[Int]$PHCoords[0],
+										[Int]$PHCoords[1],
+										([Int]$PHCoords[2]-[Int]$PHCoords[0]),
+										([Int]$PHCoords[3]-[Int]$PHCoords[1]),
+										$True
+									)
+                                }
+                                'SETWINDTEXT' {
+                                    $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
+                                    [Void][Cons.WindowDisp]::SetWindowText($PHTMPProcHand,$PHWindText)
+                                }
+                            }
+                            If($PHAction -match 'MIN|MAX|SHOW'){
+								$PHKey = @($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')})
+                                If($PHKey.Count){$PHKey = (($PHKey | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)}
+								
+                                If($PHKey){
+                                    Try{
+                                        $Script:HiddenWindows.Remove($PHKey)
+                                    }Catch{
+                                        If($ShowCons.Checked){
+											[System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')
+											[System.Console]::WriteLine($Error[0])
+										}
+                                    }
+                                }
+                            }
+                        }
+                    }Else{
+                        $PHProc | %{
+                            Switch($X.Split(' ')[0].Replace('{','')){
+                                'FOCUS'       {
+									If($ShowCons.Checked){
+										[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))
+									}
+								}
+                                'MIN'         {
+									If($ShowCons.Checked){
+										[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))
+									}
+								}
+                                'MAX'         {
+									If($ShowCons.Checked){
+										[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))
+									}
+								}
+                                'SHOW'        {
+									If($ShowCons.Checked){
+										[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))
+									}
+								}
+                                'HIDE'        {
+									If($ShowCons.Checked){
+										[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))
+									}
+								}
+                                'SETWIND'     {
+                                    $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
+                                    If($ShowCons.Checked){
+										[System.Console]::WriteLine(
+											$Tab+`
+											'WHATIF: RESIZE WINDOW '+`
+											($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+`
+											' TO TOP-LEFT ('+`
+											$PHCoords[0]+`
+											','+`
+											$PHCoords[1]+`
+											') AND BOTTOM-RIGHT ('+`
+											$PHCoords[2]+`
+											','+`
+											$PHCoords[3]+`
+											')'
+										)
+									}
+                                }
+                                'SETWINDTEXT' {
+                                    $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
+                                    If($ShowCons.Checked){
+										[System.Console]::WriteLine(
+											$Tab+`
+											'WHATIF: SET WINDOW TEXT FOR '+`
+											($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+`
+											' TO '+`
+											$PHWindText
+										)
+									}
+                                }
+                            }
+                        }
+                    }
+                }Else{
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
+                }
+            }
+            '{ECHO .*?}'{
+                If($X -match '{ECHO -GUI \S+'){
+                    [Void][Microsoft.VisualBasic.Interaction]::MsgBox(($X -replace '^{ECHO ' -replace '^-GUI ' -replace '}$'), [Microsoft.VisualBasic.MsgBoxStyle]::OkOnly, 'ECHO GUI')
+                }Else{
+                    [System.Console]::WriteLine($Tab+'ECHO: '+($X -replace '^{ECHO ' -replace '}$'))
+                }
+            }
+            Default{
+                If($Escaped){
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'THIS LINE WAS ESCAPED. ABOVE MAY APPEAR AS COMMANDS,')}
+                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'BUT HAS BEEN CONVERTED TO KEYSTROKES!')}
+                    $X = (($TempX.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
+                    $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
+                    $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
+                }
+                If(($X -notmatch '^\(.*\)$' -AND $X -notmatch '^{.*}$' -AND $X -notmatch '^\[.*\]$') -AND ($DelayTimer.Value -ne 0 -OR ($DelayCheck.Checked -AND ($DelayRandTimer.Value -gt 0)))){
+                    $X.ToCharArray() | %{
+                        $PHX = $(
+                            Switch([String]$_){
+                                '{'{'{{}'}
+                                '}'{'{}}'}
+                                '('{'{(}'}
+                                ')'{'{)}'}
+                                '['{'{[}'}
+                                ']'{'{]}'}
+                                default{$_}
+                            }
+                        )
                     
+                        If(!$WhatIf){
+                            [Cons.Send]::Keys([String]$PHX)
+                        }Else{
+                            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$PHX)}
+                        }
+                    
+                        If($DelayCheck.Checked){
+                            $PH = ((([N.e]::w([Random],@()).Next((-1*$DelayRandTimer.Value),($DelayRandTimer.Value)))))
+                        }Else{
+                            $PH = 0
+                        }
+                        
+                        [System.Threading.Thread]::Sleep([Math]::Round([Math]::Abs(($DelayTimer.Value + $PH))))
+                    }
+                }Else{
                     Try{
                         If(!$WhatIf){
                             [Cons.Send]::Keys([String]$X)
                         }Else{
                             If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)}
                         }
-                    }Catch{
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FAILED!')}
+                    }
+                    Catch{
+                        If(!$Escaped){
+                            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'POTENTIAL UNCLOSED OR BAD BRACES, POSSIBLE NON-VALID COMMAND. RE-ATTEMPTING AS KEYSTROKES...')}
+                            $X = (($X.ToCharArray() | %{If($_ -eq '{'){'{{}'}ElseIf($_ -eq '}'){'{}}'}Else{[String]$_}}) -join '')
+                            $X = (($X.ToCharArray() | %{If($_ -eq '('){'{(}'}ElseIf($_ -eq ')'){'{)}'}Else{[String]$_}}) -join '')
+                            $X = (($X.ToCharArray() | %{If($_ -eq '['){'{[}'}ElseIf($_ -eq ']'){'{]}'}Else{[String]$_}}) -join '')
+                            If($ShowCons.Checked){[System.Console]::WriteLine($X)}
+                        }
+                    
+                        Try{
+                            If(!$WhatIf){
+                                [Cons.Send]::Keys([String]$X)
+                            }Else{
+                                If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)}
+                            }
+                        }Catch{
+                            If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'FAILED!')}
+                        }
                     }
                 }
             }
         }
+
         If($CommandDelayTimer.Value -ne 0 -OR ($CommDelayCheck.Checked -AND ($CommRandTimer.Value -gt 0))){
             If($CommDelayCheck.Checked){
                 $PH = ((([N.e]::w([Random],@()).Next((-1*$CommRandTimer.Value),($CommRandTimer.Value)))))
@@ -1867,6 +2205,7 @@ Function GO{
     $Script:WhileEval = $False
     $Script:BufferedCommandsIfEl = ''
     $Script:BufferedCommandsWhile = ''
+    $Script:FuncRegex = '{}'
     $Script:VarsHash = @{}
     $Script:FuncHash = @{}
     #$Script:HiddenWindows = @{}
@@ -1886,28 +2225,30 @@ Function GO{
         $FunctionsBox.Text -replace '\s*' -AND `
         !$InlineCommand
     ){
-        [System.Console]::WriteLine($Tab+'Parsing Functions:')                                   #Ignore
-        [System.Console]::WriteLine($Tab+'-------------------------')                            #Ignore
-        $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{ #Ignore
-            $FunctionStart = $False                                                              #Ignore
-            $FunctionText = @()                                                                  #Ignore
-        }{                                                                                       #Ignore
-            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}        #Ignore
-            If($FunctionStart){                                                                  #Ignore
-                If($_ -match '^{FUNCTION NAME '){                                                #Ignore
-                    $NameFunc = [String]($_ -replace '^.*{FUNCTION NAME ' -replace '}\s*$')      #Ignore
-                }ElseIf($_ -match '{FUNCTION END}'){                                             #Ignore
-                    $FunctionStart = $False                                                      #Ignore
-                    $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))                    #Ignore
-                    $FunctionText = @()                                                          #Ignore
-                }Else{                                                                           #Ignore
-                    $FunctionText+=$_                                                            #Ignore
-                }                                                                                #Ignore
-            }                                                                                    #Ignore
-        }                                                                                        #Ignore
-        $Script:FuncHash.Keys | Sort | %{                                                        #Ignore
-            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)#Ignore
-        }                                                                                        #Ignore
+        [System.Console]::WriteLine($Tab+'Parsing Functions:')                                   
+        [System.Console]::WriteLine($Tab+'-------------------------')                            
+        $FunctionsBox.Text.Split($NL) | ?{$_ -ne ''} | %{$_.TrimStart(' ').TrimStart($Tab)} | %{ 
+            $FunctionStart = $False                                                              
+            $FunctionText = @()                                                                  
+        }{                                                                                       
+            If(!$FunctionStart -AND $_ -match '^{FUNCTION NAME '){$FunctionStart = $True}        
+            If($FunctionStart){                                                                  
+                If($_ -match '^{FUNCTION NAME '){                                                
+                    $NameFunc = [String]($_ -replace '^.*{FUNCTION NAME ' -replace '}\s*$')      
+                }ElseIf($_ -match '{FUNCTION END}'){                                             
+                    $FunctionStart = $False                                                      
+                    $Script:FuncHash.Add($NameFunc,($FunctionText -join $NL))                    
+                    $FunctionText = @()                                                          
+                }Else{                                                                           
+                    $FunctionText+=$_                                                            
+                }                                                                                
+            }                                                                                    
+        }                                                                                        
+        $Script:FuncHash.Keys | Sort | %{                                                        
+            [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
+        }
+
+        $Script:FuncRegex = ('{'+($Script:FuncHash.Keys -join ' \d+|{')+($Script:FuncHash.Keys -join '}|{')+'}')
     }
     [System.Console]::WriteLine($NL+'---------------'+$NL+'Starting Macro!'+$NL+'---------------'+$NL)
     
@@ -1993,7 +2334,7 @@ Function GO{
                             }
                         }
                     }Catch{
-                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$_.ToString())}
+                        If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'UNHANDLED ERROR: '+$Error[0])}
                     }
                 }
             }
@@ -2847,6 +3188,9 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                                 $TapeForm = [N.e]::w([System.Windows.Forms.Form],@())
                                 $TapeForm.Size = [N.e]::w([System.Drawing.Size],@(5000,5000))
                                 $TapeForm.Text = 'Measuring Tape'
+                                $TapeForm.TopMost = $True
+                                $TapeForm.TopMost = $False
+                                $TapeForm.TopMost = $True
                                 $Black = [System.Drawing.Color]::Black
                                 $Red = [System.Drawing.Color]::Red
                                 $Blue = [System.Drawing.Color]::Blue
@@ -2907,7 +3251,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                                 })
                                 $TapeForm.TransparencyKey = $Green
                                 $TapeForm.BackColor = $DarkGray
-                                $TapeForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::SizableToolWindow
+                                #$TapeForm.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::SizableToolWindow
                                 [System.Windows.Forms.Application]::Run($TapeForm)
                             })
                             $TapePow.BeginInvoke() | Out-Null
