@@ -2248,7 +2248,7 @@ Function GO{
             [System.Console]::WriteLine(($Tab*2) + $_ + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$_.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)
         }
 
-        $Script:FuncRegex = ('{'+($Script:FuncHash.Keys -join ' \d+|{')+($Script:FuncHash.Keys -join '}|{')+'}')
+        $Script:FuncRegex = ('{'+($Script:FuncHash.Keys -join ' \d+|{')+' \d+|{'+($Script:FuncHash.Keys -join '}|{')+'}')
     }
     [System.Console]::WriteLine($NL+'---------------'+$NL+'Starting Macro!'+$NL+'---------------'+$NL)
     
