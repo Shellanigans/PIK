@@ -1023,7 +1023,7 @@ Function Actions{
             }
         
             $Script:FuncRegex{
-                If($Script:FuncRegex -ne '{}'){
+                If($Script:FuncRegex -ne '{ \d+|{}'){
                     $FuncCount = 1
                     If($X -match ' '){
                         $FuncCount = [Int]($X.Split()[-1] -replace '\D')
