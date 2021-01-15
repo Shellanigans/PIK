@@ -1,3 +1,32 @@
+\\#This function can also be placed inside the functions tab to clean up the commands area. It is just here to make the example program easier to copy.
+{FUNCTION NAME RECURSIVE_LOOP}
+	\\#Check the nonNull statement
+	{VAR TMP={VAR {VAR INDEX}_splitter}}
+	{IF ({VAR TMP} -ne )}
+		{IF ({VAR TMP} -eq string)}
+			\\#Break the current word into a char array, save it as a STRINGVARCHAR array
+			{VAR STRINGVAR={VAR {VAR INDEX}_splitter}}
+			{MANIP TCA STRINGVAR,STRINGVARCHAR}
+
+			\\#Reverse the char array
+			{MANIP REV STRINGVARCHAR}
+			
+			\\#Join with nothing and prepend with a comma 
+			{VAR OUTPUT+=,{MANIP JOI STRINGVARCHAR,(NULL)}}
+		{ELSE}
+			{VAR OUTPUT+=,{VAR {VAR INDEX}_splitter}}
+		{FI}
+	{FI}
+
+	\\#add one to index
+	{VAR INDEX++}
+
+	\\#go to RECURSIVE_LOOP
+	{IF ({VAR INDEX} -lt {VAR ARR_COUNT})}
+		{RECURSIVE_LOOP}
+	{FI}
+{FUNCTION END}
+
 \\#Focus on the notepad application
 {FOCUS Notepad}
 
