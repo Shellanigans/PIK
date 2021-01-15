@@ -35,3 +35,4 @@ jobs:
           echo Add other actions to build,
           echo test, and deploy your project.
           powershell -file .\build_no_Run.ps1
+          powershell -c "echo (gc .\pik.ps1)"
