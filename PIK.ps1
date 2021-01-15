@@ -1,7 +1,12 @@
+$Asms = @(
+    'System.Windows.Forms',
+    'System.Drawing',
+    'Microsoft.VisualBasic',
+    'System.Configuration',
+    'System.Reflection'
+)
 
-#Some C# code that I use as wrapper class for System.Windows.Forms (for easy instantiation) as well as a collection of imported functions from other dlls
-#Eventually should move to entirely C# invoked by Powershell and some of the migration is done below (the interpret method in the parser class)
-$CSharpDef = @'
+$CSharpCode = @'
 using System;
 using System.IO;
 using System.Text;
@@ -13,6 +18,9 @@ using System.Text.RegularExpressions;
 using DR = System.Drawing;
 using SWF = System.Windows.Forms;
 
+//::new() doesn't exist in POSH versions below 3, but we want to cover as many versions of powershell as possible.
+//This makes it so we can use [N.e]::w([Type],@(args)) instead of New-Object (POSH v2) which is very slow.
+//We COULD just use [System.Activator]::CreatInstance([Type],@(args)), but this gets long and wordy quickly.
 namespace N{
     public class e{
         public static Object w (Type type, params Object[] args){
@@ -21,29 +29,107 @@ namespace N{
     }
 }
 
-namespace Cons{
-    public class MouseEvnt{
-        [DllImport("user32.dll")]
-        public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
+//This is just a bunch of wrapper classes that allow for shorter, easier instantiation of GUI objects.
+//This also adds a bunch of constructor types that allow you to specify location, size, and text in one go.
+namespace GUI{
+    public class Style{
+        public static void Enable (){
+            SWF.Application.EnableVisualStyles();
+        }
     }
 
-    public class KeyEvnt{
-        [DllImport("user32.dll")]
-        public static extern void keybd_event(Byte bVk, Byte bScan, Int64 dwFlags, Int64 dwExtraInfo);
+    public class SP{
+        public static DR.Point PO (int sx, int sy) {return (new DR.Point(sx, sy));}
+        public static DR.Size SI (int sx, int sy)  {return (new DR.Size(sx, sy));}
     }
 
-    public class WindowMessages{
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
-        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
-        public static extern IntPtr PostMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
+    public class F : SWF.Form{
+        public F (){}
+        public F (int sx, int sy, string tx)                   {this.Size = new DR.Size(sx,sy);this.Text = tx;}
     }
 
-    public class WindowDisp{
-        [DllImport("Kernel32.dll")]
-        public static extern IntPtr GetConsoleWindow();
+    public class TC : SWF.TabControl{
+        public TC (){}
+        public TC (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+    }
 
+    public class P : SWF.Panel{
+        public P (){}
+        public P (int sx, int sy, int lx, int ly)              {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+    }
+
+    public class LB : SWF.ListBox{
+        public LB (){}
+        public LB (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+    }
+
+    public class CoB : SWF.ComboBox{
+        public CoB (){}
+        public CoB (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+    }
+
+    public class NUD : SWF.NumericUpDown{
+        public NUD (){}
+        public NUD (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
+    }
+
+    public class GB : SWF.GroupBox{
+        public GB (){}
+        public GB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class TP : SWF.TabPage{
+        public TP (){}
+        public TP (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class L : SWF.Label{
+        public L (){}
+        public L (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class TB : SWF.TextBox{
+        public TB (){}
+        public TB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class RTB : SWF.RichTextBox{
+        public RTB (){}
+        public RTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class MTB : SWF.MaskedTextBox{
+        public MTB (){}
+        public MTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class B : SWF.Button{
+        public B (){}
+        public B (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class RB : SWF.RadioButton{
+        public RB (){}
+        public RB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class ChB : SWF.CheckBox{
+        public ChB (){}
+        public ChB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
+    }
+
+    public class Rect{
+        public static DR.Rectangle E = DR.Rectangle.Empty;
+        public static DR.Rectangle R (int lx, int ly, int sx, int sy){
+            return (new DR.Rectangle(lx, ly, sx, sy));
+        }
+    }
+
+    public class ScreenInfo{
+        public static SWF.Screen[] All = SWF.Screen.AllScreens;
+    }
+
+    public class Window{
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
 
@@ -64,26 +150,34 @@ namespace Cons{
 
         [DllImport("User32.dll")]
         public extern static int GetWindowTextLength(IntPtr handle);
-        
-        public static void Visual (){
-            SWF.Application.EnableVisualStyles();
-        }
-    }
 
-    public class App{
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        public static extern IntPtr SendMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = false)]
+        public static extern IntPtr PostMessage(IntPtr hWnd, UInt32 Msg, IntPtr wParam, IntPtr lParam);
+
         public static void Act (string AppTitle){
             Microsoft.VisualBasic.Interaction.AppActivate(AppTitle);
         }
     }
 
     public class Clip{
-        public static string GetT ()           {return SWF.Clipboard.GetText();}
-        public static void SetT (string Text)  {SWF.Clipboard.SetText(Text);}
+        public static string GetTxt ()           {return SWF.Clipboard.GetText();}
+        public static void SetTxt (string Text)  {SWF.Clipboard.SetText(Text);}
     }
 
-    public class Curs{
-        public static DR.Point GPos ()         {return SWF.Cursor.Position;}
-        public static void SPos (int x, int y) {SWF.Cursor.Position = new DR.Point(x, y);}
+    public class Cursor{
+        public static DR.Point GetPos ()         {return SWF.Cursor.Position;}
+        public static void SetPos (int x, int y) {SWF.Cursor.Position = new DR.Point(x, y);}
+    }
+
+    public class Events{
+        [DllImport("user32.dll")]
+        public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(Byte bVk, Byte bScan, Int64 dwFlags, Int64 dwExtraInfo);
     }
 
     public class Send{
@@ -105,13 +199,13 @@ namespace Cons{
                 }
                 
                 if(Regex.IsMatch(WinKeys, "R")){
-                    Cons.KeyEvnt.keybd_event(0x5C, 0, 0x02, 0);
+                    GUI.Events.keybd_event(0x5C, 0, 0x02, 0);
                     System.Threading.Thread.Sleep(40);
-                    Cons.KeyEvnt.keybd_event(0x5C, 0, 0, 0);
+                    GUI.Events.keybd_event(0x5C, 0, 0, 0);
                 }else{
-                    Cons.KeyEvnt.keybd_event(0x5B, 0, 0x02, 0);
+                    GUI.Events.keybd_event(0x5B, 0, 0x02, 0);
                     System.Threading.Thread.Sleep(40);
-                    Cons.KeyEvnt.keybd_event(0x5B, 0, 0, 0);
+                    GUI.Events.keybd_event(0x5B, 0, 0, 0);
                 }
             }else{
                 SWF.SendKeys.SendWait(Keys);
@@ -119,22 +213,7 @@ namespace Cons{
         }
     }
 
-    public class Writer{
-        public static void WriteLine (string Line, System.ConsoleColor Back, System.ConsoleColor Fore){
-            System.Console.BackgroundColor = Back;
-            System.Console.ForegroundColor = Fore;
-            System.Console.WriteLine(Line);
-            System.Console.ResetColor();
-        }
-
-        public static void WriteLine (string Line){
-            System.Console.WriteLine(Line);
-        }
-    }
-}
-
-namespace Img{
-    public class Find{
+    public class FindImg{
         public static System.Collections.Generic.List<DR.Point> GetSubPositions(DR.Bitmap main, DR.Bitmap sub) {
             System.Collections.Generic.List<DR.Point> possiblepos = new System.Collections.Generic.List<DR.Point>();
             
@@ -255,100 +334,31 @@ namespace Img{
     }
 }
 
-namespace GUI{
-    public class SP{
-        public static DR.Point PO (int sx, int sy) {return (new DR.Point(sx, sy));}
-        public static DR.Size SI (int sx, int sy)  {return (new DR.Size(sx, sy));}
+namespace Cons{
+    public class Wind{
+        [DllImport("Kernel32.dll")]
+        public static extern IntPtr GetConsoleWindow();
     }
 
-    public class F : SWF.Form{
-        public F (){}
-        public F (int sx, int sy, string tx)                   {this.Size = new DR.Size(sx,sy);this.Text = tx;}
-    }
-
-    public class TC : SWF.TabControl{
-        public TC (){}
-        public TC (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
-
-    public class P : SWF.Panel{
-        public P (){}
-        public P (int sx, int sy, int lx, int ly)              {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
-
-    public class LB : SWF.ListBox{
-        public LB (){}
-        public LB (int sx, int sy, int lx, int ly)             {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
-
-    public class CoB : SWF.ComboBox{
-        public CoB (){}
-        public CoB (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
-
-    public class NUD : SWF.NumericUpDown{
-        public NUD (){}
-        public NUD (int sx, int sy, int lx, int ly)            {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);}
-    }
-
-    public class GB : SWF.GroupBox{
-        public GB (){}
-        public GB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class TP : SWF.TabPage{
-        public TP (){}
-        public TP (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class L : SWF.Label{
-        public L (){}
-        public L (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class TB : SWF.TextBox{
-        public TB (){}
-        public TB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class RTB : SWF.RichTextBox{
-        public RTB (){}
-        public RTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class MTB : SWF.MaskedTextBox{
-        public MTB (){}
-        public MTB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class B : SWF.Button{
-        public B (){}
-        public B (int sx, int sy, int lx, int ly, string tx)   {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class RB : SWF.RadioButton{
-        public RB (){}
-        public RB (int sx, int sy, int lx, int ly, string tx)  {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class ChB : SWF.CheckBox{
-        public ChB (){}
-        public ChB (int sx, int sy, int lx, int ly, string tx) {this.Size = new DR.Size(sx,sy);this.Location = new DR.Point(lx,ly);this.Text = tx;}
-    }
-
-    public class Rect{
-        public static DR.Rectangle E = DR.Rectangle.Empty;
-        public static DR.Rectangle R (int lx, int ly, int sx, int sy){
-            return (new DR.Rectangle(lx, ly, sx, sy));
+    public class Writer{
+        public static void WriteLine (string Line, System.ConsoleColor Back, System.ConsoleColor Fore){
+            System.Console.BackgroundColor = Back;
+            System.Console.ForegroundColor = Fore;
+            System.Console.WriteLine(Line);
+            System.Console.ResetColor();
         }
-    }
 
-    public class ScreenInfo{
-        public static SWF.Screen[] All = SWF.Screen.AllScreens;
+        public static void WriteLine (string Line){
+            System.Console.WriteLine(Line);
+        }
+
+        public static void Write (string Line){
+            System.Console.Write(Line);
+        }
     }
 }
 
-public class Parser{
+public class Parse{
     public static string HoldKeys(string X){
         X = X.ToUpper();
 
@@ -399,7 +409,7 @@ public class Parser{
         }
     }
 
-    public static string Interpret(string X){
+    public static string KeyWord(string X){
         if(Regex.IsMatch(X.ToUpper(), "{[CPSDGRMW]")){
             if(Regex.IsMatch(X, "{COPY}") || Regex.IsMatch(X, "{PASTE}") || Regex.IsMatch(X, "{SELECTALL}")){
                 X = (X.Replace("{COPY}","(^c)"));
@@ -443,9 +453,9 @@ public class Parser{
             }
 
             if(Regex.IsMatch(X, "{GETCLIP}") || Regex.IsMatch(X, "{GETMOUSE}")){
-                DR.Point Coords = Cons.Curs.GPos();
+                DR.Point Coords = GUI.Cursor.GetPos();
 
-                if(Regex.IsMatch(X, "{GETCLIP}")){X = X.Replace("{GETCLIP}",(Cons.Clip.GetT()));}
+                if(Regex.IsMatch(X, "{GETCLIP}")){X = X.Replace("{GETCLIP}",(GUI.Clip.GetTxt()));}
                 if(Regex.IsMatch(X, "{GETMOUSE}")){X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));}
             }
         }
@@ -453,13 +463,7 @@ public class Parser{
     }
 }
 '@
-Add-Type -ReferencedAssemblies `
-    System.Windows.Forms,`
-    System.Drawing,`
-    Microsoft.VisualBasic,`
-    System.Configuration,`
-    System.Reflection `
--IgnoreWarnings -TypeDefinition $CSharpDef
+Add-Type -ReferencedAssemblies $Asms -IgnoreWarnings -TypeDefinition $CSharpCode
 
 ###########################################################################################
              #######                                                           
@@ -478,7 +482,7 @@ Add-Type -ReferencedAssemblies `
            |
            ---> "Parse-IfEl" used to parse the IF statements and look ahead to determine behavior from there, this will loop back into Parse-While to handle nested while and if statements correctly before handing off to actions
                  |
-                 ---> "[Parser]::Interpret" Ultimately where everything will reside, but for now a place where extremely simple find/replace keywords can get parsed and is completed first.
+                 ---> "[Parse]::KeyWord" Ultimately where everything will reside, but for now a place where extremely simple find/replace keywords can get parsed and is completed first.
                        |
                        ---> "Interpret" Gets called before any actions (though if statetments and while true/false conditions take precedence). The purpose is to make substitutions such as var substitutions or getting content (i.e. values are known)
                              |
@@ -578,7 +582,7 @@ Function Actions{
             '{SETCLIP '{
                 $X.Split('{}') | ?{$_ -match 'SETCLIP '} | %{
                     If(!$WhatIf){
-                        [Cons.Clip]::SetT($_.Substring(8))
+                        [GUI.Clip]::SetTxt($_.Substring(8))
                     }Else{
                         If($ShowCons.Checked){
                             [System.Console]::WriteLine($Tab+'WHATIF: SET CLIPBOARD TO "'+$_.Substring(8)+'"')
@@ -691,20 +695,20 @@ Function Actions{
                         
                         [Int]$X.Split()[-1].Replace('MOUSE}','').Replace('L','2').Replace('R','8').Replace('M','32') | %{
                             If($Rel){
-                                [Cons.MouseEvnt]::mouse_event(($_*2), 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(($_*2), 0, 0, 0, 0)
                             }Else{
-                                [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event($_, 0, 0, 0, 0)
                             }
                         }
                     }Else{
-                        $Temp = ([Parser]::HoldKeys(($X.Split()[-1] -replace '}')))
+                        $Temp = ([Parse]::HoldKeys(($X.Split()[-1] -replace '}')))
                         
                         $UndoHash.KeyList+=([String]$Temp)
                         
                         If($Rel){
-                            [Cons.KeyEvnt]::keybd_event($Temp, 0, '&H2', 0)
+                            [GUI.Events]::keybd_event($Temp, 0, '&H2', 0)
                         }Else{
-                            [Cons.KeyEvnt]::keybd_event($Temp, 0, 0, 0)
+                            [GUI.Events]::keybd_event($Temp, 0, 0, 0)
                         }
                     }
                 }Else{
@@ -738,7 +742,7 @@ Function Actions{
                         }
                         $MoveCoords = (($PHX -replace '}$').Split(' ') | ?{$_ -ne ''})[-1].Split(',')[-2,-1]
                         #Write-Host 'TEST1'
-                        $Coords = [Cons.Curs]::GPos()
+                        $Coords = [GUI.Cursor]::GetPos()
                         #Write-Host 'TEST2'
                         $PHTMPCoords = $Coords
                             
@@ -790,7 +794,7 @@ Function Actions{
                                         $OffsetY = $Dist*$Random.Next(1,($Weight+1))/$DistX
                                     }
                                 }
-                                $Coords = [Cons.Curs]::GPos()
+                                $Coords = [GUI.Cursor]::GetPos()
                                 $PHTMPCoords = $Coords
                             
                                 If($Right){
@@ -810,7 +814,7 @@ Function Actions{
                                 While(($j -ne $PHTMPCoords.X -OR $k -ne $PHTMPCoords.Y) -AND !$SyncHash.Stop){
                                     If($j -lt $PHTMPCoords.X){$j++}ElseIf($j -gt $PHTMPCoords.X){$j--}
                                     If($k -lt $PHTMPCoords.Y){$k++}ElseIf($k -gt $PHTMPCoords.Y){$k--}
-                                    [Cons.Curs]::SPos($j,$k)
+                                    [GUI.Cursor]::SetPos($j,$k)
                                 }
                                 $RemainderX = $OffsetX - [Math]::Round($OffsetX)
                                 $RemainderY = $OffsetY - [Math]::Round($OffsetY)
@@ -831,12 +835,12 @@ Function Actions{
                                         $k--
                                     }
                                     
-                                    [Cons.Curs]::SPos($j,$k)
+                                    [GUI.Cursor]::SetPos($j,$k)
                                 }
                                 If($PHDelay -gt 0){[System.Threading.Thread]::Sleep($PHDelay)}
                             }
                         }Else{
-                            [Cons.Curs]::SPos($MoveCoords[0],$MoveCoords[1])
+                            [GUI.Cursor]::SetPos($MoveCoords[0],$MoveCoords[1])
                         }
                     }Else{
                         $ClickCount = 1
@@ -848,9 +852,9 @@ Function Actions{
                         1..$ClickCount | %{
                             [Int]($X.Replace('L','2').Replace('R','8').Replace('M','32') -replace '\D') | %{
                                 If($_ -eq 2 -OR $_ -eq 8 -OR $_ -eq 32){
-                                    [Cons.MouseEvnt]::mouse_event($_, 0, 0, 0, 0)
+                                    [GUI.Events]::mouse_event($_, 0, 0, 0, 0)
                                     [System.Threading.Thread]::Sleep(40)
-                                    [Cons.MouseEvnt]::mouse_event(($_*2), 0, 0, 0, 0)
+                                    [GUI.Events]::mouse_event(($_*2), 0, 0, 0, 0)
                                 }Else{
                                     If($ShowCons.Checked){
                                         [System.Console]::WriteLine($Tab+'INVALID MOUSE VALUE!')
@@ -1106,9 +1110,9 @@ Function Actions{
 								$ChildHandles = $True
 								Try{
 									$ProcSearchTerm = [IntPtr][Int]$ProcSearchTerm
-									$PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($ProcSearchTerm)
+									$PHTextLength = [GUI.Window]::GetWindowTextLength($ProcSearchTerm)
 									$PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-									[Void]([Cons.WindowDisp]::GetWindowText($ProcSearchTerm, $PHString, $PHString.Capacity))
+									[Void]([GUI.Window]::GetWindowText($ProcSearchTerm, $PHString, $PHString.Capacity))
 									If(!$PHString){
 										$PHProc = $Null
 										$PHHidden = $Null
@@ -1172,9 +1176,9 @@ Function Actions{
                                 'FOCUS'       {
                                     Try{
                                         If(!$ChildHandles){
-											[Void][Cons.App]::Act($PHTMPProcTitle)
+											[Void][GUI.Window]::Act($PHTMPProcTitle)
 										}Else{
-											[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)
+											[Void][GUI.Window]::ShowWindow($PHTMPProcHand,9)
 										}
                                     }Catch{
                                         If($ShowCons.Checked){
@@ -1192,11 +1196,11 @@ Function Actions{
 										}
                                     }
                                 }
-                                'MIN'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,6)}
-                                'MAX'         {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,3)}
-                                'SHOW'        {[Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,9)}
+                                'MIN'         {[Void][GUI.Window]::ShowWindow($PHTMPProcHand,6)}
+                                'MAX'         {[Void][GUI.Window]::ShowWindow($PHTMPProcHand,3)}
+                                'SHOW'        {[Void][GUI.Window]::ShowWindow($PHTMPProcHand,9)}
                                 'HIDE'        {
-                                    [Void][Cons.WindowDisp]::ShowWindow($PHTMPProcHand,0)
+                                    [Void][GUI.Window]::ShowWindow($PHTMPProcHand,0)
                                     If(!$ChildHandles){
                                         $Script:HiddenWindows.Add(
 											($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),
@@ -1206,7 +1210,7 @@ Function Actions{
                                 }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
-                                    [Void][Cons.WindowDisp]::MoveWindow(
+                                    [Void][GUI.Window]::MoveWindow(
 										$PHTMPProcHand,
 										[Int]$PHCoords[0],
 										[Int]$PHCoords[1],
@@ -1217,7 +1221,7 @@ Function Actions{
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
-                                    [Void][Cons.WindowDisp]::SetWindowText($PHTMPProcHand,$PHWindText)
+                                    [Void][GUI.Window]::SetWindowText($PHTMPProcHand,$PHWindText)
                                 }
                             }
                             If($PHAction -match 'MIN|MAX|SHOW'){
@@ -1299,7 +1303,9 @@ Function Actions{
                         }
                     }
                 }Else{
-                    If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')
+                    }
                 }
             }
             '{ECHO .*?}'{
@@ -1332,7 +1338,7 @@ Function Actions{
                         )
                     
                         If(!$WhatIf){
-                            [Cons.Send]::Keys([String]$PHX)
+                            [GUI.Send]::Keys([String]$PHX)
                         }Else{
                             If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$PHX)}
                         }
@@ -1348,7 +1354,7 @@ Function Actions{
                 }Else{
                     Try{
                         If(!$WhatIf){
-                            [Cons.Send]::Keys([String]$X)
+                            [GUI.Send]::Keys([String]$X)
                         }Else{
                             If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)}
                         }
@@ -1364,7 +1370,7 @@ Function Actions{
                     
                         Try{
                             If(!$WhatIf){
-                                [Cons.Send]::Keys([String]$X)
+                                [GUI.Send]::Keys([String]$X)
                             }Else{
                                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'WHATIF: SEND KEYS '+$X)}
                             }
@@ -1391,7 +1397,7 @@ Function Interpret{
     Param([String]$X,[Switch]$SuppressConsole)
     #Do the really basic parsing
     #Write-Host 'NEW LINE IN INTERPRET FUNC'
-    $X = [Parser]::Interpret($X)
+    $X = [Parse]::KeyWord($X)
     #Write-Host 'NEW LINE IN INTERPRET POST FUNC'
     #[System.Console]::WriteLine('INSIDE INTERPRET')
     #Reset the depth overflow (useful for finding bad logic with infinite loops)
@@ -1512,9 +1518,9 @@ Function Interpret{
                     $TrueHand = $True
                     $PHProcHand = [IntPtr][Int]$PHProcHand
                     Try{
-                        $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHProcHand)
+                        $PHTextLength = [GUI.Window]::GetWindowTextLength($PHProcHand)
                         $PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-                        [Void]([Cons.WindowDisp]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
+                        [Void]([GUI.Window]::GetWindowText($PHProcHand, $PHString, $PHString.Capacity))
                         If(!$PHString){
                             $PHProc = ''
                             $PHHidden = ''
@@ -1553,19 +1559,19 @@ Function Interpret{
                             }
                         }
                         'GETWINDTEXT' {
-                            $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHTMPProcHand)
+                            $PHTextLength = [GUI.Window]::GetWindowTextLength($PHTMPProcHand)
                             $PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-                            [Void]([Cons.WindowDisp]::GetWindowText($PHTMPProcHand, $PHString, $PHString.Capacity))
+                            [Void]([GUI.Window]::GetWindowText($PHTMPProcHand, $PHString, $PHString.Capacity))
                             $PHOut+=($PHString.ToString()+';')
                         }
                         'GETWIND'     {
                             $PHRect = [GUI.Rect]::E
-                            [Void]([Cons.WindowDisp]::GetWindowRect($PHTMPProcHand,[Ref]$PHRect))
+                            [Void]([GUI.Window]::GetWindowRect($PHTMPProcHand,[Ref]$PHRect))
                             $PHOut+=(([String]$PHRect.X+','+[String]$PHRect.Y+','+[String]$PHRect.Width+','+[String]$PHRect.Height)+';')
                         }
                         default{
                             If($PHTMPProc -match 'GETFOCUS'){
-                                $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
+                                $PHFocussedHandle = [GUI.Window]::GetForegroundWindow()
                                 If($PHProc -match '-ID'){
                                     $PHOut = [String](PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle}).Id
                                 }ElseIf($PHProc -match '-HAND'){
@@ -1580,7 +1586,11 @@ Function Interpret{
             }
             
             $PHOut = $PHOut.ToString().Trim(';')
-            If(!$PHProc -OR !$PHOut){If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}}
+            
+            If(!$PHProc -OR !$PHOut){If($ShowCons.Checked -AND !$SuppressConsole){
+                [System.Console]::WriteLine($Tab+'PROCESS NOT FOUND!')}
+            }
+            
             $X = ($X.Replace(('{'+$_+'}'),$PHOut.Trim(';')))
         }
         #Replace the keyword with the input supplied to either the message box or the console prompt
@@ -1713,7 +1723,7 @@ Function Interpret{
             $Graphics = [System.Drawing.Graphics]::FromImage($BMP1)
             $Graphics.CopyFromScreen($Bounds.Location, [System.Drawing.Point]::Empty, $Bounds.size)
             $BMP2 = [System.Drawing.Bitmap]::FromFile($PHFile)
-            $PHOut = [Img.Find]::GetSubPositions($BMP1,$BMP2)[$PHIndex]
+            $PHOut = [GUI.FindImg]::GetSubPositions($BMP1,$BMP2)[$PHIndex]
             If($PHOut -ne $Null){
                 $PHOut = ([String]$PHOut.X + ',' + $PHOut.Y)
                 If($ShowCons.Checked -AND !$SuppressConsole){
@@ -2211,9 +2221,9 @@ Function GO{
     #$Script:HiddenWindows = @{}
     $UndoHash.KeyList | %{
         If($_ -notmatch 'MOUSE'){
-            [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+            [GUI.Events]::keybd_event(([String]$_), 0, '&H2', 0)
         }Else{
-            [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+            [GUI.Events]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
         }
     }
     $UndoHash = @{KeyList=[String[]]@()}
@@ -2253,7 +2263,7 @@ Function GO{
     [System.Console]::WriteLine($NL+'---------------'+$NL+'Starting Macro!'+$NL+'---------------'+$NL)
     
     $Results = (Measure-Command {
-        [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+        [GUI.Window]::ShowWindow($Form.Handle,0)
             
         If($InlineCommand){
             $PHText = $InlineCommand
@@ -2341,9 +2351,9 @@ Function GO{
         }While($SyncHash.Restart)
         $UndoHash.KeyList | %{
             If($_ -notmatch 'MOUSE'){
-                [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+                [GUI.Events]::keybd_event(([String]$_), 0, '&H2', 0)
             }Else{
-                [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+                [GUI.Events]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
             }
         }
         If($Server){$SyncHash.Stop = $False}
@@ -2351,7 +2361,7 @@ Function GO{
         If(!$CommandLine -AND !$Server){    
             $Commands.ReadOnly     = $False
             $FunctionsBox.ReadOnly = $False
-            [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+            [GUI.Window]::ShowWindow($Form.Handle,4)
             $Form.Refresh()
             If($Script:Refocus){
                 $Form.Activate()
@@ -2381,7 +2391,7 @@ Function Handle-RMenuExit($MainObj){
     }
     $L = $PHObj.Location
     $S = $PHObj.Size
-    $M = [Cons.Curs]::GPos()
+    $M = [GUI.Cursor]::GetPos()
     $M.X = ($M.X - $Form.Location.X)
     $M.Y = ($M.Y - $Form.Location.Y)
     If(($M.X -lt ($L.X + 10)) -OR ($M.Y -lt ($L.Y + 35)) -OR ($M.X -gt ($S.Width + $L.X + 4)) -OR ($M.Y -gt ($S.Height + $L.Y + 29))){
@@ -2401,8 +2411,8 @@ Function Handle-RMenuClick($MainObj){
         $PHObj.Focus()
         Switch($MainObj.Text)
         {
-            'Cut'              {[Cons.Clip]::SetT($PHObj.SelectedText);$PHObj.SelectedText = ''}
-            'Copy'             {[Cons.Clip]::SetT($PHObj.SelectedText)}
+            'Cut'              {[GUI.Clip]::SetTxt($PHObj.SelectedText);$PHObj.SelectedText = ''}
+            'Copy'             {[GUI.Clip]::SetTxt($PHObj.SelectedText)}
             'Paste'            {$PHObj.Paste()}
             'Select All'       {$PHObj.SelectAll()}
             'Select Line'      {
@@ -2429,7 +2439,7 @@ Function Handle-RMenuClick($MainObj){
 }
 
 Function Handle-MousePosGet{
-    $PH = [Cons.Curs]::GPos()
+    $PH = [GUI.Cursor]::GetPos()
     
     $XCoord.Value = $PH.X
     $YCoord.Value = $PH.Y
@@ -2496,7 +2506,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
     }ElseIf($KeyCode -eq 'F5'){
         GO
     }ElseIf($KeyCode -eq 'F6'){
-        $PH = [Cons.Curs]::GPos()
+        $PH = [GUI.Cursor]::GetPos()
         $XCoord.Value = $PH.X
         $YCoord.Value = $PH.Y
         #$MainObj.SelectionLength = 0
@@ -2517,7 +2527,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         #$Script:Saved = $False
         $Form.Text = 'PARSING'
         $Form.Refresh()
-        #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 0)
+        #[Void][GUI.Window]::ShowWindow($Form.Handle, 0)
         #$Script:Saved = $False
         $TempSelectionIndex = $MainObj.SelectionStart
         $TempSelectionLength = $MainObj.SelectionLength
@@ -2670,7 +2680,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectionStart = $TempSelectionIndex
         $MainObj.SelectionLength = $TempSelectionLength
         $Form.Enabled = $True
-        #[Void][Cons.WindowDisp]::ShowWindow($Form.Handle, 1)
+        #[Void][GUI.Window]::ShowWindow($Form.Handle, 1)
         
         $Form.Text = $PrevFormText
         $Script:Saved = $PrevSaved
@@ -2805,8 +2815,8 @@ Function Save-Profile{
 
 If($Host.Name -match 'Console'){
     [Console]::Title = 'PIK'
-    #[Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
-    [Void][Cons.WindowDisp]::Visual()
+    #[Void][GUI.Window]::ShowWindow([Cons.Wind]::GetConsoleWindow(), 0)
+    [GUI.Style]::Enable()
 }
 
 If(!(Test-Path ($env:APPDATA+'\Macro'))){[Void](MKDIR ($env:APPDATA+'\Macro') -Force)}
@@ -3000,7 +3010,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $RightClickMenu.Visible = $True
                         $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
                         $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
-                        $M = [Cons.Curs]::Gpos()
+                        $M = [GUI.Cursor]::GetPos()
                         If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
                         If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
                         $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
@@ -3044,7 +3054,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $RightClickMenu.Visible = $True
                         $XBound = ($Form.Location.X + $Form.Size.Width - $RightClickMenu.Size.Width)
                         $YBound = ($Form.Location.Y + $Form.Size.Height - $RightClickMenu.Size.Height)
-                        $M = [Cons.Curs]::Gpos()
+                        $M = [GUI.Cursor]::GetPos()
                         If($M.X -gt $XBound){$PHXCoord = ($Form.Size.Width - $RightClickMenu.Size.Width - 17)}Else{$PHXCoord = ($_.Location.X+30)}
                         If($M.Y -gt $YBound){$PHYCoord = ($Form.Size.Height - $RightClickMenu.Size.Height - 40)}Else{$PHYCoord = ($_.Location.Y+45)}
                         $RightClickMenu.Location = [GUI.SP]::PO($PHXCoord,$PHYCoord)
@@ -3097,17 +3107,17 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $MouseCoordsBox = ([N.e]::w([GUI.TB],@(140, 25, 130, 25, '')))
                         $MouseCoordsBox.ReadOnly = $True
                         $MouseCoordsBox.Multiline = $True
-                        $MouseCoordsBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+                        $MouseCoordsBox.Add_DoubleClick({If($This.Text){[GUI.Clip]::SetTxt($This.Text); $This.SelectAll()}})
                         $MouseCoordsBox.Parent = $TabHelperSubMouse
                         $MouseManualLabel = ([N.e]::w([GUI.L],@(100, 10, 10, 60, 'Manual Move:')))
                         $MouseManualLabel.Parent = $TabHelperSubMouse
                         $XCoord = ([N.e]::w([GUI.NUD],@(50, 25, 10, 75)))
                         $XCoord.Maximum = 99999
                         $XCoord.Minimum = -99999
-                        $XCoord.Add_ValueChanged({[Cons.Curs]::SPos($This.Value,$YCoord.Value);Handle-MousePosGet})
+                        $XCoord.Add_ValueChanged({[GUI.Cursor]::SetPos($This.Value,$YCoord.Value);Handle-MousePosGet})
                         $XCoord.Add_KeyUp({
                             If($_.KeyCode -eq 'Return'){
-                                [Cons.Curs]::SPos($This.Value,$YCoord.Value)
+                                [GUI.Cursor]::SetPos($This.Value,$YCoord.Value)
                                 Handle-MousePosGet
                             }
                         })
@@ -3116,10 +3126,10 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $YCoord = ([N.e]::w([GUI.NUD],@(50, 25, 70, 75)))
                         $YCoord.Maximum = 99999
                         $YCoord.Minimum = -99999
-                        $YCoord.Add_ValueChanged({[Cons.Curs]::SPos($XCoord.Value,$This.Value);Handle-MousePosGet})
+                        $YCoord.Add_ValueChanged({[GUI.Cursor]::SetPos($XCoord.Value,$This.Value);Handle-MousePosGet})
                         $YCoord.Add_KeyUp({
                             If($_.KeyCode -eq 'Return'){
-                                [Cons.Curs]::SPos($XCoord.Value,$This.Value)
+                                [GUI.Cursor]::SetPos($XCoord.Value,$This.Value)
                                 Handle-MousePosGet
                             }
                         })
@@ -3129,13 +3139,13 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $PixColorBox = ([N.e]::w([GUI.TB],@(140, 25, 130, 75, '')))
                         $PixColorBox.ReadOnly = $True
                         $PixColorBox.Multiline = $True
-                        $PixColorBox.Add_DoubleClick({If($This.Text){[Cons.Clip]::SetT($This.Text); $This.SelectAll()}})
+                        $PixColorBox.Add_DoubleClick({If($This.Text){[GUI.Clip]::SetTxt($This.Text); $This.SelectAll()}})
                         $PixColorBox.Parent = $TabHelperSubMouse
                         $LeftMouseBox = ([N.e]::w([GUI.B],@(135,25,10,110,'Left Click')))
                         $LeftMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
-                                [Cons.MouseEvnt]::mouse_event(2, 0, 0, 0, 0)
-                                [Cons.MouseEvnt]::mouse_event(4, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(2, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(4, 0, 0, 0, 0)
                             }
                             $_.SuppressKeyPress = $True
                         })
@@ -3143,8 +3153,8 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $MiddleMouseBox = ([N.e]::w([GUI.B],@(135,25,10,152,'Middle Click')))
                         $MiddleMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
-                                [Cons.MouseEvnt]::mouse_event(32, 0, 0, 0, 0)
-                                [Cons.MouseEvnt]::mouse_event(64, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(32, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(64, 0, 0, 0, 0)
                             }
                             $_.SuppressKeyPress = $True
                         })
@@ -3152,8 +3162,8 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $RightMouseBox = ([N.e]::w([GUI.B],@(135,25,10,194,'Right Click')))
                         $RightMouseBox.Add_KeyUp({
                             If($_.KeyCode -eq 'Space'){
-                                [Cons.MouseEvnt]::mouse_event(8, 0, 0, 0, 0)
-                                [Cons.MouseEvnt]::mouse_event(16, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(8, 0, 0, 0, 0)
+                                [GUI.Events]::mouse_event(16, 0, 0, 0, 0)
                             }
                             $_.SuppressKeyPress = $True
                         })
@@ -3279,13 +3289,13 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $GetProcInfo.Add_LostFocus({
                             If($This.Text -ne 'Get Proc Inf'){
                                 $This.Text = 'Get Proc Inf'
-                                $PHFocussedHandle = [Cons.WindowDisp]::GetForegroundWindow()
+                                $PHFocussedHandle = [GUI.Window]::GetForegroundWindow()
                                 $PHProcInfo = (PS | ?{$_.MainWindowHandle -eq $PHFocussedHandle})
-                                $PHTextLength = [Cons.WindowDisp]::GetWindowTextLength($PHFocussedHandle)
+                                $PHTextLength = [GUI.Window]::GetWindowTextLength($PHFocussedHandle)
                                 $PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-                                [Void]([Cons.WindowDisp]::GetWindowText($PHFocussedHandle, $PHString, $PHString.Capacity))
+                                [Void]([GUI.Window]::GetWindowText($PHFocussedHandle, $PHString, $PHString.Capacity))
                                 $PHRect = [GUI.Rect]::E
-                                [Void]([Cons.WindowDisp]::GetWindowRect($PHFocussedHandle,[Ref]$PHRect))
+                                [Void]([GUI.Window]::GetWindowRect($PHFocussedHandle,[Ref]$PHRect))
                                 $ProcInfoBox.Text = ('ProcName:       '+$PHProcInfo.Name)
                                 $ProcInfoBox.Text+=($NL+'ProcId:         '+$PHProcInfo.Id)
                                 $ProcInfoBox.Text+=($NL+'WindowText:     '+$PHString)
@@ -3660,9 +3670,9 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             $Temp+=('GO -InlineCommand $ScriptedCMDs'+$NL)
                             $Temp+=('$UndoHash.KeyList | %{'+$NL)
                             $Temp+=('    If($_ -notmatch '+"'"+'MOUSE'+"'"+'){'+$NL)
-                            $Temp+=('        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '+"'"+'&H2'+"'"+', 0)'+$NL)
+                            $Temp+=('        [GUI.Events]::keybd_event(([String]$_), 0, '+"'"+'&H2'+"'"+', 0)'+$NL)
                             $Temp+=('    }Else{'+$NL)
-                            $Temp+=('        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('+"'"+'MOUSE'+"'"+','+"'"+''+"'"+').Replace('+"'"+'L'+"'"+',4).Replace('+"'"+'R'+"'"+',16).Replace('+"'"+'M'+"'"+',64))), 0, 0, 0, 0)'+$NL)
+                            $Temp+=('        [GUI.Events]::mouse_event(([Int]($_.Replace('+"'"+'MOUSE'+"'"+','+"'"+''+"'"+').Replace('+"'"+'L'+"'"+',4).Replace('+"'"+'R'+"'"+',16).Replace('+"'"+'M'+"'"+',64))), 0, 0, 0, 0)'+$NL)
                             $Temp+=('    }'+$NL)
                             $Temp+=('}'+$NL)
                             $Temp+=('$SyncHash.Kill = $True'+$NL)
@@ -3807,7 +3817,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     $SyncHash.SrvPort = $PHPort
                     $SyncHash.SrvIP = ($ServerIPOct1.Text+'.'+$ServerIPOct2.Text+'.'+$ServerIPOct3.Text+'.'+$ServerIPOct4.Text)
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
-                    [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+                    [GUI.Window]::ShowWindow($Form.Handle,0)
                     $MaxTime = [Int]$SrvTimeOut.Value
                     $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
                     $Listener.Start()
@@ -3844,7 +3854,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         }
                     }
                     $Listener.Stop()
-                    [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+                    [GUI.Window]::ShowWindow($Form.Handle,4)
                     
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
                     $Form.Refresh()
@@ -3858,7 +3868,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     $SyncHash.SrvPort = $PHPort
                     $SyncHash.SrvIP = ($ServerIPOct1.Text+'.'+$ServerIPOct2.Text+'.'+$ServerIPOct3.Text+'.'+$ServerIPOct4.Text)
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
-                    [Cons.WindowDisp]::ShowWindow($Form.Handle,0)
+                    [GUI.Window]::ShowWindow($Form.Handle,0)
                     $MaxTime = [Int]$SrvTimeOut.Value
                     $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
                     $Listener.Start()
@@ -3895,7 +3905,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         }
                     }
                     $Listener.Stop()
-                    [Cons.WindowDisp]::ShowWindow($Form.Handle,4)
+                    [GUI.Window]::ShowWindow($Form.Handle,4)
                     
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
                     $Form.Refresh()
@@ -3959,9 +3969,9 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                 $ShowCons.Add_CheckedChanged({
                     If($Host.Name -match 'Console'){
                         If($This.Checked){
-                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 1)
+                            [Void][GUI.Window]::ShowWindow([Cons.Wind]::GetConsoleWindow(), 1)
                         }Else{
-                            [Void][Cons.WindowDisp]::ShowWindow([Cons.WindowDisp]::GetConsoleWindow(), 0)
+                            [Void][GUI.Window]::ShowWindow([Cons.Wind]::GetConsoleWindow(), 0)
                         }
                     }
                 })
@@ -4104,7 +4114,7 @@ $FindForm.Visible = $False
     $FRClose.Parent = $FindForm
 $FindForm.Parent = $Form
 #If($Host.Name -match 'Console'){Cls}
-If(Test-Path ($env:APPDATA+'\Macro\LegacySendKeys.txt')){[Cons.Send]::SetConfig()}
+If(Test-Path ($env:APPDATA+'\Macro\LegacySendKeys.txt')){[GUI.Send]::SetConfig()}
 
 $Config = ('' | Select `
     @{NAME='DelayTimeVal';EXPRESSION={0}},`
@@ -4284,9 +4294,9 @@ If($CommandLine){
 
 $UndoHash.KeyList | %{
     If($_ -notmatch 'MOUSE'){
-        [Cons.KeyEvnt]::keybd_event(([String]$_), 0, '&H2', 0)
+        [GUI.Events]::keybd_event(([String]$_), 0, '&H2', 0)
     }Else{
-        [Cons.MouseEvnt]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
+        [GUI.Events]::mouse_event(([Int]($_.Replace('MOUSE','').Replace('L',4).Replace('R',16).Replace('M',64))), 0, 0, 0, 0)
     }
 }
 
@@ -4297,5 +4307,7 @@ $MutexPow.Dispose()
 $MouseIndPow.EndInvoke($MouseIndHandle)
 $MouseIndRun.Close()
 $MouseIndPow.Dispose()
+
+[Void][GUI.Window]::ShowWindow([Cons.Wind]::GetConsoleWindow(), 1)
 
 #If($Host.Name -match 'Console'){Exit}
