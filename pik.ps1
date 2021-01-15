@@ -24,7 +24,7 @@
                     }
                 }
             }
-        
+            
             '^{CMD .*}$'{
                 If(!$WhatIf){
                     [Void]([ScriptBlock]::Create('CMD /C'+($X -replace '^{CMD ' -replace '}$'))).Invoke()
@@ -569,104 +569,104 @@
             }
         
             '{FOCUS |{SETWIND |{MIN |{MAX |{HIDE |{SHOW |{SETWINDTEXT '{
-				$ProcSearchTerm = ($_ -replace '}\s*$' -replace ',.*')
-				$ProcSearchTerm = ($ProcSearchTerm.Replace(' -ID ',' ').Replace(' -HAND ',' '))
-				$ProcSearchTerm = ($ProcSearchTerm.Split() | ?{$_})
-				$ProcSearchTerm = (($ProcSearchTerm | Select -Skip 1) -join ' ' -replace ' \d*$')
-				
-				$PHProc = $Null
-				$PHHidden = $Null
-				
+                $ProcSearchTerm = ($_ -replace '}\s*$' -replace ',.*')
+                $ProcSearchTerm = ($ProcSearchTerm.Replace(' -ID ',' ').Replace(' -HAND ',' '))
+                $ProcSearchTerm = ($ProcSearchTerm.Split() | ?{$_})
+                $ProcSearchTerm = (($ProcSearchTerm | Select -Skip 1) -join ' ' -replace ' \d*$')
+                
+                $PHProc = $Null
+                $PHHidden = $Null
+                
                 $ChildHandles = $False
-				If($X -match ' -ID '){
-					Try{
-						$PHProc = @(PS -Id $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
-						If(!$PHProc.Count){
-							If($Script:HiddenWindows.Keys.Count){
-								$LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
-								$LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
-								$LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_.*?_'+$LastHiddenTime+'$')
-								$KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
-								
-								$PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
-							}
-						}
-					}Catch{
-						$PHProc = $Null
-						$PHHidden = $Null
-						If($ShowCons.Checked){
-							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
-							[System.Console]::WriteLine($Error[0])
-						}
-						
-						$SyncHash.Stop = $True
-						Break
-					}
-				}ElseIf($X -match ' -HAND '){
-					Try{
-						$PHProc = @(PS -ErrorAction Stop | ?{$_.MainWindowHandle -eq $ProcSearchTerm})
-						If(!$PHProc.Count){
-							If($Script:HiddenWindows.Keys.Count){
-								$LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
-								$LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
-								$LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_'+$LastHiddenTime+'$')
-								$KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
-								
-								$PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
-							}
-							
-							If(!$PHHidden){
-								$ChildHandles = $True
-								Try{
-									$ProcSearchTerm = [IntPtr][Int]$ProcSearchTerm
-									$PHTextLength = [GUI.Window]::GetWindowTextLength($ProcSearchTerm)
-									$PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
-									[Void]([GUI.Window]::GetWindowText($ProcSearchTerm, $PHString, $PHString.Capacity))
-									If(!$PHString){
-										$PHProc = $Null
-										$PHHidden = $Null
-									}Else{
-										$PHHidden = @($ProcSearchTerm)
-									}
-								}Catch{
-									$PHProc = $Null
-									$PHHidden = $Null
-								}
-							}
-						}
-					}Catch{
-						$PHProc = $Null
-						$PHHidden = $Null
-						If($ShowCons.Checked){
-							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
-							[System.Console]::WriteLine($Error[0])
-						}
-						
-						$SyncHash.Stop = $True
-						Break
-					}
-				}Else{
-					Try{
-						$PHProc = @(PS $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
-						If(!$PHProc.Count){
-							$PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $ProcSearchTerm})
-						}
-						If($Script:HiddenWindows.Keys.Count){
-							$PHHidden = @(($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$ProcSearchTerm+'_')}) | %{$Script:HiddenWindows.$_})
-						}
-					}Catch{
-						$PHProc = $Null
-						$PHHidden = $Null
-						If($ShowCons.Checked){
-							[System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
-							[System.Console]::WriteLine($Error[0])
-						}
-						
-						$SyncHash.Stop = $True
-						Break
-					}
-				}
-				
+                If($X -match ' -ID '){
+                    Try{
+                        $PHProc = @(PS -Id $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+                        If(!$PHProc.Count){
+                            If($Script:HiddenWindows.Keys.Count){
+                                $LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
+                                $LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
+                                $LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_.*?_'+$LastHiddenTime+'$')
+                                $KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
+                                
+                                $PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
+                            }
+                        }
+                    }Catch{
+                        $PHProc = $Null
+                        $PHHidden = $Null
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+                            [System.Console]::WriteLine($Error[0])
+                        }
+                        
+                        $SyncHash.Stop = $True
+                        Break
+                    }
+                }ElseIf($X -match ' -HAND '){
+                    Try{
+                        $PHProc = @(PS -ErrorAction Stop | ?{$_.MainWindowHandle -eq $ProcSearchTerm})
+                        If(!$PHProc.Count){
+                            If($Script:HiddenWindows.Keys.Count){
+                                $LastHiddenTime = ($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$ProcSearchTerm+'_')})
+                                $LastHiddenTime = ($LastHiddenTime | %{[String]($_.Split('_')[-1])} | Sort | Select -Last 1)
+                                $LastHiddenSearchTerm = ('_'+$ProcSearchTerm+'_'+$LastHiddenTime+'$')
+                                $KeyNameOfLastHidden = ($Script:HiddenWindows.Keys | ?{$_ -match $LastHiddenSearchTerm})
+                                
+                                $PHHidden = @($Script:HiddenWindows.$KeyNameOfLastHidden)
+                            }
+                            
+                            If(!$PHHidden){
+                                $ChildHandles = $True
+                                Try{
+                                    $ProcSearchTerm = [IntPtr][Int]$ProcSearchTerm
+                                    $PHTextLength = [GUI.Window]::GetWindowTextLength($ProcSearchTerm)
+                                    $PHString = ([N.e]::w([System.Text.StringBuilder],@(($PHTextLength + 1))))
+                                    [Void]([GUI.Window]::GetWindowText($ProcSearchTerm, $PHString, $PHString.Capacity))
+                                    If(!$PHString){
+                                        $PHProc = $Null
+                                        $PHHidden = $Null
+                                    }Else{
+                                        $PHHidden = @($ProcSearchTerm)
+                                    }
+                                }Catch{
+                                    $PHProc = $Null
+                                    $PHHidden = $Null
+                                }
+                            }
+                        }
+                    }Catch{
+                        $PHProc = $Null
+                        $PHHidden = $Null
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+                            [System.Console]::WriteLine($Error[0])
+                        }
+                        
+                        $SyncHash.Stop = $True
+                        Break
+                    }
+                }Else{
+                    Try{
+                        $PHProc = @(PS $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+                        If(!$PHProc.Count){
+                            $PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $ProcSearchTerm})
+                        }
+                        If($Script:HiddenWindows.Keys.Count){
+                            $PHHidden = @(($Script:HiddenWindows.Keys | ?{$_ -match ('^'+$ProcSearchTerm+'_')}) | %{$Script:HiddenWindows.$_})
+                        }
+                    }Catch{
+                        $PHProc = $Null
+                        $PHHidden = $Null
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'ERROR: FAILED DURING FIND PROC, KILLING MACRO TO AVOID CAUSING DAMAGE')
+                            [System.Console]::WriteLine($Error[0])
+                        }
+                        
+                        $SyncHash.Stop = $True
+                        Break
+                    }
+                }
+                
                 If($PHHidden.Count){$PHProc+=$PHHidden}
                 If($PHProc.Count){
                     If(!$WhatIf){
@@ -681,28 +681,28 @@
                             $PHTMPProcHand = [IntPtr][Int]$PHTMPProcHand
                             $PHAction = $X.Split(' ')[0].Replace('{','')
                             
-							Switch($PHAction){
+                            Switch($PHAction){
                                 'FOCUS'       {
                                     Try{
                                         If(!$ChildHandles){
-											[Void][GUI.Window]::Act($PHTMPProcTitle)
-										}Else{
-											[Void][GUI.Window]::ShowWindow($PHTMPProcHand,9)
-										}
+                                            [Void][GUI.Window]::Act($PHTMPProcTitle)
+                                        }Else{
+                                            [Void][GUI.Window]::ShowWindow($PHTMPProcHand,9)
+                                        }
                                     }Catch{
                                         If($ShowCons.Checked){
-											[System.Console]::WriteLine(`
-												$Tab+`
-												'COULD NOT FIND HANDLES: '+`
-												([Boolean]$ChildHandles).ToString().ToUpper()+`
-												', PROC TITLE: '+`
-												$PHTMPProcTitle+`
-												', HANDLE: '+`
-												$PHTMPProcHand
-											)
-											
-											[System.Console]::WriteLine($Error[0])
-										}
+                                            [System.Console]::WriteLine(`
+                                                $Tab+`
+                                                'COULD NOT FIND HANDLES: '+`
+                                                ([Boolean]$ChildHandles).ToString().ToUpper()+`
+                                                ', PROC TITLE: '+`
+                                                $PHTMPProcTitle+`
+                                                ', HANDLE: '+`
+                                                $PHTMPProcHand
+                                            )
+                                            
+                                            [System.Console]::WriteLine($Error[0])
+                                        }
                                     }
                                 }
                                 'MIN'         {[Void][GUI.Window]::ShowWindow($PHTMPProcHand,6)}
@@ -712,21 +712,21 @@
                                     [Void][GUI.Window]::ShowWindow($PHTMPProcHand,0)
                                     If(!$ChildHandles){
                                         $Script:HiddenWindows.Add(
-											($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),
-											$PHTMPProc
-										)
+                                            ($PHTMPProc.Name+'_'+$PHTMPProc.Id+'_'+$PHTMPProcHand+'_'+[DateTime]::Now.ToFileTimeUtc()),
+                                            $PHTMPProc
+                                        )
                                     }
                                 }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
                                     [Void][GUI.Window]::MoveWindow(
-										$PHTMPProcHand,
-										[Int]$PHCoords[0],
-										[Int]$PHCoords[1],
-										([Int]$PHCoords[2]-[Int]$PHCoords[0]),
-										([Int]$PHCoords[3]-[Int]$PHCoords[1]),
-										$True
-									)
+                                        $PHTMPProcHand,
+                                        [Int]$PHCoords[0],
+                                        [Int]$PHCoords[1],
+                                        ([Int]$PHCoords[2]-[Int]$PHCoords[0]),
+                                        ([Int]$PHCoords[3]-[Int]$PHCoords[1]),
+                                        $True
+                                    )
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
@@ -734,17 +734,17 @@
                                 }
                             }
                             If($PHAction -match 'MIN|MAX|SHOW'){
-								$PHKey = @($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')})
+                                $PHKey = @($Script:HiddenWindows.Keys | ?{$_ -match ('_'+$PHTMPProcHand+'_')})
                                 If($PHKey.Count){$PHKey = (($PHKey | %{[String]($_.Split('_')[-1])} | Sort) | Select -Last 1)}
-								
+                                
                                 If($PHKey){
                                     Try{
                                         $Script:HiddenWindows.Remove($PHKey)
                                     }Catch{
                                         If($ShowCons.Checked){
-											[System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')
-											[System.Console]::WriteLine($Error[0])
-										}
+                                            [System.Console]::WriteLine($Tab+'COULD NOT DELETE PROC KEY ('+$PHKey+'), THIS MAY NOT BE AN ISSUE')
+                                            [System.Console]::WriteLine($Error[0])
+                                        }
                                     }
                                 }
                             }
@@ -753,60 +753,60 @@
                         $PHProc | %{
                             Switch($X.Split(' ')[0].Replace('{','')){
                                 'FOCUS'       {
-									If($ShowCons.Checked){
-										[System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))
-									}
-								}
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'WHATIF: FOCUS ON '+($X -replace '{FOCUS ' -replace '}'))
+                                    }
+                                }
                                 'MIN'         {
-									If($ShowCons.Checked){
-										[System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))
-									}
-								}
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'WHATIF: MIN WINDOW '+($X -replace '{MIN ' -replace '}' -replace '-ID'))
+                                    }
+                                }
                                 'MAX'         {
-									If($ShowCons.Checked){
-										[System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))
-									}
-								}
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'WHATIF: MAX WINDOW '+($X -replace '{MAX ' -replace '}' -replace '-ID'))
+                                    }
+                                }
                                 'SHOW'        {
-									If($ShowCons.Checked){
-										[System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))
-									}
-								}
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'WHATIF: SHOW WINDOW '+($X -replace '{SHOW ' -replace '}' -replace '-ID'))
+                                    }
+                                }
                                 'HIDE'        {
-									If($ShowCons.Checked){
-										[System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))
-									}
-								}
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'WHATIF: HIDE WINDOW '+($X -replace '{HIDE ' -replace '}' -replace '-ID'))
+                                    }
+                                }
                                 'SETWIND'     {
                                     $PHCoords = (($X -replace '{SETWIND ' -replace '}$').Split(',') | Select -Skip 1)
                                     If($ShowCons.Checked){
-										[System.Console]::WriteLine(
-											$Tab+`
-											'WHATIF: RESIZE WINDOW '+`
-											($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+`
-											' TO TOP-LEFT ('+`
-											$PHCoords[0]+`
-											','+`
-											$PHCoords[1]+`
-											') AND BOTTOM-RIGHT ('+`
-											$PHCoords[2]+`
-											','+`
-											$PHCoords[3]+`
-											')'
-										)
-									}
+                                        [System.Console]::WriteLine(
+                                            $Tab+`
+                                            'WHATIF: RESIZE WINDOW '+`
+                                            ($X -replace '{SETWIND ' -replace '}' -replace '-ID ')+`
+                                            ' TO TOP-LEFT ('+`
+                                            $PHCoords[0]+`
+                                            ','+`
+                                            $PHCoords[1]+`
+                                            ') AND BOTTOM-RIGHT ('+`
+                                            $PHCoords[2]+`
+                                            ','+`
+                                            $PHCoords[3]+`
+                                            ')'
+                                        )
+                                    }
                                 }
                                 'SETWINDTEXT' {
                                     $PHWindText = ($X -replace ('^\s*{.*?,') -replace '}$')
                                     If($ShowCons.Checked){
-										[System.Console]::WriteLine(
-											$Tab+`
-											'WHATIF: SET WINDOW TEXT FOR '+`
-											($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+`
-											' TO '+`
-											$PHWindText
-										)
-									}
+                                        [System.Console]::WriteLine(
+                                            $Tab+`
+                                            'WHATIF: SET WINDOW TEXT FOR '+`
+                                            ($X -replace '{SETWINDTEXT ' -replace '}' -replace '-ID ').Split(',')[0]+`
+                                            ' TO '+`
+                                            $PHWindText
+                                        )
+                                    }
                                 }
                             }
                         }
