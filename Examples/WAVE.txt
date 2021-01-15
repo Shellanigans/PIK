@@ -1,3 +1,4 @@
+\\#This function can also be placed inside the functions tab to clean up the commands area. It is just here to make the example program easier to copy.
 {FUNCTION NAME WAVE}
 	{HOLD LMOUSE}
 	{MOUSE {EVAL {VAR XLOC}+3*{VAR INDEX}},{EVAL {VAR YLOC}-75*{SIN {EVAL {VAR INDEX}/{VAR PERIOD}}}}}
