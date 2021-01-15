@@ -28,7 +28,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Build PIK
         run: |
-          powershell -c "Write-Host 'Combining files...'
+          powershell -c "Write-Host 'Combining files...'"
           powershell -file .\Build_no_Run.ps1
           powershell -c "Write-Host 'Output:';Write-Host (GC -ReadCount 0 .\pik.ps1 | Out-String)"
           
