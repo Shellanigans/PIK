@@ -402,7 +402,7 @@ public class Parse{
 
     public static string KeyWord(string X){
         if(Regex.IsMatch(X.ToUpper(), "{[CPSDGRMW]")){
-            if(Regex.IsMatch(X, "{COPY}") || Regex.IsMatch(X, "{PASTE}") || Regex.IsMatch(X, "{SELECTALL}")){
+            if(Regex.IsMatch(X, "{COPY}|{PASTE}|{SELECTALL}")){
                 X = (X.Replace("{COPY}","(^c)"));
                 X = (X.Replace("{PASTE}","(^v)"));
                 X = (X.Replace("{SELECTALL}","(^a)"));
@@ -413,11 +413,11 @@ public class Parse{
             if(Regex.IsMatch(X, "{WHOAMI}")){
                 X = (X.Replace("{WHOAMI}",(Environment.UserDomainName.ToString()+"\\"+Environment.UserName.ToString())));
             }
-            if(Regex.IsMatch(X, "{DATETIME") || Regex.IsMatch(X, "{RAND") || Regex.IsMatch(X, "{SPACE")){
+            if(Regex.IsMatch(X, "{DATETIME|{RAND |{SPACE ?")){
                 X = (X.Replace("{DATETIME}",DateTime.Now.ToString()));
 		        X = (X.Replace("{DATETIMEUTC}",DateTime.Now.ToFileTimeUtc().ToString()));
 
-                while(Regex.IsMatch(X, "{SPACE")){
+                while(Regex.IsMatch(X, "{SPACE ?")){
                     foreach(string SubString in X.Split("{}".ToCharArray())){
                         if(Regex.IsMatch(SubString, "SPACE")){
                             X = X.Replace(
@@ -443,11 +443,12 @@ public class Parse{
                 }
             }
 
-            if(Regex.IsMatch(X, "{GETCLIP}") || Regex.IsMatch(X, "{GETMOUSE}")){
-                DR.Point Coords = GUI.Cursor.GetPos();
-
+            if(Regex.IsMatch(X, "{GETCLIP}|{GETMOUSE}")){
                 if(Regex.IsMatch(X, "{GETCLIP}")){X = X.Replace("{GETCLIP}",(GUI.Clip.GetTxt()));}
-                if(Regex.IsMatch(X, "{GETMOUSE}")){X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));}
+                if(Regex.IsMatch(X, "{GETMOUSE}")){
+                    DR.Point Coords = GUI.Cursor.GetPos();
+                    X = X.Replace("{GETMOUSE}",(Coords.X.ToString()+","+Coords.Y.ToString()));
+                }
             }
         }
         return X;
