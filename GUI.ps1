@@ -1,4 +1,4 @@
-﻿$Asms = @(
+$Asms = @(
     'System.Windows.Forms',
     'System.Drawing',
     'Microsoft.VisualBasic',
@@ -426,7 +426,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                 $Profile.Parent = $TabPageProfiles
                 $SavedProfilesLabel = ([N.e]::w([GUI.L],@(75, 15, 85, 36, 'Profiles:')))
                 $SavedProfilesLabel.Parent = $TabPageProfiles
-                $RefreshProfiles = ([N.e]::w([GUI.B],@(75, 21, 186, 32, 'Refresh')))
+                $RefreshProfiles = ([N.e]::w([GUI.B],@(75, 21, 10, 33, 'Refresh')))
                 $RefreshProfiles.Add_Click({
                     $SavedProfiles.Items.Clear()
                     [Void]((Get-ChildItem ($env:APPDATA+'\Macro\Profiles')) | %{$SavedProfiles.Items.Add($_.Name)})
@@ -505,7 +505,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $SaveProfile.Parent = $TabPageProfiles
-                $BlankProfile = ([N.e]::w([GUI.B],@(75, 21, 10, 132, 'New')))
+                $BlankProfile = ([N.e]::w([GUI.B],@(75, 21, 10, 150, 'New/Blank')))
                 $BlankProfile.Add_Click({
                     If((Check-Saved) -ne 'Cancel'){
                         $Profile.Text = 'Working Profile: None/Prev Text'
@@ -519,7 +519,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $BlankProfile.Parent = $TabPageProfiles
-                $ImportProfile = ([N.e]::w([GUI.B],@(75,21,186,85,'Import')))
+                $ImportProfile = ([N.e]::w([GUI.B],@(75,21,186,75,'Import')))
                 $ImportProfile.Add_Click({
                     If((Check-Saved) -ne 'Cancel'){
                         $DialogO = ([N.e]::w([System.Windows.Forms.OpenFileDialog],@()))
@@ -599,7 +599,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     }
                 })
                 $ImportProfile.Parent = $TabPageProfiles
-                $ExportProfile = ([N.e]::w([GUI.B],@(75,21,186,115,'Export')))
+                $ExportProfile = ([N.e]::w([GUI.B],@(75,21,186,95,'Export')))
                 $ExportProfile.Add_Click({
                     $PIK_PS1 = ([System.Windows.Forms.MessageBox]::Show('Export as executable script? Select "No" or close to save as a PIK file instead.','Export Type','YesNo') -eq 'Yes')
                     
@@ -617,6 +617,10 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     If($DialogS.ShowDialog() -eq 'OK'){
                         #$SavePath = $DialogS.FileName
                         If($PIK_PS1){
+                            $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
+                            $Temp+=($FunctionsBox.Text+$NL)
+                            $Temp+=($Commands.Text+$NL)
+                            $Temp+=("'"+[Char]64+$NL)
                             $Temp+=('$CSharpDef = '+[Char]64+"'"+$NL)
                             $Temp+=($CSharpDef+$NL)
                             $Temp+=("'"+[Char]64+$NL)
@@ -698,10 +702,6 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             $Temp+=('$MutexPow.AddParameter('+"'"+'SyncHash'+"'"+', $SyncHash) | Out-Null'+$NL)
                             $Temp+=('$MutexHandle = $MutexPow.BeginInvoke()'+$NL)
                             $Temp+=('$ShowCons = @{Checked=$True}'+$NL)
-                            $Temp+=('$ScriptedCMDs = '+[Char]64+"'"+$NL)
-                            $Temp+=($FunctionsBox.Text+$NL)
-                            $Temp+=($Commands.Text+$NL)
-                            $Temp+=("'"+[Char]64+$NL)
                             $Temp+=('GO -InlineCommand $ScriptedCMDs'+$NL)
                             $Temp+=('$UndoHash.KeyList | %{'+$NL)
                             $Temp+=('    If($_ -notmatch '+"'"+'MOUSE'+"'"+'){'+$NL)
@@ -892,25 +892,33 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     [GUI.Window]::ShowWindow($Form.Handle,4)
                     
                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+                    [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
                     $Form.Refresh()
                     $SyncHash.Stop = $False
                     $SyncHash.Restart = $False
                 })
                 $ServerStart.Parent = $TabPageServer
-                <#$RevServerStart = ([N.e]::w([GUI.B],@(150, 25, 25, 50, 'Connect and Listen')))
+                $RevServerStart = ([N.e]::w([GUI.B],@(150, 25, 25, 75, 'Connect and Listen')))
                 $RevServerStart.Add_Click({
                     $PHPort = [Int]$ServerPort.Text
                     $SyncHash.SrvPort = $PHPort
                     $SyncHash.SrvIP = ($ServerIPOct1.Text+'.'+$ServerIPOct2.Text+'.'+$ServerIPOct3.Text+'.'+$ServerIPOct4.Text)
-                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server started!'+$NL+'---------------'+$NL)
-                    [GUI.Window]::ShowWindow($Form.Handle,0)
-                    $MaxTime = [Int]$SrvTimeOut.Value
-                    $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
-                    $Listener.Start()
-                    While(!$SyncHash.Stop){
-                        $Client = $Listener.AcceptTCPClient()
-                        $Listener.Stop()
-                        $Stream = $Client.GetStream()
+                    $MaxTime = [Int]$CliTimeOut.Value
+                    Try{
+                        If($SyncHash.SrvIP -ne '0.0.0.0'){
+                            $Listener = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
+                            [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Connect!'+$NL+'---------------'+$NL)
+                            [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
+                            [GUI.Window]::ShowWindow($Form.Handle,0)
+                        }Else{
+                            [System.Console]::WriteLine($Tab+'ERROR! 0.0.0.0 IS AN INVALID REMOTE IP!')
+                        }
+                    }Catch{
+                        [System.Console]::WriteLine($Tab+'ERROR! COULD NOT CONNECT!')
+                        [System.Console]::WriteLine($Error[0])
+                    }
+                    While(!$SyncHash.Stop -AND $Listener.Connected){
+                        $Stream = $Listener.GetStream()
                         $Buff = [N.e]::w([Byte[]],@(1024))
                         $CMDsIn = ''
                         $Timeout = 1
@@ -927,27 +935,43 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
                             GO -InlineCommand $CMDsIn -Server -Stream $Stream
                             Try{
-                                $Listener.Start()
-                                
                                 $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
-                                $Stream.Close()
-                                $Stream.Dispose()
-                                $Client.Close()
-                                $Client.Dispose()
                             }Catch{
                                 If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')}
                             }
+
+                            Try{
+                                If(!$Listener.Connected){
+                                    $Stream.Close()
+                                    $Stream.Dispose()
+                                    $Listener.Close()
+                                    $Listener.Dispose()
+                                    $Listener = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
+                                }
+                            }Catch{
+                                [System.Console]::WriteLine($Tab+'ERROR! COULD NOT RECONNECT!')
+                                [System.Console]::WriteLine($Error[0])
+                            }
                         }
                     }
-                    $Listener.Stop()
-                    [GUI.Window]::ShowWindow($Form.Handle,4)
                     
-                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+                    Try{
+                        $Stream.Close()
+                        $Stream.Dispose()
+                        $Listener.Close()
+                        $Listener.Dispose()
+                        [GUI.Window]::ShowWindow($Form.Handle,4)
+                    
+                        [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+                    }Catch{
+                        [System.Console]::WriteLine($Tab+'ERROR! NO CONNECTION TO CLOSE!')
+                        [System.Console]::WriteLine($Error[0])
+                    }
                     $Form.Refresh()
                     $SyncHash.Stop = $False
                     $SyncHash.Restart = $False
                 })
-                $RevServerStart.Parent = $TabPageServer#>
+                $RevServerStart.Parent = $TabPageServer
                 $CliTimeOutLabel = ([N.e]::w([GUI.L],@(172, 15, 25, 200, 'Sender Timeout (s):')))
                 $CliTimeOutLabel.Parent = $TabPageServer
                 $CliTimeOut = ([N.e]::w([GUI.NUD],@(150, 25, 25, 220)))
