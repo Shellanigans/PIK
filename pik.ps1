@@ -647,7 +647,7 @@
                     }
                 }Else{
                     Try{
-                        $PHProc = @(PS $ProcSearchTerm -ErrorAction Stop | ?{$_.MainWindowHandle -ne 0})
+                        $PHProc = @(PS $ProcSearchTerm | ?{$_.MainWindowHandle -ne 0})
                         If(!$PHProc.Count){
                             $PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $ProcSearchTerm})
                         }
