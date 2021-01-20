@@ -1826,7 +1826,9 @@ Function GO{
                                 }
                                 Try{
                                     $Script:FuncHash.Add($NewFuncName,$NewFuncBody)
-                                        
+                                    
+                                    $Script:FuncRegex+='|{'+$NewFuncName+' \d+|{'+$NewFuncName+'}'
+                                    
                                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'Parsing New Function:')}
                                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'-------------------------')}
                                     If($ShowCons.Checked){[System.Console]::WriteLine(($Tab*2) + $NewFuncName + $NL + ($Tab*2) + '-------------------------' + $NL + (($Script:FuncHash.$NewFuncName.Split($NL) | ?{$_ -ne ''} | %{($Tab*2)+($_ -replace '^\s*')}) -join $NL) + $NL)}
