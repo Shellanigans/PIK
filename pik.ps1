@@ -359,7 +359,7 @@
                         }
                         
                         1..$ClickCount | %{
-                            [Int]($X.Replace('L','2').Replace('R','8').Replace('M','32') -replace '\D') | %{
+                            [Int]($X.Replace('LM','2').Replace('RM','8').Replace('MM','32').Split(' ')[0] -replace '\D') | %{
                                 If($_ -eq 2 -OR $_ -eq 8 -OR $_ -eq 32){
                                     [GUI.Events]::mouse_event($_, 0, 0, 0, 0)
                                     [System.Threading.Thread]::Sleep(40)
