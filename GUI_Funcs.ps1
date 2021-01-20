@@ -116,7 +116,7 @@
                                 Try{
                                     $Script:FuncHash.Add($NewFuncName,$NewFuncBody)
                                     
-                                    $Script:FuncRegex+='|{'+$NewFuncName+' \d+|{'+$NewFuncName+'}'
+                                    $Script:FuncRegex+=('|{'+$NewFuncName+' \d+|{'+$NewFuncName+'}')
                                     
                                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'Parsing New Function:')}
                                     If($ShowCons.Checked){[System.Console]::WriteLine($Tab+'-------------------------')}
