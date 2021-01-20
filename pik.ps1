@@ -3679,7 +3679,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                     $MaxTime = [Int]$CliTimeOut.Value
                     Try{
                         If($SyncHash.SrvIP -ne '0.0.0.0'){
-                            $Listener = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
+                            $Listener = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
                             [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Connect!'+$NL+'---------------'+$NL)
                             [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
                             [GUI.Window]::ShowWindow($Form.Handle,0)
