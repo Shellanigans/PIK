@@ -536,7 +536,7 @@
             }
         
             $Script:FuncRegex{
-                If($Script:FuncRegex -ne '{ \d+|{}'){
+                If($Script:FuncRegex -ne '{ \d+|{}' -AND $X -notmatch '^{REMOTE '){
                     $FuncCount = 1
                     If($X -match ' '){
                         $FuncCount = [Int]($X.Split()[-1] -replace '\D')
