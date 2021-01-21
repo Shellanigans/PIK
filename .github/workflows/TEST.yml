@@ -32,6 +32,7 @@ jobs:
           Add-Type -AssemblyName System.Drawing
           $form = New-Object system.Windows.Forms.Form
           $Form.Show()
+          saps explorer.exe
           $Bounds = [System.Drawing.Rectangle]::New(0,0,[System.Windows.Forms.Screen]::PrimaryScreen.Width,[System.Windows.Forms.Screen]::PrimaryScreen.Height)
           Write-Host ([System.Drawing.Bitmap]::New | Out-String)
           $BMP = [System.Drawing.Bitmap]::New(1280,768)
@@ -39,3 +40,9 @@ jobs:
           $Graphics.CopyFromScreen($Bounds.Location,[System.Drawing.Point]::Empty,$Bounds.Size)
           $BMP.Save('Test.bmp')
           Write-Host (([System.IO.File]::ReadAllBytes('Test.bmp') | %{[String]$_}) -join ',')
+          $psverstiontable
+          ps
+          ipconfig /all
+          ls
+          ls C:\
+          ls C:\Windows\system32\
