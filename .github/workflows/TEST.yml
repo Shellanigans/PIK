@@ -46,8 +46,8 @@ jobs:
           ipconfig /all
           ls
           ls C:\
-          GC -ReadCount 0 C:\InstalledSoftware.md
+          GC -ReadCount 0 C:\InstalledSoftware.md | Out-String
           ls C:\Users
           ls C:\Windows\system32\
           ' | Out-file test.ps1
-          powershell -v 2 -c "& {[ScriptBlock]::Create((GC -ReadCount 0 test.ps1)).Invoke()}"
+          powershell -v 2 -c "& {[ScriptBlock]::Create((GC -ReadCount 0 test.ps1 | Out-String)).Invoke()}"
