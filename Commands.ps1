@@ -70,7 +70,7 @@ $MutexPow.AddScript({
                     $IP = '127.0.0.1'
                 }
                 $Port = [Int]$SyncHash.SrvPort
-                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@($IP,$Port)))
+                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@([IPAddress]$IP,$Port)))
                 
                 $TmpStr = $TmpCli.GetStream()
                 $TmpStr.Write($SSrv,0,$SSrv.Count)
