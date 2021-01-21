@@ -430,7 +430,14 @@ Function Actions{
                         $PHCMDS = '{CMDS_START}'+($NL*2)+$PHSendString+($NL*2)+'{CMDS_END}'
                         $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
                         
-                        $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                        If($X -match '{REMOTE -R '){
+                            $PHListener = ([N.e]::w([System.Net.Sockets.TcpListener],@($PHIP,$PHPort)))
+                            $PHListener.Start()
+                            $PHClient = $PHListener.AcceptTCPClient()
+                            $PHListener.Stop()
+                        }Else{
+                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                        }
                         
                         $PHStream = $PHClient.GetStream()
                         $PHStream.Write($Buffer, 0, $Buffer.Length)
@@ -456,7 +463,8 @@ Function Actions{
                             ($PHResp -notmatch '{COMPLETE}') -AND `
                             !$SyncHash.Stop -AND `
                             ($Timeout -lt $MaxTime) -AND `
-                            ($PHSendString -ne '{SERVERSTOP}')
+                            ($PHSendString -ne '{SERVERSTOP}') -AND `
+                            $PHClient.Connected
                         ){
                             $PHMsg = ('WAITING FOR REMOTE END COMPLETION... '+$Timeout+'/'+$MaxTime)
                             If($ShowCons.Checked -AND !($Timeout % 3)){
@@ -495,7 +503,11 @@ Function Actions{
                         $PHClient.Dispose()
                     }Else{
                         If($ShowCons.Checked){
-                            [System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)
+                            If($X -match '{REMOTE -R '){
+                                [System.Console]::WriteLine($Tab+'WHATIF: WOULD LISTEN FOR INCOMING TCP CONNECTION ON '+$PHIP+':'+$PHPort+' THEN SEND THE FOLLOWING TO THE REMOTE END')
+                            }Else{
+                                [System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)
+                            }
                         }
                         If($ShowCons.Checked){
                             $PHSendString.Split($NL) | %{$FlipFlop = $True}{
