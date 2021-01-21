@@ -28,6 +28,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: GUI_TEST
         run: |
+          '
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
           $form = New-Object system.Windows.Forms.Form
@@ -38,8 +39,8 @@ jobs:
           $BMP = [System.Drawing.Bitmap]::New(1280,768)
           $Graphics = [System.Drawing.Graphics]::FromIMage($BMP)
           $Graphics.CopyFromScreen($Bounds.Location,[System.Drawing.Point]::Empty,$Bounds.Size)
-          $BMP.Save('Test.bmp')
-          Write-Host (([System.IO.File]::ReadAllBytes('Test.bmp') | %{[String]$_}) -join ',')
+          $BMP.Save("Test.bmp")
+          Write-Host (([System.IO.File]::ReadAllBytes("Test.bmp") | %{[String]$_}) -join ",")
           $psversiontable
           ps
           ipconfig /all
@@ -48,3 +49,5 @@ jobs:
           GC -RAW C:\InstalledSoftware.md
           ls C:\Users
           ls C:\Windows\system32\
+          ' | Out-file test.ps1
+          powershell -v 2 -c "& {[ScriptBlock]::Create((GC -RAW test.ps1)).Invoke()}"
