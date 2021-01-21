@@ -28,6 +28,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: GUI_TEST
         run: |
+          sysinfo
           '
           Add-Type -AssemblyName System.Windows.Forms
           Add-Type -AssemblyName System.Drawing
