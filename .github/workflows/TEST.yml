@@ -36,5 +36,5 @@ jobs:
           echo "$Graphics.CopyFromScreen($Bounds.Location,[System.Drawing.Point]::Empty,$Bounds.Size)" >> TestFile.ps1
           echo "$BMP.Save('Test.bmp')" >> TestFile.ps1
           echo "Write-Host (([System.IO.File]::ReadAllBytes('Test.bmp') | %{[String]$_}) -join ',')" >> TestFile.ps1
-          powershell -c "& {[ScriptBlock]::Create(GC -RAW TestFile.ps1)).Invoke()}"
+          powershell -c "& {[ScriptBlock]::Create((GC -RAW TestFile.ps1)).Invoke()}"
           
