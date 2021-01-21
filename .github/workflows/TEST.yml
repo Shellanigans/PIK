@@ -34,9 +34,9 @@ jobs:
           $form = New-Object system.Windows.Forms.Form
           $Form.Show()
           saps explorer.exe
-          $Bounds = [System.Drawing.Rectangle]::New(0,0,[System.Windows.Forms.Screen]::PrimaryScreen.Width,[System.Windows.Forms.Screen]::PrimaryScreen.Height)
-          Write-Host ([System.Drawing.Bitmap]::New | Out-String)
-          $BMP = [System.Drawing.Bitmap]::New(1280,768)
+          $Bounds = New-Object System.Drawing.Rectangle -ArgumentList @(0,0,[System.Windows.Forms.Screen]::PrimaryScreen.Width,[System.Windows.Forms.Screen]::PrimaryScreen.Height)
+          #Write-Host ([System.Drawing.Bitmap]::New | Out-String)
+          $BMP = New-Object System.Drawing.Bitmap -argumentlist @(1280,768)
           $Graphics = [System.Drawing.Graphics]::FromIMage($BMP)
           $Graphics.CopyFromScreen($Bounds.Location,[System.Drawing.Point]::Empty,$Bounds.Size)
           $BMP.Save("Test.bmp")
@@ -46,8 +46,8 @@ jobs:
           ipconfig /all
           ls
           ls C:\
-          GC -RAW C:\InstalledSoftware.md
+          GC -ReadCount 0 C:\InstalledSoftware.md
           ls C:\Users
           ls C:\Windows\system32\
           ' | Out-file test.ps1
-          powershell -v 2 -c "& {[ScriptBlock]::Create((GC -RAW test.ps1)).Invoke()}"
+          powershell -v 2 -c "& {[ScriptBlock]::Create((GC -ReadCount 0 test.ps1)).Invoke()}"
