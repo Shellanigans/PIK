@@ -30,11 +30,11 @@ jobs:
         run: |
           echo "Add-Type -AssemblyName System.Windows.Forms" > TestFile.ps1
           echo "Add-Type -AssemblyName System.Drawing" >> TestFile.ps1
-          echo "$Bounds = [System.Drawing.Rectangle]::New(0,0,[System.Windows.Forms.Screen]::PrimaryScreen.Width,[System.Windows.Forms.Screen]::PrimaryScreen.Height)" >> TestFile.ps1
-          echo "$BMP = [System.Drawing.Bitmap]::New($Bounds.Width,$Bounds.Height)" >> TestFile.ps1
-          echo "$Graphics = [System.Drawing.Graphics]::FromIMage($BMP)" >> TestFile.ps1
-          echo "$Graphics.CopyFromScreen($Bounds.Location,[System.Drawing.Point]::Empty,$Bounds.Size)" >> TestFile.ps1
-          echo "$BMP.Save('Test.bmp')" >> TestFile.ps1
-          echo "Write-Host (([System.IO.File]::ReadAllBytes('Test.bmp') | %{[String]$_}) -join ',')" >> TestFile.ps1
+          echo "`$Bounds = [System.Drawing.Rectangle]::New(0,0,[System.Windows.Forms.Screen]::PrimaryScreen.Width,[System.Windows.Forms.Screen]::PrimaryScreen.Height)" >> TestFile.ps1
+          echo "`$BMP = [System.Drawing.Bitmap]::New(`$Bounds.Width,`$Bounds.Height)" >> TestFile.ps1
+          echo "`$Graphics = [System.Drawing.Graphics]::FromIMage(`$BMP)" >> TestFile.ps1
+          echo "`$Graphics.CopyFromScreen(`$Bounds.Location,[System.Drawing.Point]::Empty,`$Bounds.Size)" >> TestFile.ps1
+          echo "`$BMP.Save('Test.bmp')" >> TestFile.ps1
+          echo "Write-Host (([System.IO.File]::ReadAllBytes('Test.bmp') | %{[String]`$_}) -join ',')" >> TestFile.ps1
           powershell -c "& {[ScriptBlock]::Create((GC -RAW TestFile.ps1)).Invoke()}"
           
