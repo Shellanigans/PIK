@@ -857,7 +857,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $MaxTime = [Int]$CliTimeOut.Value
                     }Else{
                         $MaxTime = [Int]$SrvTimeOut.Value
-                        $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
+                        $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
                     }
 
                     [GUI.Window]::ShowWindow($Form.Handle,0)
@@ -871,7 +871,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             [Void][IPAddress]$SyncHash.SrvIP
                             If($Reverse){
                                 If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
+                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
                                     $Stream = $Client.GetStream()
                                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                     [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -939,7 +939,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                         $MaxTime = [Int]$CliTimeOut.Value
                     }Else{
                         $MaxTime = [Int]$SrvTimeOut.Value
-                        $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($SyncHash.SrvIP,$PHPort)))
+                        $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
                     }
 
                     [GUI.Window]::ShowWindow($Form.Handle,0)
@@ -953,7 +953,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             [Void][IPAddress]$SyncHash.SrvIP
                             If($Reverse){
                                 If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
+                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
                                     $Stream = $Client.GetStream()
                                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                     [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
