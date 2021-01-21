@@ -525,6 +525,109 @@ Function Actions{
                 }
             }
 
+            '^{LISTEN '{
+                Try{
+                    If(!$WhatIf){
+                        $PH = ($X -replace '{REMOTE ' -replace '}$')
+                        $PHIP = [String]($PH.Split(',')[0].Split(':')[0])
+                        $PHPort = [Int]($PH.Split(',')[0].Split(':')[-1])
+
+                        $PHPort = [Int]$ServerPort.Text
+                        $SyncHash.SrvPort = $PHPort
+                        
+                        $Reverse = ($X -match '{LISTEN -R ')
+
+                        If($Reverse){
+                            $MaxTime = [Int]$CliTimeOut.Value
+                        }Else{
+                            $MaxTime = [Int]$SrvTimeOut.Value
+                            $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($PHIP,$PHPort)))
+                        }
+
+                        [GUI.Window]::ShowWindow($Form.Handle,0)
+                    
+                        While(!$SyncHash.Stop){
+                            $Buff = [N.e]::w([Byte[]],@(1024))
+                            $CMDsIn = ''
+                            $Timeout = 1
+
+                            Try{
+                                [Void][IPAddress]$PHIP
+                                If($Reverse){
+                                    If($SyncHash.SrvIP -ne '0.0.0.0'){
+                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                                        $Stream = $Client.GetStream()
+                                        [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
+                                        [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
+                                    }Else{[System.Console]::WriteLine($Tab+'ERROR! '+$SyncHash.SrvIP+' IS AN INVALID REMOTE IP!')}
+                                }Else{
+                                    $Listener.Start()
+                                    [System.Console]::WriteLine($NL+'---------------'+$NL+'Waiting for Commands!'+$NL+'---------------'+$NL)
+                                    $Client = $Listener.AcceptTCPClient()
+                                    $Listener.Stop()
+
+                                    $Stream = $Client.GetStream()
+                                }
+                            }Catch{
+                                [System.Console]::WriteLine($Tab+'ERROR! IN LISTENER!')
+                                [System.Console]::WriteLine($Error[0])
+                            }
+
+                            While(!(($CMDsIn -match '{CMDS_START}') -AND ($CMDsIn -match '{CMDS_END}')) -AND ($Timeout -lt $MaxTime) -AND $Client.Connected){
+                                While($Stream.DataAvailable){
+                                    $Buff = [N.e]::w([Byte[]],@(1024))
+                                    [Void]$Stream.Read($Buff, 0, 1024)
+                                    $CMDsIn+=([System.Text.Encoding]::UTF8.GetString($Buff))
+                                }
+                                [System.Threading.Thread]::Sleep(500)
+                                $Timeout++
+                            }
+                            If($Timeout -lt $MaxTime){
+                                $CMDsIn = ($CMDsIn -replace '{CMDS_START}' -replace '{CMDS_END}')
+                                GO -InlineCommand $CMDsIn -Server -Stream $Stream
+                            
+                                Try{
+                                    $Stream.Write([System.Text.Encoding]::UTF8.GetBytes('{COMPLETE}'),0,10)
+
+                                    $Stream.Close()
+                                    $Stream.Dispose()
+                                    $Client.Close()
+                                    $Client.Dispose()
+                                }Catch{
+                                    If($ShowCons.Checked){
+                                        [System.Console]::WriteLine($Tab+'ERROR! COULD NOT RETURN COMPLETE MESSAGE TO REMOTE END!')
+                                        [System.Console]::WriteLine($Error[0])
+                                    }
+                                }
+                            }
+                        }
+                        If(!$Reverse){$Listener.Stop()}
+                        [GUI.Window]::ShowWindow($Form.Handle,4)
+                    
+                        [System.Console]::WriteLine($NL+'---------------'+$NL+'Server stopped!'+$NL+'---------------'+$NL)
+                        $Form.Refresh()
+                        $SyncHash.Stop = $False
+                        $SyncHash.Restart = $False
+                    }Else{
+                        If($ShowCons.Checked){
+                            [System.Console]::WriteLine($Tab+'WHATIF: WOULD SEND THE FOLLOWING TO '+$PHIP+':'+$PHPort)
+                        }
+                        If($ShowCons.Checked){
+                            $PHSendString.Split($NL) | %{$FlipFlop = $True}{
+                                If($FlipFlop){
+                                    [System.Console]::WriteLine($Tab+$_)
+                                }
+                                $FlipFlop=!$FlipFlop
+                            }
+                        }
+                    }
+                }Catch{
+                    If($ShowCons.Checked){
+                        [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
+                    }
+                }
+            }
+
             '^{SCRNSHT '{
                 $PH = ($X -replace '{SCRNSHT ')
                 $PH = $PH.Substring(0,($PH.Length - 1))
