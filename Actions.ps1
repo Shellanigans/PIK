@@ -431,12 +431,12 @@ Function Actions{
                         $Buffer = [Text.Encoding]::UTF8.GetBytes($PHCMDS)
                         
                         If($X -match '{REMOTE -R '){
-                            $PHListener = ([N.e]::w([System.Net.Sockets.TcpListener],@($PHIP,$PHPort)))
+                            $PHListener = ([N.e]::w([System.Net.Sockets.TcpListener],@([IPAddress]$PHIP,$PHPort)))
                             $PHListener.Start()
                             $PHClient = $PHListener.AcceptTCPClient()
                             $PHListener.Stop()
                         }Else{
-                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
                         }
                         
                         $PHStream = $PHClient.GetStream()
@@ -541,7 +541,7 @@ Function Actions{
                             $MaxTime = [Int]$CliTimeOut.Value
                         }Else{
                             $MaxTime = [Int]$SrvTimeOut.Value
-                            $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@($PHIP,$PHPort)))
+                            $Listener = ([N.e]::w([System.Net.Sockets.TcpListener],@([IPAddress]$PHIP,$PHPort)))
                         }
 
                         [GUI.Window]::ShowWindow($Form.Handle,0)
@@ -555,7 +555,7 @@ Function Actions{
                                 [Void][IPAddress]$PHIP
                                 If($Reverse){
                                     If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
+                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
                                         $Stream = $Client.GetStream()
                                         [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                         [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -762,7 +762,7 @@ Function Actions{
                     }
                 }Else{
                     Try{
-                        $PHProc = @(PS $ProcSearchTerm | ?{$_.MainWindowHandle -ne 0})
+                        $PHProc = @(PS $ProcSearchTerm -ErrorAction SilentlyContinue | ?{$_.MainWindowHandle -ne 0})
                         If(!$PHProc.Count){
                             $PHProc = @(PS | ?{$_.Id -notmatch $SyncHash.MouseIndPid} | ?{$_.MainWindowTitle -match $ProcSearchTerm})
                         }
