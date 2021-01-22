@@ -162,7 +162,7 @@ Function Actions{
                         $PH = 1000
                     }
                     If(!$SyncHash.Stop -AND ($PH % 3000)){
-                        $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...')
+                        $PHMsg = ('WAITING: '+[Double]($PH / 1000)+' SECONDS REMAIN...          ')
                         If($ShowCons.Checked){
                             If($Host.Name -match 'Console'){
                                 [System.Console]::CursorLeft = 4
@@ -177,7 +177,7 @@ Function Actions{
                     $MaxWait = [Int]([Math]::Floor($PH / 3000))
                     $PH = ($PH - ($PH % 3000))
                     For($i = 0; $i -lt $MaxWait -AND !$SyncHash.Stop; $i++){
-                        $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...')
+                        $PHMsg = ('WAITING: '+[Double](($PH - (3000 * $i)) / 1000)+' SECONDS REMAIN...          ')
                         If($ShowCons.Checked){
                             If($Host.Name -match 'Console'){
                                 [System.Console]::CursorLeft = 4
