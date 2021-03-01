@@ -456,7 +456,7 @@
             }
         }
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+' -AND $_ -notmatch 'VAR \S*?\+='} | %{
-            $PH = $_.Substring(4)
+            $PH = $X.Trim().Substring(5) -replace '}$'
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$'){
                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'THE NAME '+$PHName+' IS INVALID, _ESCAPED IS A RESERVED SUFFIX. THIS LINE WILL BE IGNORED...')}
@@ -474,7 +474,8 @@
                     If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'IF YOU NEED TO ALIAS COMMANDS, USE A FUNCTION INSTEAD.')}
                     $PHName+='_ESCAPED'
                 }Else{
-                    $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',$NL).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
+                    #If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+('{'+$PH+'}'))
+                    $X = $X.Replace(('{'+$PH+'}'),'')
                 }
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
