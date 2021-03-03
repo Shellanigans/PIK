@@ -1,4 +1,4 @@
-﻿If($Host.Name -match 'Console'){
+If($Host.Name -match 'Console'){
     [Console]::Title = 'PIK'
     #[Void][GUI.Window]::ShowWindow([Cons.Wind]::GetConsoleWindow(), 0)
     [GUI.Style]::Enable()
@@ -70,7 +70,7 @@ $MutexPow.AddScript({
                     $IP = '127.0.0.1'
                 }
                 $Port = [Int]$SyncHash.SrvPort
-                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@([IPAddress]$IP,$Port)))
+                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@($IP,$Port)))
                 
                 $TmpStr = $TmpCli.GetStream()
                 $TmpStr.Write($SSrv,0,$SSrv.Count)
