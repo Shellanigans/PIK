@@ -303,7 +303,7 @@ Function Handle-TextBoxKey($KeyCode, $MainObj, $BoxType, $Shift, $Control, $Alt)
         $MainObj.SelectedText = ('{MOUSE '+((($PH).ToString().Substring(3) -replace 'Y=').TrimEnd('}'))+'}'+$NL)
     }ElseIf($KeyCode -eq 'F7'){
         $MainObj.SelectionLength = 0
-        $MainObj.SelectedText = '{WAIT M 100}'
+        $MainObj.SelectedText = '{WAIT -M 100}'
     }ElseIf($KeyCode -eq 'F8'){
         GO -SelectionRun
     }ElseIf($KeyCode -eq 'F10'){
