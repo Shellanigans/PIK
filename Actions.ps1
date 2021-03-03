@@ -436,7 +436,7 @@ Function Actions{
                             $PHClient = $PHListener.AcceptTCPClient()
                             $PHListener.Stop()
                         }Else{
-                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
+                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
                         }
                         
                         $PHStream = $PHClient.GetStream()
@@ -521,6 +521,7 @@ Function Actions{
                 }Catch{
                     If($ShowCons.Checked){
                         [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+$Error[0])
                     }
                 }
             }
@@ -555,7 +556,7 @@ Function Actions{
                                 [Void][IPAddress]$PHIP
                                 If($Reverse){
                                     If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
+                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
                                         $Stream = $Client.GetStream()
                                         [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                         [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -623,7 +624,8 @@ Function Actions{
                     }
                 }Catch{
                     If($ShowCons.Checked){
-                        [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+'ERROR! FAILED START LISTENER '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+$Error[0])
                     }
                 }
             }
