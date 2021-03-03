@@ -4220,7 +4220,7 @@ $MouseIndPow.AddScript({
     $Pointer.BackColor = $DarkRed
     $Pointer.ForeColor = $Red
     $Pointer.Font = [N.e]::w([System.Drawing.Font],@('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
-    $Pointer.Text = 'â†'
+    $Pointer.Text = [Char][Int]8592
     $Pointer.Parent = $MouseForm
     $MouseForm.BackColor = $DarkRed
     $MouseForm.TransparencyKey = $DarkRed
