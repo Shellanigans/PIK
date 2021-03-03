@@ -475,7 +475,8 @@
                     $PHName+='_ESCAPED'
                 }Else{
                     #If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+('{'+$PH+'}'))
-                    $X = $X.Replace(('{'+$PH+'}'),'')
+                    #$X = $X.Replace(('{'+$PH+'}'),'')
+                    $X = ''
                 }
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
@@ -486,7 +487,7 @@
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
             $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,'')
-            $X = $X.Replace('{'+$_,'')
+            $X = ''
         }
         $DepthOverflow++
     }
