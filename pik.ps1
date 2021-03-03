@@ -436,7 +436,7 @@
                             $PHClient = $PHListener.AcceptTCPClient()
                             $PHListener.Stop()
                         }Else{
-                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
+                            $PHClient = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
                         }
                         
                         $PHStream = $PHClient.GetStream()
@@ -521,6 +521,7 @@
                 }Catch{
                     If($ShowCons.Checked){
                         [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+$Error[0])
                     }
                 }
             }
@@ -555,7 +556,7 @@
                                 [Void][IPAddress]$PHIP
                                 If($Reverse){
                                     If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$PHIP,$PHPort)))
+                                        $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($PHIP,$PHPort)))
                                         $Stream = $Client.GetStream()
                                         [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                         [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -623,7 +624,8 @@
                     }
                 }Catch{
                     If($ShowCons.Checked){
-                        [System.Console]::WriteLine($Tab+'ERROR! FAILED SEND TO '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+'ERROR! FAILED START LISTENER '+$PHIP+':'+$PHPort)
+                        [System.Console]::WriteLine($Tab+$Error[0])
                     }
                 }
             }
@@ -1475,7 +1477,7 @@ Function Interpret{
             }
         }
         $PHSplitX | ?{$_ -match 'VAR \S+' -AND $_ -match '=.+' -AND $_ -notmatch 'VAR \S*?\+='} | %{
-            $PH = $_.Substring(4)
+            $PH = $X.Trim().Substring(5) -replace '}$'
             $PHName = $PH.Split('=')[0]
             If($PHName -match '_ESCAPED$'){
                If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'THE NAME '+$PHName+' IS INVALID, _ESCAPED IS A RESERVED SUFFIX. THIS LINE WILL BE IGNORED...')}
@@ -1493,7 +1495,8 @@ Function Interpret{
                     If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+'IF YOU NEED TO ALIAS COMMANDS, USE A FUNCTION INSTEAD.')}
                     $PHName+='_ESCAPED'
                 }Else{
-                    $X = $X.Replace(('{'+$_+'}'),'').Replace('(COMMA)',',').Replace('(SPACE)',' ').Replace('(NEWLINE)',$NL).Replace('(NULL)','').Replace('(LBRACE)','{').Replace('(RBRACE)','}')
+                    #If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+('{'+$PH+'}'))
+                    $X = $X.Replace(('{'+$PH+'}'),'')
                 }
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
@@ -3761,7 +3764,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             [Void][IPAddress]$SyncHash.SrvIP
                             If($Reverse){
                                 If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
+                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
                                     $Stream = $Client.GetStream()
                                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                     [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -3843,7 +3846,7 @@ $TabController = ([N.e]::w([GUI.TC],@(405, 400, 25, 7)))
                             [Void][IPAddress]$SyncHash.SrvIP
                             If($Reverse){
                                 If($SyncHash.SrvIP -ne '0.0.0.0'){
-                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@([IPAddress]$SyncHash.SrvIP,$PHPort)))
+                                    $Client = ([N.e]::w([System.Net.Sockets.TcpClient],@($SyncHash.SrvIP,$PHPort)))
                                     $Stream = $Client.GetStream()
                                     [System.Console]::WriteLine($NL+'---------------'+$NL+'Successful Remote Connect!'+$NL+'---------------'+$NL)
                                     [System.Console]::WriteLine($Tab+'Waiting for incoming commands...')
@@ -4173,7 +4176,7 @@ $MutexPow.AddScript({
                     $IP = '127.0.0.1'
                 }
                 $Port = [Int]$SyncHash.SrvPort
-                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@([IPAddress]$IP,$Port)))
+                $TmpCli = ([N.e]::w([System.Net.Sockets.TCPClient],@($IP,$Port)))
                 
                 $TmpStr = $TmpCli.GetStream()
                 $TmpStr.Write($SSrv,0,$SSrv.Count)
@@ -4216,7 +4219,7 @@ $MouseIndPow.AddScript({
     $Pointer.BackColor = $DarkRed
     $Pointer.ForeColor = $Red
     $Pointer.Font = [N.e]::w([System.Drawing.Font],@('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
-    $Pointer.Text = '←'
+    $Pointer.Text = 'â†'
     $Pointer.Parent = $MouseForm
     $MouseForm.BackColor = $DarkRed
     $MouseForm.TransparencyKey = $DarkRed
