@@ -1,4 +1,4 @@
-﻿Function GO{
+Function GO{
     Param([Switch]$SelectionRun,[Switch]$Server,[Switch]$WhatIf,[String]$InlineCommand,$Stream=$Null)
     #[System.Console]::WriteLine('INSIDE GO')
     #Any lines with #Ignore are there for regex purposes when exporting scripts
