@@ -1496,7 +1496,8 @@ Function Interpret{
                     $PHName+='_ESCAPED'
                 }Else{
                     #If($ShowCons.Checked -AND !$SuppressConsole){[System.Console]::WriteLine($Tab+('{'+$PH+'}'))
-                    $X = $X.Replace(('{'+$PH+'}'),'')
+                    #$X = $X.Replace(('{'+$PH+'}'),'')
+                    $X = ''
                 }
                 $Script:VarsHash.Remove($PHName)
                 $Script:VarsHash.Add($PHName,$PHValue)
@@ -1507,7 +1508,7 @@ Function Interpret{
             $PHName = ($_.Split('=')[0] -replace '^VAR ')
             $Script:VarsHash.Remove($PHName)
             $Script:VarsHash.Add($PHName,'')
-            $X = $X.Replace('{'+$_,'')
+            $X = ''
         }
         $DepthOverflow++
     }
@@ -4219,7 +4220,7 @@ $MouseIndPow.AddScript({
     $Pointer.BackColor = $DarkRed
     $Pointer.ForeColor = $Red
     $Pointer.Font = [N.e]::w([System.Drawing.Font],@('Lucida Console',50,[System.Drawing.FontStyle]::Bold))
-    $Pointer.Text = '←'
+    $Pointer.Text = 'â†'
     $Pointer.Parent = $MouseForm
     $MouseForm.BackColor = $DarkRed
     $MouseForm.TransparencyKey = $DarkRed
