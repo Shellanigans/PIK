@@ -31,3 +31,6 @@ Tab can be used to tab in or out multiple selected lines
 Ctrl+s will save as well
 
 Right Click will bring up a custom menu with things like find/replace
+
+![Docs](Other/2021-03-03-CROP.jpg)
+![Docs](Other/2021-03-04-CROP.jpg)
