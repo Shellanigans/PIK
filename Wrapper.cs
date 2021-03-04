@@ -12,6 +12,9 @@ using SWF = System.Windows.Forms;
 //::new() doesn't exist in POSH versions below 3, but we want to cover as many versions of powershell as possible.
 //This makes it so we can use [N.e]::w([Type],@(args)) instead of New-Object (POSH v2) which is very slow.
 //We COULD just use [System.Activator]::CreatInstance([Type],@(args)), but this gets long and wordy quickly.
+//The biggest limitation of this implementation is that by doing this, you lose powershell's "smart" typcasting
+//So what will happen if the types are not expected is that POSH will return tan error saying no constructor was found
+//for x number of args. The fix if you see that is to type cast to the correct type before you call the constructor.
 namespace N{
     public class e{
         public static Object w (Type type, params Object[] args){
@@ -120,6 +123,7 @@ namespace GUI{
         public static SWF.Screen[] All = SWF.Screen.AllScreens;
     }
 
+    //Some basic windows handling imports
     public class Window{
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
@@ -163,6 +167,7 @@ namespace GUI{
         public static void SetPos (int x, int y) {SWF.Cursor.Position = new DR.Point(x, y);}
     }
 
+    //Some imports for sending events, these are used for holding keys down
     public class Events{
         [DllImport("user32.dll")]
         public static extern void mouse_event(Int64 dwFlags, Int64 dx, Int64 dy, Int64 cButtons, Int64 dwExtraInfo);
@@ -171,6 +176,9 @@ namespace GUI{
         public static extern void keybd_event(Byte bVk, Byte bScan, Int64 dwFlags, Int64 dwExtraInfo);
     }
 
+    //This is a small wrapper for the SendWait function that adds the Windows key to the SendWait lexicon
+    //This also sets the app config to run the SendWait function in SendInput mode. 
+    //This avoids duplicate entries in Win10 keystrokes.
     public class Send{
     	public static void SetConfig ()        {
             System.Configuration.ConfigurationManager.AppSettings.Set("SendKeys","SendInput");
@@ -189,14 +197,13 @@ namespace GUI{
                     WinKeyCount = Convert.ToInt32(Regex.Replace(WinKeys, "\\D", ""));
                 }
                 
-                if(Regex.IsMatch(WinKeys, "R")){
-                    GUI.Events.keybd_event(0x5C, 0, 0x02, 0);
+                byte LR = 0x5B
+                if(Regex.IsMatch(WinKeys, "R")){LR = 0x5C}
+                
+                for(i = 0; i < WinKeyCount; i++) {
+                    GUI.Events.keybd_event(LR, 0, 0x02, 0);
                     System.Threading.Thread.Sleep(40);
-                    GUI.Events.keybd_event(0x5C, 0, 0, 0);
-                }else{
-                    GUI.Events.keybd_event(0x5B, 0, 0x02, 0);
-                    System.Threading.Thread.Sleep(40);
-                    GUI.Events.keybd_event(0x5B, 0, 0, 0);
+                    GUI.Events.keybd_event(LR, 0, 0, 0);
                 }
             }else{
                 SWF.SendKeys.SendWait(Keys);
@@ -204,6 +211,7 @@ namespace GUI{
         }
     }
 
+    //The class for sub image searching
     public class FindImg{
         public static System.Collections.Generic.List<DR.Point> GetSubPositions(DR.Bitmap main, DR.Bitmap sub) {
             System.Collections.Generic.List<DR.Point> possiblepos = new System.Collections.Generic.List<DR.Point>();
@@ -325,6 +333,7 @@ namespace GUI{
     }
 }
 
+//The namespace for console related shenanigans
 namespace Cons{
     public class Wind{
         [DllImport("Kernel32.dll")]
@@ -349,6 +358,7 @@ namespace Cons{
     }
 }
 
+//The C# implementation of the Interpret function, eventually all of this, save for the variable stuff should be in here
 public class Parse{
     public static string HoldKeys(string X){
         X = X.ToUpper();
