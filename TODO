@@ -3,3 +3,6 @@ Graphical dimension setter for windows selected
     Maybe live update window text and dimensions?
 still missing configuration to set stop button
 just move all the shit into C# there's no reason for it to be posh other than runnability at this point.
+still missing help file
+revisit loading/saving of profiles
+screenshotter? (for if you are tryng to catch something?)
