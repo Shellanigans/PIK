@@ -1,0 +1,5 @@
+Graphical process selector (live list view instead of clicker)
+Graphical dimension setter for windows selected
+    Maybe live update window text and dimensions?
+still missing configuration to set stop button
+just move all the shit into C# there's no reason for it to be posh other than runnability at this point.
