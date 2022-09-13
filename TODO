@@ -14,10 +14,13 @@ still missing help file
 revisit loading/saving of profiles
     Maybe rename to programs???
     Should profiles refer to settings???
+    are settings important with programs or macros?
 screenshotter? (for if you are tryng to catch something?)
 fix syntax highlighting only look at lines changed (basically get rid of it as a command/hotkey)
     (need to consider when new lines are added and strings that are multi-line like block comments)
-live push commands and return output to server/client comms (just like a box that can do that or something)
 Memory scanner??? Like cheat engine???
-Packet crafting???
-TLS/SSL for comms???
+Server Client stuff is fucked, get them both in the same place and actually pass the stream object correctly
+    Keepalive is hella dumb as well
+    live push commands and return output to server/client comms (just like a box that can do that or something)
+    Packet crafting???
+    TLS/SSL for comms???
