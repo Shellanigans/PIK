@@ -1,12 +1,23 @@
 Graphical process selector (live list view instead of clicker)
 Graphical dimension setter for windows selected
     Maybe live update window text and dimensions?
-still missing configuration to set stop button
+Gracefully handle multiple instances of PIK running
+still missing configuration to set stop button (or programmable hotkeys in general)
+    Also show the hotkey code in the right click menu
+    programmable hotkeys should be settable with the clickable button thing that games do
+    dont forget a default reset
 just move all the shit into C# there's no reason for it to be posh other than runnability at this point.
     speaking of C#... NO MO REGEX (in places it can be helped)
+    condense interpreter into the GUI.parse C# stuff
+    breakout C# into multiple pieces
 still missing help file
-revisit loading/saving of profiles >>> Maybe rename to programs??? Should profiles refer to settings???
+revisit loading/saving of profiles
+    Maybe rename to programs???
+    Should profiles refer to settings???
 screenshotter? (for if you are tryng to catch something?)
-gracefully handle multiple instances running
-fix syntax highlighting only look at lines changed
+fix syntax highlighting only look at lines changed (basically get rid of it as a command/hotkey)
     (need to consider when new lines are added and strings that are multi-line like block comments)
+live push commands and return output to server/client comms (just like a box that can do that or something)
+Memory scanner??? Like cheat engine???
+Packet crafting???
+TLS/SSL for comms???
