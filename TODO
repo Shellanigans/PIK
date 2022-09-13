@@ -8,3 +8,5 @@ still missing help file
 revisit loading/saving of profiles >>> Maybe rename to programs??? Should profiles refer to settings???
 screenshotter? (for if you are tryng to catch something?)
 gracefully handle multiple instances running
+fix syntax highlighting only look at lines changed
+    (need to consider when new lines are added and strings that are multi-line like block comments)
