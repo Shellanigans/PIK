@@ -2,7 +2,7 @@ Graphical process selector (live list view instead of clicker)
 Graphical dimension setter for windows selected
     Maybe live update window text and dimensions?
 Gracefully handle multiple instances of PIK running
-still missing configuration to set stop button (or programmable hotkeys in general)
+still missing configuration to set stop hotkey (or programmable hotkeys in general)
     Also show the hotkey code in the right click menu
     programmable hotkeys should be settable with the clickable button thing that games do
     dont forget a default reset
@@ -21,6 +21,6 @@ fix syntax highlighting only look at lines changed (basically get rid of it as a
 Memory scanner??? Like cheat engine???
 Server Client stuff is fucked, get them both in the same place and actually pass the stream object correctly
     Keepalive is hella dumb as well
-    live push commands and return output to server/client comms (just like a box that can do that or something)
+    live push commands and return output to server/client comms (just like a textbox that can do that or something)
     Packet crafting???
     TLS/SSL for comms???
